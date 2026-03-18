@@ -120,11 +120,12 @@ jobs:
         sudo apt-get update -qq
         sudo apt-get install -y --no-install-recommends poppler-utils
 
-    - name: Install parser-core (editable) + parser-free
+    - name: Install parser-core (editable) + parser-free + lint tools
       run: |
         pip install --upgrade pip
         pip install -e ../parser-core
         pip install -e ".[test]"
+        pip install black isort flake8
 
     - name: Black
       run: black --check --diff src tests
