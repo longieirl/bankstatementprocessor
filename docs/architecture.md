@@ -114,32 +114,19 @@ The free-tier CLI always calls `free_tier()`. The premium distribution validates
 
 ## Premium Distribution
 
-A separate private distribution (`bankstatements-premium`) extends the open-source packages:
+A separate premium distribution extends the open-source packages with:
 
-- Consumes `bankstatements-core` from PyPI
-- Adds HMAC-SHA256 license validation: `resolve_entitlements()` reads a signed `license.json` and returns `Entitlements.paid_tier()` if valid, otherwise falls back to `free_tier()`
-- Includes additional bank templates (credit card, loan) not present in this repository
-- Is the only source of Docker images
+- Additional bank templates (credit card, loan statements) not present in this repository
+- Support for processing statements without IBAN patterns
+- License-gated access to `paid_tier()` entitlements
 
-The license validation code is not part of this repository. The `paid_tier()` method in `bankstatements-core` is not sensitive — it describes a feature set (`require_iban=False`). Without a valid signed license, it cannot be activated.
-
-For premium access, contact the maintainer via a GitHub issue with label `license-inquiry`.
+The premium distribution is not part of this repository. For premium access, contact the maintainer via a GitHub issue with label `license-inquiry`.
 
 ---
 
 ## Boundary Enforcement
 
-CI enforces that `parser-free` never imports premium code:
-
-```yaml
-# boundary-check.yml
-- name: Check import boundary
-  run: |
-    if grep -r "bankstatements_premium\|src\.licensing" packages/parser-free/src/; then
-      echo "parser-free imports premium code"
-      exit 1
-    fi
-```
+CI enforces that `parser-free` never imports code from outside `bankstatements-core`. A dedicated `boundary-check.yml` workflow scans `packages/parser-free/src/` on every PR and fails if any prohibited imports are found.
 
 This ensures the structural boundary between the free and premium tiers is maintained automatically on every PR.
 

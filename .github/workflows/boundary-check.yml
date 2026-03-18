@@ -1,7 +1,7 @@
-# Boundary check — enforce that parser-free never imports premium code
+# Boundary check — enforce that parser-free only imports from bankstatements-core
 #
 # parser-free must only depend on bankstatements-core (public).
-# Any import of bankstatements_premium or src.licensing is a structural violation.
+# Any import outside this boundary is a structural violation.
 #
 # Trigger: push/PR to main
 
@@ -35,9 +35,8 @@ jobs:
 
         if grep -r "bankstatements_premium\|src\.licensing" packages/parser-free/src/; then
           echo ""
-          echo "BOUNDARY VIOLATION: parser-free imports premium or private licensing code."
-          echo "parser-free must only import from bankstatements_core."
+          echo "BOUNDARY VIOLATION: parser-free must only import from bankstatements_core."
           exit 1
         fi
 
-        echo "Boundary check passed — no premium imports found."
+        echo "Boundary check passed — no prohibited imports found."
