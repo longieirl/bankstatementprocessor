@@ -58,9 +58,9 @@ jobs:
         working-directory: packages/parser-core
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.12'
         cache: pip
@@ -107,9 +107,9 @@ jobs:
         working-directory: packages/parser-free
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.12'
         cache: pip
@@ -142,9 +142,9 @@ jobs:
     timeout-minutes: 10
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.12'
 
@@ -169,7 +169,7 @@ jobs:
       run: safety scan --json > safety-report.json || true
 
     - name: Upload security reports
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: security-reports
@@ -197,9 +197,9 @@ jobs:
         python-version: ${{ github.event_name == 'pull_request' && fromJSON('["3.12"]') || fromJSON('["3.11", "3.12", "3.13"]') }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
         cache: pip
@@ -225,7 +225,7 @@ jobs:
           --tb=short
 
     - name: Upload test results
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: test-results-core-${{ matrix.python-version }}
@@ -251,9 +251,9 @@ jobs:
         working-directory: packages/parser-free
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: '3.12'
         cache: pip
