@@ -6,7 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from bankstatements_core.config.processor_config import ExtractionConfig, ProcessorConfig
+from bankstatements_core.config.processor_config import (
+    ExtractionConfig,
+    ProcessorConfig,
+)
 from bankstatements_core.processor import BankStatementProcessor
 
 

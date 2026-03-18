@@ -25,7 +25,9 @@ class TestExtractionOrchestrator(unittest.TestCase):
             extraction_config=self.extraction_config
         )
 
-    @patch("bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf")
+    @patch(
+        "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
+    )
     def test_extract_from_pdf_success(self, mock_extract):
         """Test successful PDF extraction."""
         pdf_path = Path(self.temp_dir) / "test.pdf"
@@ -45,7 +47,9 @@ class TestExtractionOrchestrator(unittest.TestCase):
         self.assertEqual(iban, "IE12BOFI90000112345")
         mock_extract.assert_called_once()
 
-    @patch("bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf")
+    @patch(
+        "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
+    )
     def test_extract_from_pdf_with_forced_template(self, mock_extract):
         """Test extraction with forced template."""
         pdf_path = Path(self.temp_dir) / "test.pdf"
@@ -67,7 +71,9 @@ class TestExtractionOrchestrator(unittest.TestCase):
         call_args = mock_extract.call_args
         self.assertEqual(call_args[0][0], pdf_path)  # First positional arg
 
-    @patch("bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf")
+    @patch(
+        "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
+    )
     def test_extract_from_pdf_no_data(self, mock_extract):
         """Test extraction when PDF has no data."""
         pdf_path = Path(self.temp_dir) / "test.pdf"
@@ -81,7 +87,9 @@ class TestExtractionOrchestrator(unittest.TestCase):
         self.assertEqual(pages, 2)
         self.assertIsNone(iban)
 
-    @patch("bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf")
+    @patch(
+        "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
+    )
     def test_extract_from_pdf_returns_rows_as_is(self, mock_extract):
         """Test that extracted rows are returned as-is from extract_tables_from_pdf."""
         pdf_path = Path(self.temp_dir) / "test.pdf"

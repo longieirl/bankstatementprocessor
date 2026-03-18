@@ -12,7 +12,10 @@ from pathlib import Path
 
 import pytest
 
-from bankstatements_core.patterns.strategies import CSVOutputStrategy, JSONOutputStrategy
+from bankstatements_core.patterns.strategies import (
+    CSVOutputStrategy,
+    JSONOutputStrategy,
+)
 
 
 @pytest.fixture

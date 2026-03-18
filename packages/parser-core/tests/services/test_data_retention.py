@@ -353,7 +353,9 @@ class TestActivityLogIntegration:
         self, retention_service, temp_output_dir
     ):
         """Test cleanup logs deletion events."""
-        from bankstatements_core.services.processing_activity_log import ProcessingActivityLog
+        from bankstatements_core.services.processing_activity_log import (
+            ProcessingActivityLog,
+        )
 
         # Create activity log
         logs_dir = temp_output_dir / "logs"
@@ -376,7 +378,9 @@ class TestActivityLogIntegration:
 
     def test_cleanup_all_files_logs_deletion(self, retention_service, temp_output_dir):
         """Test cleanup_all_files logs deletion events."""
-        from bankstatements_core.services.processing_activity_log import ProcessingActivityLog
+        from bankstatements_core.services.processing_activity_log import (
+            ProcessingActivityLog,
+        )
 
         logs_dir = temp_output_dir / "logs"
         logs_dir.mkdir()
@@ -393,7 +397,9 @@ class TestActivityLogIntegration:
 
     def test_cleanup_by_date_logs_deletion(self, retention_service, temp_output_dir):
         """Test cleanup_by_date logs deletion events."""
-        from bankstatements_core.services.processing_activity_log import ProcessingActivityLog
+        from bankstatements_core.services.processing_activity_log import (
+            ProcessingActivityLog,
+        )
 
         logs_dir = temp_output_dir / "logs"
         logs_dir.mkdir()

@@ -2,7 +2,13 @@ from __future__ import annotations
 
 import unittest
 
-from bankstatements_core.utils import format_currency, log_summary, parse_bool_env, parse_int_env, to_float
+from bankstatements_core.utils import (
+    format_currency,
+    log_summary,
+    parse_bool_env,
+    parse_int_env,
+    to_float,
+)
 
 
 class TestUtils(unittest.TestCase):

@@ -46,7 +46,9 @@ class TestColumnTotalsServiceSpecificExceptions:
         service = ColumnTotalsService(totals_columns=["Amount"])
 
         # Mock calculate_column_sum where it's imported
-        with patch("bankstatements_core.services.totals_calculator.calculate_column_sum") as mock_calc:
+        with patch(
+            "bankstatements_core.services.totals_calculator.calculate_column_sum"
+        ) as mock_calc:
             # RuntimeError is NOT in caught exceptions
             mock_calc.side_effect = RuntimeError("Unexpected system error")
 
@@ -75,7 +77,9 @@ class TestAppConfigSpecificExceptions:
 
     def test_exception_chaining_with_from_e(self):
         """ConfigurationError chains original exception with 'from e'."""
-        with patch("bankstatements_core.config.totals_config.parse_totals_columns") as mock_parse:
+        with patch(
+            "bankstatements_core.config.totals_config.parse_totals_columns"
+        ) as mock_parse:
             original_error = ValueError("Invalid format at position 5")
             mock_parse.side_effect = original_error
 
@@ -89,7 +93,9 @@ class TestAppConfigSpecificExceptions:
 
     def test_configuration_error_includes_context(self):
         """ConfigurationError includes the problematic configuration value."""
-        with patch("bankstatements_core.config.totals_config.parse_totals_columns") as mock_parse:
+        with patch(
+            "bankstatements_core.config.totals_config.parse_totals_columns"
+        ) as mock_parse:
             mock_parse.side_effect = ValueError("Parse error")
 
             with patch.dict("os.environ", {"TOTALS_COLUMNS": "invalid_config"}):
@@ -109,7 +115,9 @@ class TestExceptionHandlingBenefits:
         service = ColumnTotalsService(totals_columns=["Amount"])
 
         # ValueError has specific meaning: non-numeric data
-        with patch("bankstatements_core.services.totals_calculator.calculate_column_sum") as mock_calc:
+        with patch(
+            "bankstatements_core.services.totals_calculator.calculate_column_sum"
+        ) as mock_calc:
             mock_calc.side_effect = ValueError("Cannot convert 'abc' to float")
 
             df = pd.DataFrame({"Amount": ["abc"]})
@@ -123,14 +131,18 @@ class TestExceptionHandlingBenefits:
         service = ColumnTotalsService(totals_columns=["Value"])
 
         # Expected error (ValueError) is caught
-        with patch("bankstatements_core.services.totals_calculator.calculate_column_sum") as mock_calc:
+        with patch(
+            "bankstatements_core.services.totals_calculator.calculate_column_sum"
+        ) as mock_calc:
             mock_calc.side_effect = ValueError("Expected error")
             df = pd.DataFrame({"Value": [1]})
             totals = service.calculate(df)
             assert totals["Value"] == 0.0
 
         # Unexpected error (KeyError) bubbles up
-        with patch("bankstatements_core.services.totals_calculator.calculate_column_sum") as mock_calc:
+        with patch(
+            "bankstatements_core.services.totals_calculator.calculate_column_sum"
+        ) as mock_calc:
             mock_calc.side_effect = KeyError("Unexpected error")
             df = pd.DataFrame({"Value": [1]})
             with pytest.raises(KeyError):
@@ -152,7 +164,9 @@ class TestComparisonWithGenericCatching:
         service = ColumnTotalsService(totals_columns=["Amount"])
 
         # Simulate a bug: KeyError in the calculation logic
-        with patch("bankstatements_core.services.totals_calculator.calculate_column_sum") as mock_calc:
+        with patch(
+            "bankstatements_core.services.totals_calculator.calculate_column_sum"
+        ) as mock_calc:
             mock_calc.side_effect = KeyError("missing_key")  # Bug in code
 
             df = pd.DataFrame({"Amount": [1, 2]})
@@ -166,7 +180,9 @@ class TestComparisonWithGenericCatching:
         """Specific exception types preserve detailed error messages."""
         service = ColumnTotalsService(totals_columns=["Amount"])
 
-        with patch("bankstatements_core.services.totals_calculator.calculate_column_sum") as mock_calc:
+        with patch(
+            "bankstatements_core.services.totals_calculator.calculate_column_sum"
+        ) as mock_calc:
             detailed_error = ValueError(
                 "Cannot convert 'invalid_data' to float at row 42, column 'Amount'"
             )

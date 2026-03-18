@@ -11,7 +11,11 @@ from bankstatements_core.adapters.pdfplumber_adapter import (
     PDFPlumberPageAdapter,
     PDFPlumberReaderAdapter,
 )
-from bankstatements_core.domain.protocols.pdf_reader import IPDFDocument, IPDFPage, IPDFReader
+from bankstatements_core.domain.protocols.pdf_reader import (
+    IPDFDocument,
+    IPDFPage,
+    IPDFReader,
+)
 
 
 class TestPDFPlumberPageAdapter:

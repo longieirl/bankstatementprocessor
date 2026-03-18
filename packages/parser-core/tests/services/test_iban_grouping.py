@@ -66,7 +66,9 @@ class TestIBANGroupingService(unittest.TestCase):
             "file1.pdf": "IE12 BOFI 9000 0112 3456",
         }
 
-        with self.assertLogs("bankstatements_core.services.iban_grouping", level=logging.WARNING):
+        with self.assertLogs(
+            "bankstatements_core.services.iban_grouping", level=logging.WARNING
+        ):
             grouped = self.service.group_by_iban(rows, pdf_ibans)
 
         # Row without filename should go to unknown

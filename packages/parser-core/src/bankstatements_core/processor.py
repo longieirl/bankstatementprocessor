@@ -18,7 +18,9 @@ from bankstatements_core.services.duplicate_detector import DuplicateDetectionSe
 from bankstatements_core.services.expense_analysis import ExpenseAnalysisService
 from bankstatements_core.services.monthly_summary import MonthlySummaryService
 from bankstatements_core.services.output_orchestrator import OutputOrchestrator
-from bankstatements_core.services.pdf_processing_orchestrator import PDFProcessingOrchestrator
+from bankstatements_core.services.pdf_processing_orchestrator import (
+    PDFProcessingOrchestrator,
+)
 from bankstatements_core.services.sorting_service import (
     ChronologicalSortingStrategy,
     NoSortingStrategy,
@@ -185,7 +187,9 @@ class BankStatementProcessor:
 
         # Strategy pattern: Duplicate detection strategy (defaults to AllFieldsStrategy)
         if duplicate_strategy is None:
-            from bankstatements_core.patterns.strategies import AllFieldsDuplicateStrategy
+            from bankstatements_core.patterns.strategies import (
+                AllFieldsDuplicateStrategy,
+            )
 
             self._duplicate_strategy = AllFieldsDuplicateStrategy()
         else:
@@ -217,7 +221,9 @@ class BankStatementProcessor:
 
         # Repository pattern: Transaction repository (defaults to FileSystemTransactionRepository)
         if repository is None:
-            from bankstatements_core.patterns.repositories import FileSystemTransactionRepository
+            from bankstatements_core.patterns.repositories import (
+                FileSystemTransactionRepository,
+            )
 
             self.repository = FileSystemTransactionRepository()
         else:

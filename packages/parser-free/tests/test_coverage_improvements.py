@@ -11,9 +11,9 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 
-from bankstatements_free.app import main
 from bankstatements_core.patterns.repositories import reset_config_singleton
 from bankstatements_core.processor import calculate_column_totals
+from bankstatements_free.app import main
 
 
 class TestAppErrorHandling(unittest.TestCase):
@@ -93,7 +93,10 @@ class TestProcessorErrorHandling(unittest.TestCase):
         df = pd.DataFrame({"BadColumn": [object(), object(), object()]})
 
         # Mock to_float to raise an exception
-        with patch("bankstatements_core.processor.to_float", side_effect=Exception("Parse error")):
+        with patch(
+            "bankstatements_core.processor.to_float",
+            side_effect=Exception("Parse error"),
+        ):
             result = calculate_column_totals(df, ["BadColumn"])
 
             # Should return 0.0 for the column that caused an error
@@ -116,7 +119,10 @@ class TestProcessorHelperFunctions(unittest.TestCase):
 
     def test_detect_duplicates_same_file_same_transaction(self):
         """Test _detect_duplicates handles same transaction in same file"""
-        from bankstatements_core.config.processor_config import ExtractionConfig, ProcessorConfig
+        from bankstatements_core.config.processor_config import (
+            ExtractionConfig,
+            ProcessorConfig,
+        )
         from bankstatements_core.processor import BankStatementProcessor
 
         config = ProcessorConfig(

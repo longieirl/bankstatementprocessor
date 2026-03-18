@@ -1,0 +1,25 @@
+# Companion to ci.yml — runs only when ALL changed files are docs/assets.
+# Reports "CI Pass" so branch protection is satisfied for docs-only PRs.
+
+name: CI (docs only)
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.gitignore'
+      - '**.png'
+      - '**.jpg'
+      - '**.jpeg'
+      - '**.gif'
+      - '**.svg'
+
+jobs:
+  ci-pass:
+    name: CI Pass
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Docs-only change — skipping code checks."

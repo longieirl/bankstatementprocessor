@@ -262,7 +262,9 @@ class TestBankStatementProcessor(unittest.TestCase):
         self.assertNotIn("json_path", result)
         self.assertNotIn("duplicates_path", result)
 
-    @patch("bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf")
+    @patch(
+        "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
+    )
     def test_processor_continues_after_pdf_error(self, mock_extract):
         """Test that processing continues when a PDF fails to extract"""
         # Create mock PDF files
@@ -285,7 +287,9 @@ class TestBankStatementProcessor(unittest.TestCase):
         self.assertEqual(result["transactions"], 2)
         self.assertEqual(mock_extract.call_count, 3)
 
-    @patch("bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf")
+    @patch(
+        "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
+    )
     def test_processor_handles_empty_pdf_gracefully(self, mock_extract):
         """Test that processing continues when a PDF has no tables"""
         # Create mock PDF files
