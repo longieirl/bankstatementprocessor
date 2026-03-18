@@ -90,31 +90,21 @@ bankstatementprocessor/
 
 ## Docker
 
-The free-tier CLI can be run via Docker using the image published from the private `bankstatements-premium` distribution:
+Docker images are built from the private `bankstatements-premium` repository which consumes this package. To run locally as a developer, clone both repos side-by-side and use `docker-compose`:
 
 ```bash
-# Pull the latest image
-docker pull ghcr.io/longieirl/bankstatements-premium:latest
+# Clone both repos
+git clone https://github.com/longieirl/bankstatementprocessor.git
+git clone https://github.com/longieirl/bankstatements.git
 
-# Run against a local input directory
-docker run --rm \
-  -v $(pwd)/input:/app/input \
-  -v $(pwd)/output:/app/output \
-  ghcr.io/longieirl/bankstatements-premium:latest
+# From the bankstatements directory
+cd bankstatements
+cp .env.example .env  # configure input/output dirs and licence path
 
-# With custom output formats
-docker run --rm \
-  -v $(pwd)/input:/app/input \
-  -v $(pwd)/output:/app/output \
-  -e OUTPUT_FORMATS=csv,json,excel \
-  ghcr.io/longieirl/bankstatements-premium:latest
+docker-compose up --build
 ```
 
-Or with `docker-compose` — copy [`.env.example`](.env.example) to `.env` and run:
-
-```bash
-docker-compose up
-```
+The `--build` flag builds the image locally from source using `bankstatements-core` from this repo — no remote image is pulled.
 
 ---
 
