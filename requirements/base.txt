@@ -1,0 +1,14 @@
+# requirements/base.txt
+# Core dependencies for FREE and PAID tiers
+
+pdfplumber>=0.11.9  # PDF parsing (updated 2026-03-02)
+pypdf>=6.7.5  # PDF utilities - security patches (updated 2026-03-02)
+pandas>=2.2.0  # Data processing
+python-dotenv>=1.0.0  # Environment configuration
+tabulate>=0.9.0  # Table formatting
+cryptography>=46.0.5  # Cryptographic operations - security patches (updated 2026-03-02)
+openpyxl>=3.1.0  # Excel export (.xlsx format)
+
+# Note: Network libraries (requests, urllib3) intentionally excluded
+# This application processes sensitive financial data locally only
+# No remote API calls or cloud services are used (GDPR compliance)

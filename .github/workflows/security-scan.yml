@@ -1,0 +1,202 @@
+name: Security Vulnerability Scanning
+
+on:
+  schedule:
+    # Run every Monday at 9:00 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:  # Allow manual trigger
+  push:
+    branches: [ main ]
+    paths:
+      - 'Dockerfile'
+      - 'requirements/**'
+      - '.github/workflows/security-scan.yml'
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+  issues: write
+
+jobs:
+  scan-latest-image:
+    name: Scan Latest Docker Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v4
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Pull latest production image
+      run: |
+        docker pull ghcr.io/longieirl/bankstatements:latest
+        echo "Image pulled successfully"
+        docker images ghcr.io/longieirl/bankstatements:latest
+
+    - name: Run comprehensive Trivy scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'ghcr.io/longieirl/bankstatements:latest'
+        format: 'table'
+        severity: 'CRITICAL,HIGH,MEDIUM'
+        vuln-type: 'os,library'
+        exit-code: '0'  # Don't fail, just report
+
+    - name: Run Trivy scan for secrets
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'ghcr.io/longieirl/bankstatements:latest'
+        format: 'table'
+        scanners: 'secret'
+        exit-code: '1'  # Fail if secrets found
+
+    - name: Run Trivy scan for misconfigurations
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'ghcr.io/longieirl/bankstatements:latest'
+        format: 'table'
+        scanners: 'config'
+        exit-code: '0'  # Don't fail, just report
+
+    - name: Generate Trivy SARIF report
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'ghcr.io/longieirl/bankstatements:latest'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    # Note: SARIF upload to GitHub Security requires GHAS (not available for private repos)
+    # Detailed security reports are available as workflow artifacts
+
+    - name: Generate detailed JSON report
+      uses: aquasecurity/trivy-action@master
+      if: always()
+      with:
+        image-ref: 'ghcr.io/longieirl/bankstatements:latest'
+        format: 'json'
+        output: 'trivy-detailed-report.json'
+
+    - name: Upload detailed report as artifact
+      uses: actions/upload-artifact@v7
+      if: always()
+      with:
+        name: security-scan-report-${{ github.run_number }}
+        path: trivy-detailed-report.json
+        retention-days: 90
+
+    - name: Check for critical vulnerabilities
+      id: check-critical
+      run: |
+        CRITICAL_COUNT=$(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+          aquasec/trivy:latest image --quiet \
+          --severity CRITICAL \
+          --format json \
+          ghcr.io/longieirl/bankstatements:latest | \
+          jq '[.Results[]?.Vulnerabilities // [] | .[] | select(.Severity == "CRITICAL")] | length')
+
+        echo "critical_count=${CRITICAL_COUNT}" >> $GITHUB_OUTPUT
+        echo "Found ${CRITICAL_COUNT} critical vulnerabilities"
+
+    - name: Create issue for critical vulnerabilities
+      if: steps.check-critical.outputs.critical_count > 0
+      uses: actions/github-script@v8
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const criticalCount = ${{ steps.check-critical.outputs.critical_count }};
+          const issueTitle = `🚨 Security Alert: ${criticalCount} Critical Vulnerabilities Found`;
+          const issueBody = `
+          ## Security Vulnerability Alert
+
+          **Scan Date**: ${new Date().toISOString()}
+          **Image**: ghcr.io/longieirl/bankstatements:latest
+          **Critical Vulnerabilities**: ${criticalCount}
+
+          ### Action Required
+
+          Critical vulnerabilities were found during automated security scanning.
+
+          ### Next Steps
+
+          1. Review the detailed scan report in the [Actions artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          2. Follow the remediation steps in [docs/SECURITY_SCANNING.md](docs/SECURITY_SCANNING.md)
+          4. Update base image or affected dependencies
+          5. Rebuild and rescan
+
+          ### Scan Commands
+
+          \`\`\`bash
+          # Pull latest image
+          docker pull ghcr.io/longieirl/bankstatements:latest
+
+          # Run local scan
+          trivy image --severity CRITICAL ghcr.io/longieirl/bankstatements:latest
+
+          # Get recommendations
+          docker scout recommendations ghcr.io/longieirl/bankstatements:latest
+          \`\`\`
+
+          ### Documentation
+
+          - [Security Scanning Guide](docs/SECURITY_SCANNING.md)
+          - [Docker Maintenance](docs/DOCKER_MAINTENANCE.md)
+
+          ---
+
+          This issue was automatically created by the security scanning workflow.
+          `;
+
+          // Check if there's already an open issue
+          const issues = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            labels: 'security,vulnerability'
+          });
+
+          const existingIssue = issues.data.find(issue =>
+            issue.title.includes('Critical Vulnerabilities Found')
+          );
+
+          if (existingIssue) {
+            // Update existing issue
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: existingIssue.number,
+              body: `**Update**: Still ${criticalCount} critical vulnerabilities found in latest scan.\n\nScan run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+            });
+          } else {
+            // Create new issue
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: issueTitle,
+              body: issueBody,
+              labels: ['security', 'vulnerability', 'critical']
+            });
+          }
+
+    - name: Post scan summary
+      if: always()
+      run: |
+        echo "## 🔍 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Image**: ghcr.io/longieirl/bankstatements:latest" >> $GITHUB_STEP_SUMMARY
+        echo "**Scan Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+        echo "**Critical Vulnerabilities**: ${{ steps.check-critical.outputs.critical_count }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Actions" >> $GITHUB_STEP_SUMMARY
+        echo "- [View detailed report in artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Documentation" >> $GITHUB_STEP_SUMMARY
+        echo "- [Security Scanning Guide](docs/SECURITY_SCANNING.md)" >> $GITHUB_STEP_SUMMARY
+        echo "- [Docker Maintenance Guide](docs/DOCKER_MAINTENANCE.md)" >> $GITHUB_STEP_SUMMARY

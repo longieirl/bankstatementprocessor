@@ -1,0 +1,112 @@
+repos:
+  # File and format checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ['--maxkb=1000']  # Limit files to 1MB
+      - id: debug-statements
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: check-case-conflict
+      - id: mixed-line-ending
+      - id: check-docstring-first
+      - id: check-builtin-literals
+
+  # Python import sorting
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: ["--profile", "black", "--filter-files"]
+
+  # Python code formatting
+  - repo: https://github.com/psf/black
+    rev: 23.12.1
+    hooks:
+      - id: black
+        language_version: python3
+
+  # Ruff - fast Python linter and auto-fixer
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.0.265
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+
+  # Python linting
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        args: ["--max-line-length=88", "--extend-ignore=E203,W503,E501,W504,D,C420"]
+
+  # Type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-requests, types-setuptools, types-python-dateutil]
+        args: [--ignore-missing-imports, --no-strict-optional]
+
+  # Security scanning (disabled - dependency issues in pre-commit environment)
+  # - repo: https://github.com/PyCQA/bandit
+  #   rev: 1.7.5
+  #   hooks:
+  #     - id: bandit
+  #       args: ['-r', 'src', '--exclude', 'tests']
+  #       additional_dependencies: ['pbr']
+
+  # Dependency vulnerability scanning (disabled - requires authentication)
+  # - repo: local
+  #   hooks:
+  #     - id: safety-scan
+  #       name: safety scan
+  #       entry: safety
+  #       args: [scan, --json]
+  #       language: system
+  #       pass_filenames: false
+  #       files: requirements.*\.txt$
+
+  # Secrets detection
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: package.lock.json
+
+  # Docker linting (disabled - requires hadolint binary installation)
+  # - repo: https://github.com/hadolint/hadolint
+  #   rev: v2.12.0
+  #   hooks:
+  #     - id: hadolint-docker
+  #       args: [--ignore, DL3008, --ignore, DL3009]
+
+  # Markdown linting (disabled - requires npm package installation)
+  # - repo: https://github.com/igorshubovych/markdownlint-cli
+  #   rev: v0.38.0
+  #   hooks:
+  #     - id: markdownlint
+  #       args: [--fix]
+
+  # YAML formatting and linting
+  - repo: https://github.com/adrienverge/yamllint.git
+    rev: v1.33.0
+    hooks:
+      - id: yamllint
+        args: [-d, relaxed]
+
+  # Commit message format validation
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v3.0.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: [feat, fix, docs, style, refactor, test, chore, perf, ci, build]

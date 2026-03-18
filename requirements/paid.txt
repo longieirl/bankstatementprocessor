@@ -1,0 +1,4 @@
+# requirements/paid.txt
+# FREE tier distribution — all features included in base requirements
+
+-r base.txt

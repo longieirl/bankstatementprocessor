@@ -1,0 +1,178 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":automergeDigest",
+    ":automergeMinor"
+  ],
+  "timezone": "UTC",
+  "schedule": [
+    "before 6am on Monday"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "assignees": [
+    "@longieirl"
+  ],
+  "python": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "description": "Group production dependencies for careful review",
+      "matchFiles": [
+        "requirements/base.txt"
+      ],
+      "groupName": "production dependencies",
+      "automerge": false,
+      "labels": [
+        "dependencies",
+        "production"
+      ],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "Group PAID tier dependencies separately",
+      "matchFiles": [
+        "requirements/paid.txt"
+      ],
+      "groupName": "PAID tier dependencies",
+      "automerge": false,
+      "labels": [
+        "dependencies",
+        "paid-tier"
+      ],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "Group development dependencies for safer automerge",
+      "matchFiles": [
+        "requirements/dev.txt",
+        "requirements/test.txt"
+      ],
+      "groupName": "development dependencies",
+      "automerge": true,
+      "automergeType": "pr",
+      "minimumReleaseAge": "1 day",
+      "labels": [
+        "dependencies",
+        "development"
+      ]
+    },
+    {
+      "description": "Group CI dependencies",
+      "matchFiles": [
+        "requirements/ci.txt"
+      ],
+      "groupName": "CI dependencies",
+      "automerge": true,
+      "automergeType": "pr",
+      "labels": [
+        "dependencies",
+        "ci"
+      ]
+    },
+    {
+      "description": "Automerge patch updates for all dependencies",
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "minimumReleaseAge": "1 day"
+    },
+    {
+      "description": "Pin digests for Docker images",
+      "matchDatasources": [
+        "docker"
+      ],
+      "pinDigests": true,
+      "automerge": false,
+      "labels": [
+        "dependencies",
+        "docker"
+      ]
+    },
+    {
+      "description": "Security updates - immediate attention",
+      "matchUpdateTypes": [
+        "pin",
+        "digest"
+      ],
+      "matchDepTypes": [
+        "vulnerabilities"
+      ],
+      "automerge": false,
+      "labels": [
+        "dependencies",
+        "security",
+        "urgent"
+      ],
+      "minimumReleaseAge": "0 days",
+      "schedule": [
+        "at any time"
+      ]
+    },
+    {
+      "description": "Major version updates require careful review",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false,
+      "labels": [
+        "dependencies",
+        "major-update"
+      ],
+      "minimumReleaseAge": "7 days"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": [
+      "security",
+      "urgent"
+    ],
+    "assignees": [
+      "@longieirl"
+    ]
+  },
+  "prConcurrentLimit": 5,
+  "prCreation": "immediate",
+  "prHourlyLimit": 2,
+  "rebaseWhen": "behind-base-branch",
+  "semanticCommits": "enabled",
+  "commitMessagePrefix": "chore(deps):",
+  "commitMessageAction": "update",
+  "commitMessageTopic": "{{depName}}",
+  "commitMessageExtra": "to {{#if isPinDigest}}{{{newDigestShort}}}{{else}}{{#if isMajor}}{{prettyNewMajor}}{{else}}{{#if isSingleVersion}}{{prettyNewVersion}}{{else}}{{#if newValue}}{{{newValue}}}{{else}}{{{newDigestShort}}}{{/if}}{{/if}}{{/if}}{{/if}}",
+  "prTitle": "{{semanticPrefix}}{{#if isPin}}pin{{else}}update{{/if}} {{depName}} to {{#if isMajor}}v{{newMajor}}{{else}}{{#if isSingleVersion}}v{{newVersion}}{{else}}{{newValue}}{{/if}}{{/if}}",
+  "prBodyTemplate": "This PR contains the following updates:\n\n| Package | Change | Age | Adoption | Passing | Confidence |\n|---|---|---|---|---|---|\n{{#each upgrades as |upgrade|}}\n| {{upgrade.depName}} | `{{upgrade.currentVersion}}` -> `{{upgrade.newVersion}}` | [![age](https://developer.mend.io/api/mc/badges/age/{{upgrade.datasource}}/{{upgrade.depName}}/{{upgrade.newVersion}}?slim=true)](https://docs.renovatebot.com/merge-confidence/) | [![adoption](https://developer.mend.io/api/mc/badges/adoption/{{upgrade.datasource}}/{{upgrade.depName}}/{{upgrade.newVersion}}?slim=true)](https://docs.renovatebot.com/merge-confidence/) | [![passing](https://developer.mend.io/api/mc/badges/compatibility/{{upgrade.datasource}}/{{upgrade.depName}}/{{upgrade.currentVersion}}/{{upgrade.newVersion}}?slim=true)](https://docs.renovatebot.com/merge-confidence/) | [![confidence](https://developer.mend.io/api/mc/badges/confidence/{{upgrade.datasource}}/{{upgrade.depName}}/{{upgrade.currentVersion}}/{{upgrade.newVersion}}?slim=true)](https://docs.renovatebot.com/merge-confidence/) |\n{{/each}}\n\n---\n\n### Configuration\n\n📅 **Schedule**: {{schedule}}\n\n🚦 **Automerge**: {{#if automerge}}Enabled{{else}}Disabled{{/if}}\n\n♻ **Rebasing**: {{rebaseWhen}}\n\n---\n\nThis PR has been generated by [Renovate Bot](https://github.com/renovatebot/renovate).\n",
+  "ignoreDeps": [],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "**/vendor/**",
+    "**/__pycache__/**",
+    "**/.venv/**",
+    "**/venv/**"
+  ],
+  "enabledManagers": [
+    "pip_requirements",
+    "dockerfile",
+    "github-actions"
+  ],
+  "pip_requirements": {
+    "fileMatch": [
+      "(^|/)requirements/[^/]*\\.txt$",
+      "(^|/)requirements\\.txt$"
+    ]
+  },
+  "lockFileMaintenance": {
+    "enabled": false
+  },
+  "stabilityDays": 1,
+  "prNotPendingHours": 24
+}

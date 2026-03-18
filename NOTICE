@@ -1,0 +1,72 @@
+bankstatements
+Copyright 2026 longieirl
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+================================================================================
+
+This product includes software developed by third parties:
+
+1. pdfplumber (MIT License)
+   Copyright (c) Jeremy Singer-Vine
+   https://github.com/jsvine/pdfplumber
+
+2. pypdf (BSD-3-Clause License)
+   Copyright (c) Mathieu Fenniak and contributors
+   https://github.com/py-pdf/pypdf
+
+3. pandas (BSD-3-Clause License)
+   Copyright (c) PyData Development Team
+   https://github.com/pandas-dev/pandas
+
+4. python-dotenv (BSD-3-Clause License)
+   Copyright (c) Saurabh Kumar
+   https://github.com/theskumar/python-dotenv
+
+5. tabulate (MIT License)
+   Copyright (c) Sergey Astanin
+   https://github.com/astanin/python-tabulate
+
+6. cryptography (Apache-2.0 OR BSD-3-Clause)
+   Copyright (c) Python Cryptographic Authority
+   https://github.com/pyca/cryptography
+
+7. openpyxl (MIT License)
+   Copyright (c) Eric Gazoni and Charlie Clark
+   https://github.com/theorchard/openpyxl
+
+Full license texts for all dependencies are available in docs/LICENSES/
+
+================================================================================
+
+THIRD-PARTY SOFTWARE NOTICES
+
+The following dependencies are included in this distribution:
+
+FREE TIER DEPENDENCIES:
+- pdfplumber: PDF parsing and table extraction
+- pypdf: PDF utilities and security patches
+- pandas: Data processing and analysis
+- python-dotenv: Environment configuration management
+- tabulate: Table formatting for CLI output
+- cryptography: Cryptographic operations and license validation
+
+PAID TIER DEPENDENCIES:
+- openpyxl: Excel file generation (.xlsx format)
+
+NOTE: Network libraries (requests, urllib3) were intentionally removed
+for GDPR compliance. This application processes sensitive financial data
+locally only with no remote API calls or cloud services.
+
+All dependencies are used in accordance with their respective licenses.
+For complete license texts, see the docs/LICENSES/ directory.

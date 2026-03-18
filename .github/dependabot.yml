@@ -1,0 +1,139 @@
+# Dependabot Configuration
+# Automates dependency updates for Python, Docker, and GitHub Actions
+#
+# Documentation: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+#
+# Features:
+# - Weekly scheduled updates (Mondays 9-11am UTC)
+# - Separate PRs for each ecosystem
+# - Auto-labeled for easy filtering
+# - Limited concurrent PRs to avoid noise
+# - Auto-assigned to @longieirl for review
+#
+# Note: Dependabot security updates run automatically (separate from version updates)
+# and will create PRs immediately when vulnerabilities are detected.
+
+version: 2
+updates:
+  # ===========================================================================
+  # Python Dependencies
+  # ===========================================================================
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "longieirl"
+    assignees:
+      - "longieirl"
+    labels:
+      - "dependencies"
+      - "python"
+      - "automated"
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: "scope"
+    # Group minor and patch updates together to reduce PR noise
+    groups:
+      python-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Allow pre-release versions for security patches
+    allow:
+      - dependency-type: "all"
+
+  # ===========================================================================
+  # Docker Base Images
+  # ===========================================================================
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "10:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "longieirl"
+    assignees:
+      - "longieirl"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "automated"
+    commit-message:
+      prefix: "chore(docker)"
+      include: "scope"
+
+  # ===========================================================================
+  # GitHub Actions
+  # ===========================================================================
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "11:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "longieirl"
+    assignees:
+      - "longieirl"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "automated"
+    commit-message:
+      prefix: "chore(actions)"
+      include: "scope"
+    # Group all GitHub Actions updates together
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+# ===========================================================================
+# Dependabot Settings Summary
+# ===========================================================================
+#
+# Scheduled Update Times (Monday mornings UTC):
+#   09:00 - Python dependencies (up to 10 PRs)
+#   10:00 - Docker images (up to 5 PRs)
+#   11:00 - GitHub Actions (up to 5 PRs)
+#
+# Security Updates:
+#   - Run automatically when vulnerabilities detected
+#   - Not limited by schedule or PR limits
+#   - Create separate PRs from version updates
+#
+# PR Management:
+#   - All PRs auto-assigned to @longieirl
+#   - Labeled for easy filtering (dependencies + ecosystem)
+#   - Semantic commit messages (chore(deps): ...)
+#   - Python updates grouped (minor + patch together)
+#
+# Reviewing PRs:
+#   1. Check CI/CD passes (security scans, tests)
+#   2. Review CHANGELOG for breaking changes
+#   3. Verify no known issues in release notes
+#   4. Merge if green and non-breaking
+#   5. Monitor production after merge
+#
+# Closing PRs:
+#   - Close manually if update not desired
+#   - Dependabot will recreate if new version released
+#   - Use "ignore" commands in PR comments if needed:
+#       @dependabot ignore this major version
+#       @dependabot ignore this minor version
+#       @dependabot ignore this dependency
+#
+# ===========================================================================

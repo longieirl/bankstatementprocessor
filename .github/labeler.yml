@@ -1,0 +1,28 @@
+# Labeler configuration based on PR title patterns
+# Simplified label set - only essential labels
+
+# Type labels (conventional commit prefixes)
+'feature':
+  - head-branch: ['^feature/', 'feature']
+  - title: ['^feat:', '^feat\(', '^feature:']
+
+'bug':
+  - head-branch: ['^fix/', '^hotfix/', 'fix']
+  - title: ['^fix:', '^fix\(', '^bugfix:']
+
+'documentation':
+  - head-branch: ['^docs/', 'docs']
+  - title: ['^docs:', '^docs\(']
+
+'chore':
+  - head-branch: ['^chore/', 'chore']
+  - title: ['^chore:', '^chore\(']
+
+# Security
+'security':
+  - title: ['security', 'vulnerability', 'CVE-', 'critical']
+
+# Dependencies
+'dependencies':
+  - title: ['bump', 'update', 'upgrade', 'dependency']
+  - head-branch: ['^dependabot/', '^renovate/']

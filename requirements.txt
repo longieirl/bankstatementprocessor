@@ -1,0 +1,5 @@
+# requirements.txt
+# Points to base requirements for backwards compatibility
+# Use this for simple installations: pip install -r requirements.txt
+
+-r requirements/base.txt

@@ -1,0 +1,43 @@
+# Boundary check — enforce that parser-free never imports premium code
+#
+# parser-free must only depend on bankstatements-core (public).
+# Any import of bankstatements_premium or src.licensing is a structural violation.
+#
+# Trigger: push/PR to main
+
+name: Boundary Check
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'packages/parser-free/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'packages/parser-free/**'
+
+permissions:
+  contents: read
+
+jobs:
+  boundary-check:
+    name: Enforce package boundary — parser-free
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Check for premium imports in parser-free
+      run: |
+        echo "Scanning packages/parser-free/src/ for banned imports..."
+
+        if grep -r "bankstatements_premium\|src\.licensing" packages/parser-free/src/; then
+          echo ""
+          echo "BOUNDARY VIOLATION: parser-free imports premium or private licensing code."
+          echo "parser-free must only import from bankstatements_core."
+          exit 1
+        fi
+
+        echo "Boundary check passed — no premium imports found."

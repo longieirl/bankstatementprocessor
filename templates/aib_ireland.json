@@ -1,0 +1,57 @@
+{
+  "id": "aib_ireland",
+  "name": "AIB Ireland Bank Statement",
+  "document_type": "bank_statement",
+  "enabled": true,
+  "detection": {
+    "iban_patterns": [
+      "IE[0-9]{2}AIBK"      
+    ],
+    "header_keywords": [
+      "Personal Bank Account",
+      "Statement of Account with Allied Irish Banks",
+      "Allied Irish Banks"
+    ],
+    "column_headers": [
+      "Date",
+      "Details",
+      "Debit",
+      "Credit",
+      "Balance"
+    ]
+  },
+  "extraction": {
+    "table_top_y": 300,
+    "table_bottom_y": 720,
+    "enable_header_check": true,
+    "header_check_top_y": 250,
+    "columns": {
+      "Date": [
+        26,
+        78
+      ],
+      "Details": [
+        78,
+        255
+      ],
+      "Debit \u20ac": [
+        255,
+        313
+      ],
+      "Credit \u20ac": [
+        313,
+        369
+      ],
+      "Balance \u20ac": [
+        369,
+        450
+      ]
+    }
+  },
+  "processing": {
+    "supports_multiline": true,
+    "date_format": "%d %b %Y",
+    "currency_symbol": "\u20ac",
+    "decimal_separator": "."
+  }
+}

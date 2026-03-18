@@ -1,0 +1,178 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  validate-version:
+    name: Validate Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get-version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Get version from tag
+        id: get-version
+        run: |
+          TAG_VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=${TAG_VERSION}" >> $GITHUB_OUTPUT
+          echo "Version from tag: ${TAG_VERSION}"
+
+      - name: Verify version consistency
+        run: |
+          TAG_VERSION=${{ steps.get-version.outputs.version }}
+          CODE_VERSION=$(grep '__version__ = ' src/__version__.py | cut -d'"' -f2)
+          TOML_VERSION=$(grep 'version = ' pyproject.toml | head -1 | cut -d'"' -f2)
+
+          echo "Tag version: ${TAG_VERSION}"
+          echo "Code version: ${CODE_VERSION}"
+          echo "TOML version: ${TOML_VERSION}"
+
+          if [ "${TAG_VERSION}" != "${CODE_VERSION}" ]; then
+            echo "❌ Version mismatch: tag (${TAG_VERSION}) != code (${CODE_VERSION})"
+            exit 1
+          fi
+
+          if [ "${TAG_VERSION}" != "${TOML_VERSION}" ]; then
+            echo "❌ Version mismatch: tag (${TAG_VERSION}) != toml (${TOML_VERSION})"
+            exit 1
+          fi
+
+          echo "✅ All versions match: ${TAG_VERSION}"
+
+  build-and-push:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+    needs: validate-version
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        run: |
+          VERSION=${{ needs.validate-version.outputs.version }}
+          MAJOR=$(echo ${VERSION} | cut -d. -f1)
+          MINOR=$(echo ${VERSION} | cut -d. -f1-2)
+          BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          VCS_REF=$(git rev-parse --short HEAD)
+
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "major=${MAJOR}" >> $GITHUB_OUTPUT
+          echo "minor=${MINOR}" >> $GITHUB_OUTPUT
+          echo "build_date=${BUILD_DATE}" >> $GITHUB_OUTPUT
+          echo "vcs_ref=${VCS_REF}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          target: production  # Build production stage only (excludes dev dependencies)
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            VERSION=${{ steps.meta.outputs.version }}
+            BUILD_DATE=${{ steps.meta.outputs.build_date }}
+            VCS_REF=${{ steps.meta.outputs.vcs_ref }}
+          tags: |
+            ghcr.io/longieirl/bankstatements:${{ steps.meta.outputs.version }}
+            ghcr.io/longieirl/bankstatements:${{ steps.meta.outputs.minor }}
+            ghcr.io/longieirl/bankstatements:${{ steps.meta.outputs.major }}
+            ghcr.io/longieirl/bankstatements:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify image
+        run: |
+          docker pull ghcr.io/longieirl/bankstatements:${{ steps.meta.outputs.version }}
+          docker inspect ghcr.io/longieirl/bankstatements:${{ steps.meta.outputs.version }} | jq '.[0].Config.Labels'
+
+      - name: Run Trivy vulnerability scanner on release
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ghcr.io/longieirl/bankstatements:${{ steps.meta.outputs.version }}'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'  # Block release on critical/high vulnerabilities
+          ignore-unfixed: true  # Ignore CVEs with no fix available (documented in CVE_RESPONSE_2026-02-06.md)
+
+      - name: Generate vulnerability report for release
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: 'ghcr.io/longieirl/bankstatements:${{ steps.meta.outputs.version }}'
+          format: 'json'
+          output: 'release-trivy-report.json'
+
+      - name: Upload release vulnerability report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: release-vulnerability-report
+          path: release-trivy-report.json
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [validate-version, build-and-push]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Extract changelog for version
+        id: changelog
+        run: |
+          VERSION=${{ needs.validate-version.outputs.version }}
+
+          # Extract changelog section for this version
+          CHANGELOG=$(awk "/## \[${VERSION}\]/,/## \[/{if(/## \[${VERSION}\]/)p=1;else if(/## \[/)p=0;if(p)print}" CHANGELOG.md | tail -n +2)
+
+          if [ -z "$CHANGELOG" ]; then
+            echo "⚠️  No changelog entry found for version ${VERSION}"
+            CHANGELOG="No changelog entry available."
+          fi
+
+          # Save to file for multiline content
+          echo "$CHANGELOG" > changelog.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release v${{ needs.validate-version.outputs.version }}
+          body_path: changelog.txt
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release summary
+        run: |
+          echo "## 🚀 Release v${{ needs.validate-version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Docker Images" >> $GITHUB_STEP_SUMMARY
+          echo "- \`ghcr.io/longieirl/bankstatements:${{ needs.validate-version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`ghcr.io/longieirl/bankstatements:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Pull Command" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ghcr.io/longieirl/bankstatements:${{ needs.validate-version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

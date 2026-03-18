@@ -1,0 +1,19 @@
+# Stubtest Allowlist for pdfplumber
+# This file contains pdfplumber APIs that intentionally differ between stubs and runtime
+# or are expected to fail stubtest validation.
+
+# Implementation details we don't stub
+pdfplumber.PDF.__init__
+pdfplumber.page.Page.__init__
+
+# Private/internal APIs we intentionally omit
+pdfplumber\._.*
+
+# Deprecated APIs we don't stub
+# (Add any deprecated pdfplumber APIs here if they exist)
+
+# Platform-specific implementations
+# (Add any platform-specific differences here if needed)
+
+# Note: This allowlist should be kept minimal. Most discrepancies should be fixed
+# by updating the stubs to match runtime behavior.

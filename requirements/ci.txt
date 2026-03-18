@@ -1,0 +1,19 @@
+# requirements/ci.txt
+# CI/CD specific tools
+
+# Include test requirements
+-r test.txt
+
+# Security scanning
+bandit==1.9.4
+safety==3.7.0
+
+# License compliance
+pip-licenses>=5.0.0
+
+# SBOM and drift detection
+PyYAML>=6.0
+
+# Complexity analysis
+radon==6.0.1
+mccabe==0.7.0

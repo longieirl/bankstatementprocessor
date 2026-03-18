@@ -1,0 +1,80 @@
+# Dependency Drift Detection Policy
+#
+# This file defines rules for detecting unexpected dependency changes
+# in CI/CD pipelines to prevent supply chain attacks and unwanted updates.
+
+drift_detection:
+  # Branch to use as baseline for comparison
+  baseline: "main"
+
+  # Detection rules
+  rules:
+    # Patch version bumps (e.g., 1.2.3 → 1.2.4)
+    # Options: allow, warn, fail
+    patch_bumps: allow
+
+    # Minor version bumps (e.g., 1.2.0 → 1.3.0)
+    # Options: allow, warn, fail
+    minor_bumps: warn
+
+    # Major version bumps (e.g., 1.0.0 → 2.0.0)
+    # Options: allow, warn, fail
+    major_bumps: fail
+
+    # New top-level dependencies added
+    # Options: allow, warn, fail
+    new_dependencies: fail
+
+    # Transitive (indirect) dependency changes
+    # Options: allow, warn, fail
+    transitive_changes: warn
+
+  # Package-specific exceptions
+  # Allow certain packages to bypass drift rules
+  exceptions:
+    # Development and testing dependencies
+    - package: "pytest"
+      reason: "Test dependency, breaking changes acceptable"
+
+    - package: "pytest-cov"
+      reason: "Test dependency, breaking changes acceptable"
+
+    - package: "pytest-mock"
+      reason: "Test dependency, breaking changes acceptable"
+
+    - package: "pytest-xdist"
+      reason: "Test dependency, breaking changes acceptable"
+
+    - package: "black"
+      reason: "Formatting tool, breaking changes acceptable"
+
+    - package: "isort"
+      reason: "Formatting tool, breaking changes acceptable"
+
+    - package: "flake8"
+      reason: "Linting tool, breaking changes acceptable"
+
+    - package: "mypy"
+      reason: "Type checking tool, breaking changes acceptable"
+
+    - package: "bandit"
+      reason: "Security scanning tool, updates encouraged"
+
+    - package: "safety"
+      reason: "Security scanning tool, updates encouraged"
+
+    - package: "pip-audit"
+      reason: "Security scanning tool, updates encouraged"
+
+    # Documentation tools
+    - package: "sphinx"
+      reason: "Documentation tool, breaking changes acceptable"
+
+    - package: "sphinx-autodoc-typehints"
+      reason: "Documentation tool, breaking changes acceptable"
+
+# Notes:
+# - This policy is enforced by scripts/detect_drift.py
+# - Failures will cause CI builds to fail
+# - Warnings are informational and don't fail builds
+# - Update this file when intentionally accepting breaking changes

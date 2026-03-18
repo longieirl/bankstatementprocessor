@@ -1,0 +1,34 @@
+{
+  "id": "default",
+  "name": "Default Bank Statement",
+  "enabled": true,
+  "detection": {
+    "iban_patterns": [],
+    "column_headers": [
+      "Date",
+      "Details",
+      "Debit",
+      "Credit",
+      "Balance"
+    ]
+  },
+  "extraction": {
+    "table_top_y": 300,
+    "table_bottom_y": 720,
+    "enable_header_check": true,
+    "header_check_top_y": 250,
+    "columns": {
+      "Date": [26, 78],
+      "Details": [78, 255],
+      "Debit €": [255, 313],
+      "Credit €": [313, 369],
+      "Balance €": [369, 434]
+    }
+  },
+  "processing": {
+    "supports_multiline": false,
+    "date_format": "%d/%m/%Y",
+    "currency_symbol": "€",
+    "decimal_separator": "."
+  }
+}

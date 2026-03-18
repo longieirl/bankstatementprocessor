@@ -1,0 +1,140 @@
+"""Currency parsing and formatting utilities.
+
+This module provides functions for parsing and formatting currency amounts,
+handling common currency formats including symbols, thousands separators,
+and negative values in parentheses.
+"""
+
+from __future__ import annotations
+
+import logging
+import re
+from decimal import Decimal, InvalidOperation
+
+logger = logging.getLogger(__name__)
+
+
+class CurrencyParseError(ValueError):
+    """Raised when currency parsing fails."""
+
+    pass
+
+
+def to_float(
+    value: str | None,
+    allow_negative: bool = True,
+) -> float | None:
+    """
+    Convert currency string to float, handling common formats.
+
+    Handles:
+    - Currency symbols (€, $, £, etc.)
+    - Thousands separators (comma)
+    - Leading/trailing whitespace
+    - Negative values in parentheses: (100.00) -> -100.00
+    - Empty or None values
+
+    Args:
+        value: String representation of currency amount (or None)
+        allow_negative: Whether to allow negative values (default: True)
+
+    Returns:
+        Float value or None if value is empty/invalid
+
+    Examples:
+        >>> to_float("€100.50")
+        100.5
+        >>> to_float("1,234.56")
+        1234.56
+        >>> to_float("(50.00)")
+        -50.0
+        >>> to_float("")
+        None
+    """
+    # Handle None
+    if value is None:
+        return None
+
+    # At this point, mypy knows value is str
+    # Strip whitespace
+    original_value = value
+    value = value.strip()
+
+    # Handle empty after stripping
+    if not value:
+        return None
+
+    try:
+        # Check for negative value in parentheses
+        is_negative = False
+        if value.startswith("(") and value.endswith(")"):
+            is_negative = True
+            value = value[1:-1].strip()
+
+        # Remove currency symbols and spaces
+        # Supports €, $, £, ¥, and common variations
+        value = re.sub(r"[€$£¥\s]", "", value)
+
+        # Remove thousands separators (commas)
+        # Note: This assumes comma is thousands separator, not decimal
+        value = value.replace(",", "")
+
+        # Handle minus sign
+        if value.startswith("-"):
+            is_negative = True
+            value = value[1:]
+        elif value.startswith("+"):
+            value = value[1:]
+
+        # Validate we have something left to parse
+        if not value:
+            return None
+
+        # Convert to float using Decimal for better precision
+        decimal_value = Decimal(value)
+        float_value = float(decimal_value)
+
+        # Apply negativity
+        if is_negative:
+            if not allow_negative:
+                logger.warning(f"Negative value not allowed: {original_value}")
+                return None
+            float_value = -float_value
+
+        return float_value
+
+    except (ValueError, InvalidOperation) as e:
+        logger.debug(f"Failed to parse currency value '{original_value}': {e}")
+        return None
+
+
+def format_currency(
+    value: float | None,
+    currency_symbol: str = "€",
+    decimal_places: int = 2,
+) -> str:
+    """
+    Format float as currency string.
+
+    Args:
+        value: Numeric value to format (or None)
+        currency_symbol: Currency symbol to use (default: "€")
+        decimal_places: Number of decimal places (default: 2)
+
+    Returns:
+        Formatted currency string (empty string if value is None)
+
+    Examples:
+        >>> format_currency(1234.5)
+        '€1,234.50'
+        >>> format_currency(-50, "$")
+        '-$50.00'
+    """
+    if value is None:
+        return ""
+
+    formatted = f"{abs(value):,.{decimal_places}f}"
+
+    if value < 0:
+        return f"-{currency_symbol}{formatted}"
+    return f"{currency_symbol}{formatted}"

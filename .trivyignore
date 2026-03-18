@@ -1,0 +1,7 @@
+# Trivy vulnerability ignore list
+# Format: CVE-YYYY-NNNNN [reason]
+
+# No ignored vulnerabilities - all critical and high severity issues resolved
+# Last review: 2026-03-02
+# Next review: 2026-04-01
+

@@ -1,0 +1,141 @@
+[project]
+name = "bankstatements-core"
+version = "0.1.0"
+description = "Core PDF bank statement parsing library"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "longieirl", email = "noreply@github.com"}
+]
+keywords = ["pdf", "banking", "statement", "processor", "automation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+dependencies = [
+    "pdfplumber>=0.11.9",
+    "pypdf>=6.7.5",
+    "pandas>=2.2.0",
+    "python-dotenv>=1.0.0",
+    "tabulate>=0.9.0",
+    "openpyxl>=3.1.0",
+    "cryptography>=46.0.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=23.0.0,<27.0.0",
+    "isort>=5.12.0,<9.0.0",
+    "flake8>=6.0.0,<8.0.0",
+    "mypy>=1.8.0,<2.0.0",
+    "pyright>=1.1.350",
+    "types-python-dateutil>=2.8.0.0",
+    "types-openpyxl>=3.1.0.0",
+    "types-tabulate>=0.9.0.0",
+    "ipython>=8.0.0,<10.0.0",
+    "ipdb>=0.13.0",
+    "pre-commit>=3.0.0,<5.0.0",
+    "ruff>=0.0.265,<1.0.0",
+    "bandit[toml]>=1.7.0,<2.0.0",
+    "safety>=2.0.0,<4.0.0",
+    "detect-secrets>=1.4.0,<2.0.0",
+    "yamllint>=1.33.0,<2.0.0",
+]
+
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-xdist>=3.0.0",
+    "pytest-benchmark>=4.0.0",
+    "pytest-html>=4.0.0",
+    "pytest-metadata>=3.0.0",
+    "Faker>=21.0.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+bankstatements_core = ["templates/*.json", "py.typed"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=bankstatements_core",
+    "--cov-report=term-missing",
+    "--cov-report=xml",
+    "--cov-report=html",
+    "--cov-fail-under=91",
+]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+filterwarnings = [
+    "ignore:TestResult has no addDuration method:RuntimeWarning",
+]
+
+[tool.coverage.run]
+source = ["bankstatements_core"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/venv/*",
+    "*/.venv/*",
+    "*/migrations/*",
+    "*/bankstatements_core/patterns/*",
+]
+
+[tool.coverage.report]
+precision = 2
+fail_under = 91
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+mypy_path = "stubs"
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["bankstatements_core"]

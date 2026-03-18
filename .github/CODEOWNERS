@@ -1,0 +1,53 @@
+# CODEOWNERS file for Bank Statements Processor
+# This file defines who must review changes to specific parts of the codebase
+#
+# Each line is a file pattern followed by one or more owners.
+# Order is important; the last matching pattern takes precedence.
+#
+# Learn more about CODEOWNERS: https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners
+
+# Global code owners - require review for all changes
+* @longieirl
+
+# Critical infrastructure and configuration files
+/.github/ @longieirl
+/.github/workflows/ @longieirl
+/docker-compose.yml @longieirl
+/Dockerfile @longieirl
+/entrypoint.sh @longieirl
+
+# Python dependencies and requirements
+/requirements/ @longieirl
+/requirements.txt @longieirl
+/pyproject.toml @longieirl
+/setup.py @longieirl
+
+# Development and CI configuration
+/.pre-commit-config.yaml @longieirl
+/.flake8 @longieirl
+/Makefile @longieirl
+/setup-git-hooks.sh @longieirl
+/.githooks/ @longieirl
+
+# Core application source code
+/src/ @longieirl
+
+# Test configuration and critical tests
+/tests/ @longieirl
+/pytest.ini @longieirl
+
+# Documentation that affects workflow or setup
+/README.md @longieirl
+/.github/DEVELOPMENT_WORKFLOW.md @longieirl
+/.github/BRANCH_PROTECTION_SETUP.md @longieirl
+
+# Security-sensitive files
+/.secrets.baseline @longieirl
+/.env.example @longieirl
+
+# License and legal files
+/LICENSE @longieirl
+
+# Add additional team members as needed:
+# /src/specific-module/ @longieirl @team-member
+# /docs/ @longieirl @documentation-team

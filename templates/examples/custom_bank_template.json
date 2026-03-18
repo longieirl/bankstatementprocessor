@@ -1,0 +1,95 @@
+{
+  "_comment_1": "This is an annotated example template for adding custom bank support",
+  "_comment_2": "Remove all _comment fields before using - JSON doesn't support comments",
+
+  "id": "mybank",
+  "_comment_id": "Unique identifier: lowercase, alphanumeric, hyphens, underscores only",
+
+  "name": "My Bank Name",
+  "_comment_name": "Human-readable name shown in logs and output",
+
+  "enabled": true,
+  "_comment_enabled": "Set to false to disable without deleting the file",
+
+  "detection": {
+    "_comment_detection": "Multiple detection methods for robustness",
+
+    "iban_patterns": [
+      "[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}"
+    ],
+    "_comment_iban": "Regex pattern for IBAN matching. Generic pattern matches all IBANs (2-letter country + 2 digits + up to 30 alphanumeric). Use specific pattern like IE[0-9]{2}MYBK.* if you need to match specific bank codes.",
+
+    "_comment_filename": "OPTIONAL: Glob patterns with wildcards (*) for PDF filename matching. If omitted, defaults to *.pdf (all PDFs). Only specify if you want to restrict to certain filename patterns.",
+
+    "header_keywords": [
+      "My Bank Name",
+      "mybank.com"
+    ],
+    "_comment_keywords": "Unique keywords found in PDF header/first page",
+
+    "column_headers": [
+      "Date",
+      "Description",
+      "Debit",
+      "Credit",
+      "Balance"
+    ],
+    "_comment_columns": "Expected column names in transaction table"
+  },
+
+  "extraction": {
+    "_comment_extraction": "Defines where transaction data is located on each page",
+
+    "table_top_y": 300,
+    "_comment_table_top": "Y-coordinate where transaction table starts (from bottom of page)",
+
+    "table_bottom_y": 720,
+    "_comment_table_bottom": "Y-coordinate where transaction table ends (from bottom of page)",
+
+    "enable_header_check": true,
+    "_comment_header_check": "Whether to verify column headers exist above table",
+
+    "header_check_top_y": 250,
+    "_comment_header_y": "Y-coordinate to search for column headers (only if enable_header_check=true)",
+
+    "enable_page_validation": true,
+    "_comment_page_validation": "Whether to validate page structure before extraction",
+
+    "columns": {
+      "_comment_columns_obj": "X-coordinate ranges [left, right] for each column in PDF points",
+
+      "Date": [26, 78],
+      "_comment_date": "Date column: left edge at x=26, right edge at x=78",
+
+      "Details": [78, 255],
+      "_comment_details": "Description/Details column",
+
+      "Debit €": [255, 313],
+      "_comment_debit": "Debit amount column (money out)",
+
+      "Credit €": [313, 369],
+      "_comment_credit": "Credit amount column (money in)",
+
+      "Balance €": [369, 434],
+      "_comment_balance": "Running balance column"
+    }
+  },
+
+  "processing": {
+    "_comment_processing": "Defines how to parse extracted text data",
+
+    "supports_multiline": false,
+    "_comment_multiline": "true if descriptions can span multiple lines (e.g., Revolut), false for single-line (e.g., AIB)",
+
+    "date_format": "%d/%m/%Y",
+    "_comment_date_format": "Python strftime format: %d/%m/%Y = 31/12/2024, %d %b %Y = 31 Dec 2024",
+
+    "currency_symbol": "€",
+    "_comment_currency": "Currency symbol used in amounts (€, $, £, etc.)",
+
+    "decimal_separator": ".",
+    "_comment_decimal": "Character separating whole and fractional amounts (usually . or ,)"
+  },
+
+  "_comment_usage": "Copy this file to templates/mybank.json (remove _comment fields) and customize for your bank"
+}

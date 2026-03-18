@@ -1,0 +1,273 @@
+# CI/CD Pipeline — bankstatementprocessor monorepo
+#
+# Jobs (all lint jobs run in parallel):
+#   lint-core   — black, isort, flake8, mypy on packages/parser-core
+#   lint-free   — black, isort, flake8 on packages/parser-free
+#   security    — bandit + safety on both packages
+#   test-core   — pytest with 91% coverage gate (Python matrix), needs lint-core
+#   test-free   — pytest on packages/parser-free, needs lint-free
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.gitignore'
+      - '*.txt'
+      - '**.png'
+      - '**.jpg'
+      - '**.jpeg'
+      - '**.gif'
+      - '**.svg'
+  pull_request:
+    branches: [ main, develop ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.gitignore'
+      - '**.png'
+      - '**.jpg'
+      - '**.jpeg'
+      - '**.gif'
+      - '**.svg'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+# ---------------------------------------------------------------------------
+# Lint jobs (all parallel)
+# ---------------------------------------------------------------------------
+jobs:
+  lint-core:
+    name: Lint — parser-core
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: packages/parser-core
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: pip
+        cache-dependency-path: packages/parser-core/pyproject.toml
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends poppler-utils
+
+    - name: Install dev + test dependencies
+      run: pip install --upgrade pip && pip install -e ".[dev,test]"
+
+    - name: Black
+      run: black --check --diff src tests
+
+    - name: isort
+      run: isort --check-only --diff src tests
+
+    - name: Flake8
+      run: flake8 src tests --max-line-length=88 --extend-ignore=E203,W503,E501,W504,D,C420
+
+    - name: MyPy
+      run: mypy src --ignore-missing-imports
+
+    - name: Validate type stubs
+      run: |
+        mypy --check-untyped-defs stubs/pdfplumber/
+        stubtest pdfplumber --allowlist stubtest-allowlist.txt || echo "stubtest differences found — review allowlist"
+
+    - name: Validate version consistency
+      run: |
+        CODE_VER=$(grep '__version__ = ' src/bankstatements_core/__version__.py | cut -d'"' -f2)
+        TOML_VER=$(grep '^version = ' pyproject.toml | head -1 | cut -d'"' -f2)
+        echo "Code: ${CODE_VER}  TOML: ${TOML_VER}"
+        [ "${CODE_VER}" = "${TOML_VER}" ] || { echo "Version mismatch"; exit 1; }
+
+  lint-free:
+    name: Lint — parser-free
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: packages/parser-free
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: pip
+        cache-dependency-path: packages/parser-free/pyproject.toml
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends poppler-utils
+
+    - name: Install parser-core (editable) + parser-free
+      run: |
+        pip install --upgrade pip
+        pip install -e ../parser-core
+        pip install -e ".[test]"
+
+    - name: Black
+      run: black --check --diff src tests
+
+    - name: isort
+      run: isort --check-only --diff src tests
+
+    - name: Flake8
+      run: flake8 src tests --max-line-length=88 --extend-ignore=E203,W503,E501,W504,D,C420
+
+  security:
+    name: Security — bandit + safety
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends poppler-utils
+
+    - name: Install security tools + packages
+      run: |
+        pip install --upgrade pip bandit[toml] safety
+        pip install -e packages/parser-core
+        pip install -e packages/parser-free
+
+    - name: Bandit — parser-core
+      run: bandit -r packages/parser-core/src -f json -o bandit-core.json || true
+
+    - name: Bandit — parser-free
+      run: bandit -r packages/parser-free/src -f json -o bandit-free.json || true
+
+    - name: Safety scan
+      run: safety scan --json > safety-report.json || true
+
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          bandit-core.json
+          bandit-free.json
+          safety-report.json
+
+  # ---------------------------------------------------------------------------
+  # Test jobs (serial after their respective lint job)
+  # ---------------------------------------------------------------------------
+  test-core:
+    name: Test parser-core (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: lint-core
+    defaults:
+      run:
+        working-directory: packages/parser-core
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # PRs: fast feedback on 3.12 only; pushes to main: full matrix
+        python-version: ${{ github.event_name == 'pull_request' && fromJSON('["3.12"]') || fromJSON('["3.11", "3.12", "3.13"]') }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: pip
+        cache-dependency-path: packages/parser-core/pyproject.toml
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends poppler-utils
+
+    - name: Install package + test deps
+      run: pip install --upgrade pip && pip install -e ".[dev,test]"
+
+    - name: Run tests with coverage
+      run: |
+        python -m pytest tests/ -v \
+          --cov=bankstatements_core \
+          --cov-report=term-missing \
+          --cov-report=xml \
+          --cov-report=html \
+          --cov-fail-under=91 \
+          -n auto \
+          --tb=short
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-core-${{ matrix.python-version }}
+        path: |
+          packages/parser-core/coverage.xml
+          packages/parser-core/htmlcov/
+
+    - name: Upload coverage to Codecov
+      if: matrix.python-version == '3.12'
+      uses: codecov/codecov-action@v5
+      with:
+        file: packages/parser-core/coverage.xml
+        flags: parser-core
+        fail_ci_if_error: false
+
+  test-free:
+    name: Test parser-free
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: lint-free
+    defaults:
+      run:
+        working-directory: packages/parser-free
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: pip
+        cache-dependency-path: packages/parser-free/pyproject.toml
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends poppler-utils
+
+    - name: Install parser-core (editable) + parser-free
+      run: |
+        pip install --upgrade pip
+        pip install -e ../parser-core
+        pip install -e ".[test]"
+
+    - name: Run tests
+      run: python -m pytest tests/ -v --tb=short

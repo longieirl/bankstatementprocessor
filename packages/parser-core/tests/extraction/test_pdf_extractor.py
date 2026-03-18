@@ -1,0 +1,539 @@
+"""Tests for PDF table extraction orchestration."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from bankstatements_core.extraction.pdf_extractor import PDFTableExtractor
+
+# Test columns configuration
+TEST_COLUMNS = {
+    "Date": (0, 50),
+    "Details": (50, 200),
+    "Debit €": (200, 250),
+    "Credit €": (250, 300),
+    "Balance €": (300, 350),
+}
+
+
+class TestPDFTableExtractor:
+    """Tests for PDFTableExtractor class."""
+
+    def test_initialization_defaults(self):
+        """Test extractor initialization with defaults."""
+        extractor = PDFTableExtractor(columns=TEST_COLUMNS)
+        assert extractor.columns == TEST_COLUMNS
+        assert extractor.table_top_y == 300
+        assert extractor.table_bottom_y == 720
+        assert extractor.enable_dynamic_boundary is False
+
+    def test_initialization_custom_values(self):
+        """Test extractor initialization with custom values."""
+        extractor = PDFTableExtractor(
+            columns=TEST_COLUMNS,
+            table_top_y=250,
+            table_bottom_y=800,
+            enable_dynamic_boundary=True,
+            enable_page_validation=True,
+        )
+        assert extractor.table_top_y == 250
+        assert extractor.table_bottom_y == 800
+        assert extractor.enable_dynamic_boundary is True
+        assert extractor.page_validation_enabled is True
+
+    def test_extract_filename_date_valid(self):
+        """Test extracting date from filename with valid pattern."""
+        extractor = PDFTableExtractor(columns=TEST_COLUMNS)
+        date = extractor._extract_filename_date("statement_20230115.pdf")
+        assert date == "15 Jan 2023"
+
+    def test_extract_filename_date_no_pattern(self):
+        """Test extracting date from filename without date pattern."""
+        extractor = PDFTableExtractor(columns=TEST_COLUMNS)
+        date = extractor._extract_filename_date("statement.pdf")
+        assert date == ""
+
+    def test_extract_filename_date_invalid_date(self):
+        """Test extracting invalid date from filename."""
+        extractor = PDFTableExtractor(columns=TEST_COLUMNS)
+        date = extractor._extract_filename_date("statement_99999999.pdf")
+        assert date == ""
+
+    def test_extract_rows_from_words(self):
+        """Test extracting rows from word list."""
+        extractor = PDFTableExtractor(columns=TEST_COLUMNS)
+        words = [
+            # Row 1: Transaction (all words at same rounded Y)
+            {"text": "01", "x0": 30, "x1": 40, "top": 350.0},
+            {"text": "Jan", "x0": 35, "x1": 50, "top": 350.0},
+            {"text": "Purchase", "x0": 60, "x1": 110, "top": 350.0},
+            {"text": "50.00", "x0": 210, "x1": 240, "top": 350.0},
+            # Row 2: Another transaction
+            {"text": "02", "x0": 30, "x1": 40, "top": 370.0},
+            {"text": "Jan", "x0": 35, "x1": 50, "top": 370.0},
+            {"text": "Sale", "x0": 60, "x1": 90, "top": 370.0},
+            {"text": "25.00", "x0": 260, "x1": 290, "top": 370.0},
+        ]
+        rows = extractor._extract_rows_from_words(words)
+        assert len(rows) == 2
+        assert "01 Jan" in rows[0]["Date"]
+        assert "Purchase" in rows[0]["Details"]
+        assert "50.00" in rows[0]["Debit €"]
+
+    def test_extract_rows_from_words_filters_non_transactions(self):
+        """Test that non-transaction rows are filtered."""
+        extractor = PDFTableExtractor(columns=TEST_COLUMNS)
+        words = [
+            # Transaction
+            {"text": "01", "x0": 30, "x1": 40, "top": 350},
+            {"text": "Jan", "x0": 35, "x1": 50, "top": 350},
+            {"text": "Purchase", "x0": 60, "x1": 110, "top": 350},
+            {"text": "50.00", "x0": 210, "x1": 240, "top": 350},
+            # Header row (will be classified as metadata)
+            {"text": "Date", "x0": 30, "x1": 60, "top": 370},
+            {"text": "Details", "x0": 60, "x1": 110, "top": 370},
+        ]
+        rows = extractor._extract_rows_from_words(words)
+        # Should only have the transaction, not the header
+        assert len(rows) == 1
+
+    def test_process_row_with_date(self):
+        """Test processing row with date present."""
+        extractor = PDFTableExtractor(columns=TEST_COLUMNS)
+        row = {
+            "Date": "01 Jan 2023",
+            "Details": "Purchase",
+            "Debit €": "50.00",
+            "Credit €": "",
+            "Balance €": "100.00",
+        }
+        current_date = extractor._process_row(
+            row, current_date="", filename_date="", filename="test.pdf"
+        )
+        assert current_date == "01 Jan 2023"
+        assert row["Filename"] == "test.pdf"
+
+    def test_process_row_without_date_uses_current(self):
+        """Test processing row without date uses current date."""
+        extractor = PDFTableExtractor(columns=TEST_COLUMNS)
+        row = {
+            "Date": "",
+            "Details": "Purchase",
+            "Debit €": "50.00",
+            "Credit €": "",
+            "Balance €": "100.00",
+        }
+        current_date = extractor._process_row(
+            row,
+            current_date="31 Dec 2022",
+            filename_date="",
+            filename="test.pdf",
+        )
+        assert row["Date"] == "31 Dec 2022"
+        assert current_date == "31 Dec 2022"
+
+    def test_process_row_without_date_uses_filename_date(self):
+        """Test processing row without date uses filename date."""
+        extractor = PDFTableExtractor(columns=TEST_COLUMNS)
+        row = {
+            "Date": "",
+            "Details": "Purchase",
+            "Debit €": "50.00",
+            "Credit €": "",
+            "Balance €": "100.00",
+        }
+        current_date = extractor._process_row(
+            row,
+            current_date="",
+            filename_date="15 Jan 2023",
+            filename="test.pdf",
+        )
+        assert row["Date"] == "15 Jan 2023"
+        assert current_date == "15 Jan 2023"
+
+    @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
+    def test_extract_basic_flow(self, mock_pdfplumber):
+        """Test basic extraction flow with mocked PDF."""
+        # Setup mock
+        mock_pdf = MagicMock()
+        mock_page = MagicMock()
+        mock_pdf.pages = [mock_page]
+        mock_pdfplumber.return_value = mock_pdf
+
+        mock_cropped = MagicMock()
+        mock_page.crop.return_value = mock_cropped
+
+        # Mock words that form a transaction
+        mock_words = [
+            {"text": "01", "x0": 30, "top": 350},
+            {"text": "Jan", "x0": 35, "top": 350},
+            {"text": "2023", "x0": 40, "top": 350},
+            {"text": "Purchase", "x0": 60, "top": 350},
+            {"text": "50.00", "x0": 210, "top": 350},
+        ]
+        mock_cropped.extract_words.return_value = mock_words
+
+        # Extract - pass parameters directly instead of using environment variables
+        extractor = PDFTableExtractor(
+            columns=TEST_COLUMNS,
+            enable_page_validation=False,
+            enable_header_check=False,
+        )
+        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+
+        assert page_count == 1
+        assert len(rows) == 1
+        assert rows[0]["Filename"] == "test.pdf"
+
+    @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
+    def test_extract_with_dynamic_boundary(self, mock_pdfplumber):
+        """Test extraction with dynamic boundary enabled."""
+        mock_pdf = MagicMock()
+        mock_page = MagicMock()
+        mock_pdf.pages = [mock_page]
+        mock_pdfplumber.return_value = mock_pdf
+
+        mock_page.width = 600
+        mock_page.height = 800
+
+        mock_cropped = MagicMock()
+        mock_page.crop.return_value = mock_cropped
+
+        mock_words = [
+            {"text": "01", "x0": 30, "top": 350},
+            {"text": "Jan", "x0": 35, "top": 350},
+            {"text": "2023", "x0": 40, "top": 350},
+            {"text": "Purchase", "x0": 60, "top": 350},
+            {"text": "50.00", "x0": 210, "top": 350},
+        ]
+        mock_cropped.extract_words.return_value = mock_words
+
+        extractor = PDFTableExtractor(
+            columns=TEST_COLUMNS,
+            enable_dynamic_boundary=True,
+            enable_page_validation=False,
+            enable_header_check=False,
+        )
+        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+
+        assert page_count == 1
+        # Crop is called for: credit card check (header), table extraction (initial + final)
+        assert mock_page.crop.call_count >= 2  # At least initial + final for table
+
+    @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
+    def test_extract_with_page_validation_failure(self, mock_pdfplumber):
+        """Test extraction with page validation that fails."""
+        mock_pdf = MagicMock()
+        mock_page = MagicMock()
+        mock_pdf.pages = [mock_page]
+        mock_pdfplumber.return_value = mock_pdf
+
+        mock_cropped = MagicMock()
+        mock_page.crop.return_value = mock_cropped
+
+        # Mock words that don't form valid transactions
+        mock_words = [
+            {"text": "Invalid", "x0": 60, "top": 350},
+            {"text": "Row", "x0": 80, "top": 350},
+        ]
+        mock_cropped.extract_words.return_value = mock_words
+
+        extractor = PDFTableExtractor(columns=TEST_COLUMNS, enable_page_validation=True)
+        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+
+        assert page_count == 1
+        # No valid transactions, so rows should be empty
+        assert len(rows) == 0
+
+    @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
+    def test_extract_multiple_pages(self, mock_pdfplumber):
+        """Test extraction with multiple pages."""
+        mock_pdf = MagicMock()
+        mock_page1 = MagicMock()
+        mock_page2 = MagicMock()
+        mock_pdf.pages = [mock_page1, mock_page2]
+        mock_pdfplumber.return_value = mock_pdf
+
+        mock_cropped1 = MagicMock()
+        mock_page1.crop.return_value = mock_cropped1
+        mock_words1 = [
+            {"text": "01", "x0": 30, "top": 350},
+            {"text": "Jan", "x0": 35, "top": 350},
+            {"text": "Purchase", "x0": 60, "top": 350},
+            {"text": "50.00", "x0": 210, "top": 350},
+        ]
+        mock_cropped1.extract_words.return_value = mock_words1
+
+        mock_cropped2 = MagicMock()
+        mock_page2.crop.return_value = mock_cropped2
+        mock_words2 = [
+            {"text": "02", "x0": 30, "top": 350},
+            {"text": "Jan", "x0": 35, "top": 350},
+            {"text": "Sale", "x0": 60, "top": 350},
+            {"text": "25.00", "x0": 260, "top": 350},
+        ]
+        mock_cropped2.extract_words.return_value = mock_words2
+
+        extractor = PDFTableExtractor(
+            columns=TEST_COLUMNS,
+            enable_page_validation=False,
+            enable_header_check=False,
+        )
+        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+
+        assert page_count == 2
+        assert len(rows) == 2
+
+    @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
+    def test_extract_date_propagation_across_rows(self, mock_pdfplumber):
+        """Test that dates propagate correctly across rows."""
+        mock_pdf = MagicMock()
+        mock_page = MagicMock()
+        mock_page.width = 595  # Standard A4 width in points
+        mock_page.height = 842  # Standard A4 height in points
+        mock_pdf.pages = [mock_page]
+        mock_pdfplumber.return_value = mock_pdf
+
+        mock_cropped = MagicMock()
+        mock_cropped.width = 595
+        mock_cropped.height = 842
+        mock_page.crop.return_value = mock_cropped
+
+        # First row has date, second doesn't
+        # Date column: [0, 50], Details: [50, 200], Debit: [200, 250], Credit: [250, 300], Balance: [300, 350]
+        mock_words = [
+            # Row 1 with date (all date components must fit within [0, 50])
+            {"text": "01", "x0": 5, "x1": 15, "top": 350},
+            {"text": "Jan", "x0": 16, "x1": 30, "top": 350},
+            {"text": "2023", "x0": 31, "x1": 49, "top": 350},
+            {"text": "Purchase", "x0": 60, "x1": 110, "top": 350},
+            {"text": "50.00", "x0": 210, "x1": 240, "top": 350},
+            # Row 2 without date
+            {"text": "Sale", "x0": 60, "x1": 90, "top": 370},
+            {"text": "25.00", "x0": 260, "x1": 290, "top": 370},
+        ]
+        mock_cropped.extract_words.return_value = mock_words
+
+        extractor = PDFTableExtractor(
+            columns=TEST_COLUMNS,
+            enable_page_validation=False,
+            enable_header_check=False,
+        )
+        rows, _, iban = extractor.extract(Path("/tmp/test.pdf"))
+
+        assert len(rows) == 2
+        # Both rows should have the same date (2023 is captured if x1 is provided for all words)
+        assert "01 Jan 2023" in rows[0]["Date"]
+        assert "01 Jan 2023" in rows[1]["Date"]
+
+    def test_page_validation_constructor_parameter(self):
+        """Test page validation setting via constructor parameter."""
+        extractor = PDFTableExtractor(columns=TEST_COLUMNS, enable_page_validation=True)
+        assert extractor.page_validation_enabled is True
+
+        extractor = PDFTableExtractor(
+            columns=TEST_COLUMNS, enable_page_validation=False
+        )
+        assert extractor.page_validation_enabled is False
+
+    def test_header_check_constructor_parameter(self):
+        """Test header check setting via constructor parameter."""
+        extractor = PDFTableExtractor(columns=TEST_COLUMNS, enable_header_check=True)
+        assert extractor.header_check_enabled is True
+
+        extractor = PDFTableExtractor(columns=TEST_COLUMNS, enable_header_check=False)
+        assert extractor.header_check_enabled is False
+
+    def test_extraction_config_parameter(self):
+        """Test that extraction_config parameter is stored correctly."""
+        from bankstatements_core.templates.template_model import (
+            PerPageBoundaries,
+            TemplateExtractionConfig,
+        )
+
+        extraction_config = TemplateExtractionConfig(
+            table_top_y=140,
+            table_bottom_y=735,
+            columns=TEST_COLUMNS,
+            per_page_overrides={1: PerPageBoundaries(table_top_y=490)},
+        )
+
+        extractor = PDFTableExtractor(
+            columns=TEST_COLUMNS, extraction_config=extraction_config
+        )
+
+        assert extractor.extraction_config is not None
+        assert extractor.extraction_config == extraction_config
+
+    @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
+    def test_per_page_boundaries_applied_correctly(self, mock_pdfplumber):
+        """Test that per-page boundaries are applied to correct pages."""
+        from bankstatements_core.templates.template_model import (
+            PerPageBoundaries,
+            TemplateExtractionConfig,
+        )
+
+        # Create extraction config with per-page overrides
+        extraction_config = TemplateExtractionConfig(
+            table_top_y=140,  # Default for pages 2+
+            table_bottom_y=735,
+            columns=TEST_COLUMNS,
+            per_page_overrides={1: PerPageBoundaries(table_top_y=490)},  # Page 1
+        )
+
+        # Setup mocks for 2 pages
+        mock_pdf = MagicMock()
+        mock_page1 = MagicMock()
+        mock_page2 = MagicMock()
+        mock_pdf.pages = [mock_page1, mock_page2]
+        mock_pdfplumber.return_value = mock_pdf
+
+        mock_page1.width = 600
+        mock_page2.width = 600
+
+        # Mock crop for both pages
+        mock_cropped1 = MagicMock()
+        mock_cropped2 = MagicMock()
+        mock_page1.crop.return_value = mock_cropped1
+        mock_page2.crop.return_value = mock_cropped2
+
+        # Mock words for both pages
+        mock_words1 = [
+            {"text": "01", "x0": 30, "top": 500},
+            {"text": "Jan", "x0": 35, "top": 500},
+            {"text": "Purchase", "x0": 60, "top": 500},
+            {"text": "50.00", "x0": 210, "top": 500},
+        ]
+        mock_words2 = [
+            {"text": "02", "x0": 30, "top": 150},
+            {"text": "Feb", "x0": 35, "top": 150},
+            {"text": "Sale", "x0": 60, "top": 150},
+            {"text": "25.00", "x0": 260, "top": 150},
+        ]
+        mock_cropped1.extract_words.return_value = mock_words1
+        mock_cropped2.extract_words.return_value = mock_words2
+
+        # Create extractor with extraction_config
+        extractor = PDFTableExtractor(
+            columns=TEST_COLUMNS,
+            extraction_config=extraction_config,
+            enable_page_validation=False,
+            enable_header_check=False,
+        )
+
+        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+
+        assert page_count == 2
+        assert len(rows) == 2
+
+        # Verify crop was called with correct boundaries
+        # Page 1 should use override (490)
+        page1_crop_calls = [
+            call for call in mock_page1.crop.call_args_list if call[0][0][1] == 490
+        ]
+        assert len(page1_crop_calls) > 0, "Page 1 should use table_top_y=490"
+
+        # Page 2 should use default (140)
+        page2_crop_calls = [
+            call for call in mock_page2.crop.call_args_list if call[0][0][1] == 140
+        ]
+        assert len(page2_crop_calls) > 0, "Page 2 should use table_top_y=140"
+
+    @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
+    def test_per_page_boundaries_without_extraction_config(self, mock_pdfplumber):
+        """Test that extraction works without extraction_config (uses instance defaults)."""
+        # Setup mocks
+        mock_pdf = MagicMock()
+        mock_page = MagicMock()
+        mock_pdf.pages = [mock_page]
+        mock_pdfplumber.return_value = mock_pdf
+
+        mock_page.width = 600
+
+        mock_cropped = MagicMock()
+        mock_page.crop.return_value = mock_cropped
+
+        mock_words = [
+            {"text": "01", "x0": 30, "top": 350},
+            {"text": "Jan", "x0": 35, "top": 350},
+            {"text": "Purchase", "x0": 60, "top": 350},
+            {"text": "50.00", "x0": 210, "top": 350},
+        ]
+        mock_cropped.extract_words.return_value = mock_words
+
+        # Create extractor WITHOUT extraction_config (should use instance defaults)
+        extractor = PDFTableExtractor(
+            columns=TEST_COLUMNS,
+            table_top_y=300,
+            table_bottom_y=720,
+            enable_page_validation=False,
+            enable_header_check=False,
+        )
+
+        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+
+        assert page_count == 1
+        assert len(rows) == 1
+
+        # Verify crop was called with instance defaults (300)
+        crop_calls = [
+            call for call in mock_page.crop.call_args_list if call[0][0][1] == 300
+        ]
+        assert len(crop_calls) > 0, "Should use instance default table_top_y=300"
+
+    @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
+    def test_per_page_header_check_top_y_override(self, mock_pdfplumber):
+        """Test that per-page header_check_top_y override is applied."""
+        from bankstatements_core.templates.template_model import (
+            PerPageBoundaries,
+            TemplateExtractionConfig,
+        )
+
+        # Create extraction config with header_check_top_y override for page 1
+        extraction_config = TemplateExtractionConfig(
+            table_top_y=140,
+            table_bottom_y=735,
+            columns=TEST_COLUMNS,
+            header_check_top_y=100,  # Default
+            per_page_overrides={1: PerPageBoundaries(header_check_top_y=450)},
+        )
+
+        # Setup mocks
+        mock_pdf = MagicMock()
+        mock_page = MagicMock()
+        mock_pdf.pages = [mock_page]
+        mock_pdfplumber.return_value = mock_pdf
+
+        mock_page.width = 600
+
+        mock_cropped = MagicMock()
+        mock_page.crop.return_value = mock_cropped
+
+        mock_words = [
+            {"text": "Date", "x0": 30, "top": 460},  # Header
+            {"text": "Details", "x0": 60, "top": 460},
+            {"text": "01", "x0": 30, "top": 500},  # Transaction
+            {"text": "Jan", "x0": 35, "top": 500},
+        ]
+        mock_cropped.extract_words.return_value = mock_words
+
+        # Create extractor with header check enabled
+        extractor = PDFTableExtractor(
+            columns=TEST_COLUMNS,
+            extraction_config=extraction_config,
+            enable_page_validation=False,
+            enable_header_check=True,  # Enable header check
+        )
+
+        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+
+        # Verify header area crop was called with override value (450)
+        header_crop_calls = [
+            call for call in mock_page.crop.call_args_list if call[0][0][1] == 450
+        ]
+        assert (
+            len(header_crop_calls) > 0
+        ), "Header check should use header_check_top_y=450 for page 1"

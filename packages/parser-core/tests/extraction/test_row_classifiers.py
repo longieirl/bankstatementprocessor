@@ -1,0 +1,392 @@
+"""Tests for row classifier chain."""
+
+from __future__ import annotations
+
+import pytest
+
+from bankstatements_core.extraction.row_classifiers import (
+    AdministrativeClassifier,
+    DefaultMetadataClassifier,
+    FXContinuationClassifier,
+    HeaderMetadataClassifier,
+    ReferenceCodeClassifier,
+    RowClassifier,
+    TimestampMetadataClassifier,
+    TransactionClassifier,
+    create_row_classifier_chain,
+)
+
+# Test columns configuration
+TEST_COLUMNS = {
+    "Date": (0, 50),
+    "Details": (50, 200),
+    "Debit €": (200, 250),
+    "Credit €": (250, 300),
+    "Balance €": (300, 350),
+}
+
+
+class TestHeaderMetadataClassifier:
+    """Tests for HeaderMetadataClassifier."""
+
+    def test_detect_txndate_header(self):
+        """Test detection of TxnDate header pattern."""
+        classifier = HeaderMetadataClassifier()
+        row = {"Date": "'TxnDate'(transactiondate)", "Details": "", "Filename": "test"}
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result == "metadata"
+
+    def test_detect_field_name_pattern(self):
+        """Test detection of field name patterns."""
+        classifier = HeaderMetadataClassifier()
+        row = {"Date": "field name", "Details": "", "Filename": "test"}
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result == "metadata"
+
+    def test_detect_simple_header(self):
+        """Test detection of simple column headers."""
+        classifier = HeaderMetadataClassifier()
+        row = {"Date": "date", "Details": "details", "Filename": "test"}
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result == "metadata"
+
+    def test_non_header_row(self):
+        """Test that non-header rows are not classified."""
+        classifier = HeaderMetadataClassifier()
+        row = {"Date": "01/01/2023", "Details": "Purchase", "Filename": "test"}
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result is None
+
+
+class TestAdministrativeClassifier:
+    """Tests for AdministrativeClassifier."""
+
+    def test_detect_lending_strict(self):
+        """Test detection of strict administrative pattern."""
+        classifier = AdministrativeClassifier()
+        row = {
+            "Date": "",
+            "Details": "Lending @ 5%",
+            "Balance €": "100.00",
+            "Filename": "test",
+        }
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result == "administrative"
+
+    def test_balance_forward_without_balance(self):
+        """Test BALANCE FORWARD classified as admin when no balance amount."""
+        classifier = AdministrativeClassifier()
+        row = {"Date": "", "Details": "BALANCE FORWARD", "Filename": "test"}
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result == "administrative"
+
+    def test_balance_forward_with_balance(self):
+        """Test BALANCE FORWARD not classified as admin when balance present."""
+        classifier = AdministrativeClassifier()
+        row = {
+            "Date": "01/01/2023",
+            "Details": "BALANCE FORWARD",
+            "Balance €": "1000.00",
+            "Filename": "test",
+        }
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result is None  # Should pass to next classifier
+
+    def test_interest_rate_without_amounts(self):
+        """Test Interest Rate classified as admin when no monetary data."""
+        classifier = AdministrativeClassifier()
+        row = {"Date": "", "Details": "Interest Rate", "Filename": "test"}
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result == "administrative"
+
+    def test_interest_rate_with_amounts(self):
+        """Test Interest Rate not classified as admin when amounts present."""
+        classifier = AdministrativeClassifier()
+        row = {
+            "Date": "01/01/2023",
+            "Details": "Interest Rate",
+            "Debit €": "5.00",
+            "Filename": "test",
+        }
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result is None
+
+
+class TestReferenceCodeClassifier:
+    """Tests for ReferenceCodeClassifier."""
+
+    def test_detect_ie_reference_code(self):
+        """Test detection of IE reference codes."""
+        classifier = ReferenceCodeClassifier()
+        row = {"Date": "", "Details": "IE123456", "Filename": "test"}
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result == "reference"
+
+    def test_non_reference_code(self):
+        """Test that non-reference codes are not classified."""
+        classifier = ReferenceCodeClassifier()
+        row = {"Date": "", "Details": "Regular transaction", "Filename": "test"}
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result is None
+
+
+class TestFXContinuationClassifier:
+    """Tests for FXContinuationClassifier."""
+
+    def test_detect_gbp_rate_pattern(self):
+        """Test detection of GBP rate pattern."""
+        classifier = FXContinuationClassifier()
+        row = {"Date": "", "Details": "8.99 GBP@", "Filename": "test"}
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result == "continuation"
+
+    def test_detect_exchange_rate(self):
+        """Test detection of exchange rate pattern."""
+        classifier = FXContinuationClassifier()
+        row = {"Date": "", "Details": "0.828571", "Filename": "test"}
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result == "continuation"
+
+    def test_detect_fx_fee(self):
+        """Test detection of FX fee pattern."""
+        classifier = FXContinuationClassifier()
+        row = {"Date": "", "Details": "INCL FX FEE E0.45", "Filename": "test"}
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result == "continuation"
+
+    def test_detect_quantity_spec(self):
+        """Test detection of quantity specification."""
+        classifier = FXContinuationClassifier()
+        row = {"Date": "", "Details": "1@ 0.50 EACH", "Filename": "test"}
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result == "continuation"
+
+    def test_fx_pattern_with_amounts_not_continuation(self):
+        """Test FX pattern with debit/credit not classified as continuation."""
+        classifier = FXContinuationClassifier()
+        row = {
+            "Date": "",
+            "Details": "8.99 GBP@",
+            "Debit €": "10.00",
+            "Filename": "test",
+        }
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result is None
+
+
+class TestTimestampMetadataClassifier:
+    """Tests for TimestampMetadataClassifier."""
+
+    def test_detect_timestamp_pattern(self):
+        """Test detection of timestamp patterns."""
+        classifier = TimestampMetadataClassifier()
+        row = {"Date": "", "Details": "01JAN2023 TIME 14:30", "Filename": "test"}
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result == "metadata"
+
+    def test_non_timestamp_pattern(self):
+        """Test that non-timestamp patterns are not classified."""
+        classifier = TimestampMetadataClassifier()
+        row = {"Date": "01/01/2023", "Details": "Purchase", "Filename": "test"}
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result is None
+
+
+class TestTransactionClassifier:
+    """Tests for TransactionClassifier."""
+
+    def test_detect_transaction_with_debit(self):
+        """Test detection of transaction with debit amount."""
+        classifier = TransactionClassifier()
+        row = {
+            "Date": "01/01/2023",
+            "Details": "Purchase",
+            "Debit €": "50.00",
+            "Filename": "test",
+        }
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result == "transaction"
+
+    def test_detect_transaction_with_credit(self):
+        """Test detection of transaction with credit amount."""
+        classifier = TransactionClassifier()
+        row = {
+            "Date": "01/01/2023",
+            "Details": "Deposit",
+            "Credit €": "100.00",
+            "Filename": "test",
+        }
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result == "transaction"
+
+    def test_detect_transaction_with_prefix(self):
+        """Test detection of transaction with known prefix."""
+        classifier = TransactionClassifier()
+        row = {"Date": "01/01/2023", "Details": "VDC-12345", "Filename": "test"}
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result == "transaction"
+
+    def test_detect_transaction_with_date(self):
+        """Test detection of transaction with meaningful date."""
+        classifier = TransactionClassifier()
+        row = {
+            "Date": "01/01/2023",
+            "Details": "Some transaction",
+            "Filename": "test",
+        }
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result == "transaction"
+
+    def test_detect_transaction_with_balance(self):
+        """Test detection of transaction with balance."""
+        classifier = TransactionClassifier()
+        row = {
+            "Date": "",
+            "Details": "Balance",
+            "Balance €": "1000.00",
+            "Filename": "test",
+        }
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result == "transaction"
+
+    def test_non_transaction(self):
+        """Test that rows without transaction indicators are not classified."""
+        classifier = TransactionClassifier()
+        row = {"Date": "", "Details": "Random text", "Filename": "test"}
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result is None
+
+
+class TestDefaultMetadataClassifier:
+    """Tests for DefaultMetadataClassifier."""
+
+    def test_always_returns_metadata(self):
+        """Test that default classifier always returns metadata."""
+        classifier = DefaultMetadataClassifier()
+        row = {"Date": "", "Details": "Anything", "Filename": "test"}
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result == "metadata"
+
+
+class TestChainOfResponsibility:
+    """Tests for the complete chain of classifiers."""
+
+    def test_chain_classifies_header(self):
+        """Test chain correctly classifies header row."""
+        chain = create_row_classifier_chain()
+        row = {"Date": "date", "Details": "details", "Filename": "test"}
+        result = chain.classify(row, TEST_COLUMNS)
+        assert result == "metadata"
+
+    def test_chain_classifies_administrative(self):
+        """Test chain correctly classifies administrative row."""
+        chain = create_row_classifier_chain()
+        row = {"Date": "", "Details": "Lending @ 5%", "Filename": "test"}
+        result = chain.classify(row, TEST_COLUMNS)
+        assert result == "administrative"
+
+    def test_chain_classifies_reference(self):
+        """Test chain correctly classifies reference code."""
+        chain = create_row_classifier_chain()
+        row = {"Date": "", "Details": "IE123456", "Filename": "test"}
+        result = chain.classify(row, TEST_COLUMNS)
+        assert result == "reference"
+
+    def test_chain_classifies_fx_continuation(self):
+        """Test chain correctly classifies FX continuation."""
+        chain = create_row_classifier_chain()
+        row = {"Date": "", "Details": "0.828571", "Filename": "test"}
+        result = chain.classify(row, TEST_COLUMNS)
+        assert result == "continuation"
+
+    def test_chain_classifies_timestamp(self):
+        """Test chain correctly classifies timestamp."""
+        chain = create_row_classifier_chain()
+        row = {"Date": "", "Details": "01JAN2023 TIME 14:30", "Filename": "test"}
+        result = chain.classify(row, TEST_COLUMNS)
+        assert result == "metadata"
+
+    def test_chain_classifies_transaction(self):
+        """Test chain correctly classifies transaction."""
+        chain = create_row_classifier_chain()
+        row = {
+            "Date": "01/01/2023",
+            "Details": "Purchase",
+            "Debit €": "50.00",
+            "Filename": "test",
+        }
+        result = chain.classify(row, TEST_COLUMNS)
+        assert result == "transaction"
+
+    def test_chain_classifies_unknown_as_metadata(self):
+        """Test chain falls back to metadata for unknown rows."""
+        chain = create_row_classifier_chain()
+        row = {"Date": "", "Details": "Unknown content", "Filename": "test"}
+        result = chain.classify(row, TEST_COLUMNS)
+        assert result == "metadata"
+
+    def test_chain_order_matters(self):
+        """Test that chain order affects classification priority."""
+        # Headers should be classified before transactions
+        chain = create_row_classifier_chain()
+        row = {
+            "Date": "date",
+            "Details": "Purchase",
+            "Debit €": "50.00",
+            "Filename": "test",
+        }
+        result = chain.classify(row, TEST_COLUMNS)
+        # Should be classified as header (metadata), not transaction
+        assert result == "metadata"
+
+
+class TestRowClassifierHelpers:
+    """Tests for helper methods in RowClassifier."""
+
+    def test_get_row_values_filters_filename(self):
+        """Test that _get_row_values filters out Filename."""
+        row = {"Date": "01/01/2023", "Details": "Test", "Filename": "test.pdf"}
+        result = RowClassifier._get_row_values(row)
+        assert "Filename" not in result
+        assert "Date" in result
+        assert "Details" in result
+
+    def test_get_row_values_filters_empty(self):
+        """Test that _get_row_values filters out empty values."""
+        row = {"Date": "01/01/2023", "Details": "  ", "Debit €": "", "Filename": "test"}
+        result = RowClassifier._get_row_values(row)
+        assert "Date" in result
+        assert "Details" not in result  # Whitespace only
+        assert "Debit €" not in result  # Empty
+
+    def test_get_description_text(self):
+        """Test _get_description_text extracts description."""
+        row = {"Date": "01/01/2023", "Details": "Purchase", "Filename": "test"}
+        result = RowClassifier._get_description_text(row, TEST_COLUMNS)
+        assert result == "Purchase"
+
+    def test_get_amount_and_balance_info(self):
+        """Test _get_amount_and_balance_info detects amounts and balances."""
+        row = {
+            "Date": "01/01/2023",
+            "Details": "Purchase",
+            "Debit €": "50.00",
+            "Balance €": "950.00",
+            "Filename": "test",
+        }
+        has_amount, has_balance = RowClassifier._get_amount_and_balance_info(
+            row, TEST_COLUMNS
+        )
+        assert has_amount is True
+        assert has_balance is True
+
+    def test_looks_like_date(self):
+        """Test _looks_like_date recognizes date patterns."""
+        classifier = TransactionClassifier()
+        assert classifier._looks_like_date("01/01/2023") is True
+        assert classifier._looks_like_date("01-01-2023") is True
+        assert classifier._looks_like_date("01 Jan 2023") is True
+        assert classifier._looks_like_date("01 Jan") is True  # Date without year
+        assert classifier._looks_like_date("15 December") is True  # Full month name
+        assert classifier._looks_like_date("01JAN2023") is True
+        assert classifier._looks_like_date("Not a date") is False

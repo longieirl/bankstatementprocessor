@@ -1,0 +1,34 @@
+# requirements/dev.txt
+# Development tools and dependencies
+
+# Include base requirements
+-r base.txt
+
+# Code formatting
+black>=23.0.0,<27.0.0
+isort>=5.12.0,<9.0.0
+
+# Linting and Type Checking
+flake8>=6.0.0,<8.0.0
+mypy>=1.8.0,<2.0.0
+pyright>=1.1.350
+
+# Type stubs (compatible versions)
+types-python-dateutil>=2.8.0.0
+types-openpyxl>=3.1.0.0
+types-tabulate>=0.9.0.0
+# Note: python-dotenv has inline types (py.typed), no stub package needed
+# Note: types-requests removed (requests library not used for GDPR compliance)
+
+# Development and debugging tools
+ipython>=8.0.0,<10.0.0
+ipdb>=0.13.0
+
+# Pre-commit hooks
+pre-commit>=3.0.0,<5.0.0
+
+# Security tools (using compatible versions)
+bandit[toml]>=1.7.0,<2.0.0
+safety>=2.0.0,<4.0.0
+detect-secrets>=1.4.0,<2.0.0
+yamllint>=1.33.0,<2.0.0

@@ -1,0 +1,27 @@
+# Labeler configuration based on changed file paths
+# Simplified - only key areas
+
+# Documentation
+'documentation':
+  - changed-files:
+    - any-glob-to-any-file: ['docs/**', '*.md']
+
+# Docker
+'docker':
+  - changed-files:
+    - any-glob-to-any-file: ['Dockerfile*', 'docker-compose*.yml']
+
+# CI/CD
+'ci':
+  - changed-files:
+    - any-glob-to-any-file: ['.github/workflows/**']
+
+# Dependencies
+'dependencies':
+  - changed-files:
+    - any-glob-to-any-file: ['requirements/**']
+
+# Tests
+'tests':
+  - changed-files:
+    - any-glob-to-any-file: ['tests/**']

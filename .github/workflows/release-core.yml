@@ -1,0 +1,121 @@
+# PyPI publish workflow for bankstatements-core
+#
+# Trigger: push of a tag matching core-v*.*.*  (e.g. core-v0.1.0)
+#
+# Uses PyPI Trusted Publisher (OIDC) — no API token stored in secrets.
+# Before first use, configure a Trusted Publisher on PyPI:
+#   Project: bankstatements-core
+#   Owner:   longieirl
+#   Repo:    bankstatementprocessor
+#   Workflow: release-core.yml
+#   Environment: pypi
+#
+# Tag convention:
+#   git tag core-v0.1.0 && git push origin core-v0.1.0
+
+name: Publish bankstatements-core to PyPI
+
+on:
+  push:
+    tags:
+      - 'core-v*.*.*'
+
+permissions:
+  contents: read
+  id-token: write   # required for OIDC trusted publisher
+
+jobs:
+  validate:
+    name: Validate version matches tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: packages/parser-core
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Extract and validate version
+      id: version
+      run: |
+        TAG="${{ github.ref_name }}"               # e.g. core-v0.1.0
+        TAG_VERSION="${TAG#core-v}"                # strip prefix → 0.1.0
+
+        TOML_VERSION=$(grep '^version = ' pyproject.toml | head -1 | cut -d'"' -f2)
+        CODE_VERSION=$(grep '__version__ = ' src/bankstatements_core/__version__.py | cut -d'"' -f2)
+
+        echo "Tag version:  ${TAG_VERSION}"
+        echo "TOML version: ${TOML_VERSION}"
+        echo "Code version: ${CODE_VERSION}"
+
+        if [ "${TAG_VERSION}" != "${TOML_VERSION}" ]; then
+          echo "ERROR: tag ${TAG_VERSION} does not match pyproject.toml ${TOML_VERSION}"
+          exit 1
+        fi
+
+        if [ "${TAG_VERSION}" != "${CODE_VERSION}" ]; then
+          echo "ERROR: tag ${TAG_VERSION} does not match __version__.py ${CODE_VERSION}"
+          exit 1
+        fi
+
+        echo "version=${TAG_VERSION}" >> "$GITHUB_OUTPUT"
+        echo "All versions consistent: ${TAG_VERSION}"
+
+  build:
+    name: Build wheel + sdist
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: validate
+    defaults:
+      run:
+        working-directory: packages/parser-core
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install build tool
+      run: pip install --upgrade pip build
+
+    - name: Build distributions
+      run: python -m build
+
+    - name: Verify distributions
+      run: |
+        ls -lh dist/
+        pip install twine
+        twine check dist/*
+
+    - name: Upload distributions as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-${{ needs.validate.outputs.version }}
+        path: packages/parser-core/dist/
+        retention-days: 7
+
+  publish:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [ validate, build ]
+    environment: pypi   # must match the Trusted Publisher environment name on PyPI
+
+    steps:
+    - name: Download distributions
+      uses: actions/download-artifact@v4
+      with:
+        name: dist-${{ needs.validate.outputs.version }}
+        path: dist/
+
+    - name: Publish to PyPI (OIDC)
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        packages-dir: dist/
+        print-hash: true

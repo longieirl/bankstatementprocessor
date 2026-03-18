@@ -1,0 +1,52 @@
+name: Auto Label Pull Requests
+
+on:
+  pull_request:
+    types: [opened, reopened]
+  pull_request_target:
+    types: [edited]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label-pr:
+    name: Apply Labels
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Label based on PR title and branch
+      uses: actions/labeler@v6
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        configuration-path: .github/labeler.yml
+        sync-labels: false
+
+    - name: Label based on changed files
+      uses: actions/labeler@v6
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        configuration-path: .github/labeler-paths.yml
+        sync-labels: false
+
+    - name: Label Renovate PRs
+      if: github.event.pull_request.user.login == 'renovate[bot]'
+      uses: actions/github-script@v8
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const labels = ['renovate', 'dependencies'];
+          const title = context.payload.pull_request.title.toLowerCase();
+
+          if (title.includes('security') || title.includes('cve')) {
+            labels.push('security');
+          }
+
+          await github.rest.issues.addLabels({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+            labels: labels
+          });
+

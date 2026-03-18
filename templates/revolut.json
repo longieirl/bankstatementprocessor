@@ -1,0 +1,52 @@
+{
+  "id": "revolut",
+  "name": "Revolut Bank Statement",
+  "document_type": "bank_statement",
+  "enabled": true,
+  "detection": {
+    "iban_patterns": [
+      "[A-Z]{2}[0-9]{2}REVO[0-9A-Z]+"
+    ],
+    "header_keywords": [
+      "Revolut",
+      "Revolut Bank UAB",
+      "revolut.com"
+    ],
+    "column_headers": [
+      "Date",
+      "Description",
+      "Money out",
+      "Money in",
+      "Balance"
+    ]
+  },
+  "extraction": {
+    "table_top_y": 140,
+    "table_bottom_y": 735,
+    "enable_page_validation": false,
+    "enable_header_check": false,
+    "per_page_overrides": {
+      "1": {
+        "table_top_y": 490
+      }
+    },
+    "columns": {
+      "Date": [42, 120],
+      "Details": [124, 330],
+      "Debit €": [335, 416],
+      "Credit €": [417, 525],
+      "Balance €": [525, 556]
+    }
+  },
+  "processing": {
+    "supports_multiline": true,
+    "date_format": "%d %b %Y",
+    "currency_symbol": "€",
+    "decimal_separator": "."
+  },
+  "metadata": {
+    "description": "Revolut Bank UAB statements (Ireland and Lithuania)",
+    "supported_ibans": ["IE..REVO..", "LT..REVO.."],
+    "notes": "Revolut statements have Balance Summary section on page 1 (Y=359), transaction table starts at Y=494 on page 1 and Y=142 on subsequent pages"
+  }
+}

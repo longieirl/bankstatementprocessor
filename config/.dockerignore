@@ -1,0 +1,55 @@
+# Exclude test and development files
+.pytest_cache/
+.coverage
+.git/
+.gitignore
+.gitattributes
+tests/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Exclude input/output folders (will be created as mount points)
+input/
+output/
+
+# Exclude CI/CD and development files
+.github/
+run_tests.sh
+setup.cfg
+
+# Exclude documentation and project files
+README.md
+TODO.md
+LICENSES/
+
+# Exclude OS-specific files
+.DS_Store
+Thumbs.db
+
+# Exclude temporary and build files
+*.tmp
+*.log
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+
+# Exclude Docker files (not needed in image)
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Exclude additional dev/test artifacts
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Exclude git hooks and config
+.git-hooks/
+.pre-commit-config.yaml

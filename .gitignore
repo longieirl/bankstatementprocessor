@@ -1,0 +1,250 @@
+# ==============================================================================
+# Python
+# ==============================================================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ==============================================================================
+# Testing & Coverage
+# ==============================================================================
+
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.benchmarks/
+*.cover
+.hypothesis/
+.tox/
+nosetests.xml
+test-results/
+
+# ==============================================================================
+# Cache Directories
+# ==============================================================================
+
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+*_cache/
+
+# ==============================================================================
+# IDE & Editors
+# ==============================================================================
+
+# VSCode
+.vscode/
+**/.vscode/
+*.code-workspace
+
+# PyCharm / IntelliJ
+.idea/
+**/.idea/
+*.iml
+.project
+.pydevproject
+.settings/
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ==============================================================================
+# OS Files
+# ==============================================================================
+
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ==============================================================================
+# Project Specific
+# ==============================================================================
+
+# Environment & Configuration
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# Input/Output Directories
+input/
+output/
+**/input/
+**/output/
+
+# Logs
+logs/*.log
+logs/processing_activity.jsonl
+*.log
+
+# Development Artifacts
+.artifacts/
+temp/
+reports/
+analysis/
+scout-report.sarif
+.tmp/
+
+# Security scan reports
+bandit-report.json
+safety-report.json
+*-report.json
+
+# Temporary analysis and issue tracking documents
+*_ISSUE.md
+*_ANALYSIS.md
+REVOLUT_*.md
+TEST_COVERAGE_*.md
+
+# Type Stubs (keep stubs/ - needed for type checking)
+# stubs/ - DO NOT IGNORE (custom pdfplumber type stubs)
+
+# Custom Templates (user data)
+custom_templates/*.json
+!custom_templates/default.json
+
+# ==============================================================================
+# Security & Secrets
+# ==============================================================================
+
+# GDPR Compliance - Encryption Keys
+.encryption_key
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Secrets
+.secrets
+*.secret
+secrets.yml
+secrets.json
+
+# API Keys & Tokens
+.api_keys
+*.token
+
+# ==============================================================================
+# Build & Deployment
+# ==============================================================================
+
+# Docker
+docker-compose.override.yml
+
+# Legacy/Deprecated
+marketplace/
+.myob/
+
+# Root-level legacy artefacts (old pre-restructure layout — not part of monorepo)
+# Old flat src/ — replaced by packages/parser-core/src/ and packages/parser-free/src/
+/src/
+# Old root-level tests — replaced by packages/*/tests/
+/tests/
+# Old Docker artefacts (Docker images published from private repo only)
+/Dockerfile
+/docker-compose.yml
+/docker-compose.network-isolated.yml
+/entrypoint.sh
+/license.json
+# Docker env files (private repo only)
+/.env.remote
+/.env.local
+
+# ==============================================================================
+# Documentation & Analysis
+# ==============================================================================
+
+# Analysis results
+*_analysis_results.json
+*BOUNDARY_ANALYSIS_REPORT.md
+
+# Generated docs
+docs/_build/
+site/
+
+# ==============================================================================
+# Claude Code
+# ==============================================================================
+
+.claude/
+CLAUDE.md
+!resources/**/CLAUDE.md
+.pr_template_content.md
+
+# ==============================================================================
+# Package Manager
+# ==============================================================================
+
+.pnpm-store
+node_modules/
+package-lock.json
+yarn.lock
+
+# ==============================================================================
+# Misc
+# ==============================================================================
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+
+# Temporary files
+*.tmp
+tmp/
+
+# Archives (don't commit large binaries)
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+*.7z
