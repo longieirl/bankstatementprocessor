@@ -90,21 +90,18 @@ bankstatementprocessor/
 
 ## Docker
 
-Docker images are built from the private `bankstatements-premium` repository which consumes this package. To run locally as a developer, clone both repos side-by-side and use `docker-compose`:
+**Free tier (this repo):** a `Dockerfile` and `docker-compose.yml` are provided for local development. They build both `bankstatements-core` and `bankstatements-free` from source — no remote image is pulled and no license is required.
 
 ```bash
-# Clone both repos
 git clone https://github.com/longieirl/bankstatementprocessor.git
-git clone https://github.com/longieirl/bankstatements.git
-
-# From the bankstatements directory
-cd bankstatements
-cp .env.example .env  # configure input/output dirs and licence path
+cd bankstatementprocessor
 
 docker-compose up --build
 ```
 
-The `--build` flag builds the image locally from source using `bankstatements-core` from this repo — no remote image is pulled.
+Place PDFs in `./input/` before running. Results are written to `./output/`.
+
+**Premium tier:** production Docker images are built and published from the private `bankstatements-premium` repository.
 
 ---
 
