@@ -88,6 +88,36 @@ bankstatementprocessor/
 
 ---
 
+## Docker
+
+The free-tier CLI can be run via Docker using the image published from the private `bankstatements-premium` distribution:
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/longieirl/bankstatements-premium:latest
+
+# Run against a local input directory
+docker run --rm \
+  -v $(pwd)/input:/app/input \
+  -v $(pwd)/output:/app/output \
+  ghcr.io/longieirl/bankstatements-premium:latest
+
+# With custom output formats
+docker run --rm \
+  -v $(pwd)/input:/app/input \
+  -v $(pwd)/output:/app/output \
+  -e OUTPUT_FORMATS=csv,json,excel \
+  ghcr.io/longieirl/bankstatements-premium:latest
+```
+
+Or with `docker-compose` — copy [`.env.example`](.env.example) to `.env` and run:
+
+```bash
+docker-compose up
+```
+
+---
+
 ## Development
 
 **Setup:**
