@@ -67,7 +67,9 @@ class PDFTableExtractor:
 
         # Inject PDF reader or use default pdfplumber adapter
         if pdf_reader is None:
-            from bankstatements_core.adapters.pdfplumber_adapter import PDFPlumberReaderAdapter
+            from bankstatements_core.adapters.pdfplumber_adapter import (
+                PDFPlumberReaderAdapter,
+            )
 
             self._pdf_reader: IPDFReader = PDFPlumberReaderAdapter()  # type: ignore[assignment]
         else:
@@ -241,7 +243,9 @@ class PDFTableExtractor:
                     return None
 
             # Detect dynamic boundary
-            from bankstatements_core.pdf_table_extractor import detect_table_end_boundary_smart
+            from bankstatements_core.pdf_table_extractor import (
+                detect_table_end_boundary_smart,
+            )
 
             dynamic_bottom_y = detect_table_end_boundary_smart(
                 all_words, table_top_y, self.columns, table_bottom_y

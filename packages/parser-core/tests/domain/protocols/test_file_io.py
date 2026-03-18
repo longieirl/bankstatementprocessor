@@ -6,7 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from bankstatements_core.domain.protocols.file_io import IFileDeleter, IFileReader, IJsonWriter
+from bankstatements_core.domain.protocols.file_io import (
+    IFileDeleter,
+    IFileReader,
+    IJsonWriter,
+)
 from bankstatements_core.patterns.repositories import FileSystemTransactionRepository
 
 

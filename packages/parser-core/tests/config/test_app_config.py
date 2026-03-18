@@ -31,11 +31,15 @@ class TestAppConfigValidation:
     """Tests for AppConfig field validation."""
 
     def test_negative_table_top_y_raises(self):
-        with pytest.raises(ConfigurationError, match="TABLE_TOP_Y must be non-negative"):
+        with pytest.raises(
+            ConfigurationError, match="TABLE_TOP_Y must be non-negative"
+        ):
             _base_config(table_top_y=-1)
 
     def test_negative_table_bottom_y_raises(self):
-        with pytest.raises(ConfigurationError, match="TABLE_BOTTOM_Y must be non-negative"):
+        with pytest.raises(
+            ConfigurationError, match="TABLE_BOTTOM_Y must be non-negative"
+        ):
             _base_config(table_bottom_y=-1)
 
     def test_table_top_y_gte_bottom_raises(self):
@@ -48,6 +52,7 @@ class TestAppConfigValidation:
 
     def test_large_table_bottom_y_logs_warning(self, caplog):
         import logging
+
         with caplog.at_level(logging.WARNING):
             _base_config(table_top_y=300, table_bottom_y=1001)
         assert any("unusually large" in r.message for r in caplog.records)
@@ -90,7 +95,9 @@ class TestAppConfigFromEnv:
             "bankstatements_core.config.app_config.EnvironmentParser.parse_bool",
             side_effect=RuntimeError("Unexpected"),
         ):
-            with pytest.raises(ConfigurationError, match="Failed to load configuration"):
+            with pytest.raises(
+                ConfigurationError, match="Failed to load configuration"
+            ):
                 AppConfig.from_env()
 
     def test_from_env_with_explicit_output_formats(self, monkeypatch, tmp_path):
@@ -107,6 +114,7 @@ class TestAppConfigLogConfiguration:
 
     def test_log_configuration_runs(self, caplog):
         import logging
+
         cfg = _base_config()
         with caplog.at_level(logging.INFO):
             cfg.log_configuration()

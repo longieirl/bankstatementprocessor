@@ -432,7 +432,10 @@ class TestStrategyBackwardCompatibility(unittest.TestCase):
 
     def test_processor_direct_instantiation_still_works(self):
         """Test processor can still be instantiated without factory."""
-        from bankstatements_core.config.processor_config import ExtractionConfig, ProcessorConfig
+        from bankstatements_core.config.processor_config import (
+            ExtractionConfig,
+            ProcessorConfig,
+        )
         from bankstatements_core.pdf_table_extractor import get_columns_config
         from bankstatements_core.processor import BankStatementProcessor
 

@@ -5,7 +5,10 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from bankstatements_core.domain.dataframe_utils import calculate_column_sum, is_date_column
+from bankstatements_core.domain.dataframe_utils import (
+    calculate_column_sum,
+    is_date_column,
+)
 
 
 class TestCalculateColumnSum:

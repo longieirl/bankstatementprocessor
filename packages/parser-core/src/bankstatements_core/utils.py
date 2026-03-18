@@ -16,10 +16,17 @@ from typing import TYPE_CHECKING
 from bankstatements_core.config.environment_parser import EnvironmentParser
 
 # Currency utilities
-from bankstatements_core.domain.currency import CurrencyParseError, format_currency, to_float
+from bankstatements_core.domain.currency import (
+    CurrencyParseError,
+    format_currency,
+    to_float,
+)
 
 # DataFrame utilities
-from bankstatements_core.domain.dataframe_utils import calculate_column_sum, is_date_column
+from bankstatements_core.domain.dataframe_utils import (
+    calculate_column_sum,
+    is_date_column,
+)
 
 # File discovery - delegate to existing PDFDiscoveryService
 from bankstatements_core.services.pdf_discovery import PDFDiscoveryService
@@ -148,4 +155,3 @@ def discover_pdfs(
     """
     service = PDFDiscoveryService(entitlements)
     return service.discover_pdfs(input_dir, recursive)
-

@@ -51,7 +51,9 @@ class ExtractionOrchestrator:
 
         # Inject PDF reader or use default pdfplumber adapter
         if pdf_reader is None:
-            from bankstatements_core.adapters.pdfplumber_adapter import PDFPlumberReaderAdapter
+            from bankstatements_core.adapters.pdfplumber_adapter import (
+                PDFPlumberReaderAdapter,
+            )
 
             self._pdf_reader: IPDFReader = PDFPlumberReaderAdapter()  # type: ignore[assignment]
         else:

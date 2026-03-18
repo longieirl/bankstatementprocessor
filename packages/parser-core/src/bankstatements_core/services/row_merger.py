@@ -9,7 +9,10 @@ from __future__ import annotations
 
 import logging
 
-from bankstatements_core.domain.column_types import find_first_column_of_type, get_type_as_string
+from bankstatements_core.domain.column_types import (
+    find_first_column_of_type,
+    get_type_as_string,
+)
 
 logger = logging.getLogger(__name__)
 

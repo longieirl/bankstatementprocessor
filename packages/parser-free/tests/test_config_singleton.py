@@ -7,7 +7,10 @@ import os
 import pytest
 
 from bankstatements_free.app import AppConfig
-from bankstatements_core.patterns.repositories import get_config_singleton, reset_config_singleton
+from bankstatements_core.patterns.repositories import (
+    get_config_singleton,
+    reset_config_singleton,
+)
 
 
 class TestConfigSingleton:
@@ -91,11 +94,15 @@ class TestConfigSingleton:
         monkeypatch.setenv("SORT_BY_DATE", "false")
 
         # Import in different ways to simulate different modules
-        from bankstatements_core.patterns.repositories import get_config_singleton as get_config_1
+        from bankstatements_core.patterns.repositories import (
+            get_config_singleton as get_config_1,
+        )
 
         config1 = get_config_1()
 
-        from bankstatements_core.patterns.repositories import get_config_singleton as get_config_2
+        from bankstatements_core.patterns.repositories import (
+            get_config_singleton as get_config_2,
+        )
 
         config2 = get_config_2()
 

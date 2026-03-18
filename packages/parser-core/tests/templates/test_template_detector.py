@@ -86,7 +86,9 @@ class TestTemplateDetector:
         assert len(detector.detectors) == 7  # Phase 2: Added CardNumber, LoanReference
         # Exclusion, IBAN, CardNumber, LoanReference, Filename, Header, ColumnHeader
 
-    @patch("bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect"
+    )
     @patch("bankstatements_core.templates.detectors.iban_detector.IBANDetector.detect")
     def test_detect_by_iban(
         self, mock_iban_detect, mock_exclusion_detect, mock_registry, mock_page
@@ -109,11 +111,19 @@ class TestTemplateDetector:
         assert result == aib_template
         mock_iban_detect.assert_called_once()
 
-    @patch("bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect")
-    @patch("bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect")
-    @patch("bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect"
+    )
     @patch("bankstatements_core.templates.detectors.iban_detector.IBANDetector.detect")
-    @patch("bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect"
+    )
     def test_detect_by_filename_fallback(
         self,
         mock_filename_detect,
@@ -146,11 +156,19 @@ class TestTemplateDetector:
         mock_iban_detect.assert_called_once()
         mock_filename_detect.assert_called_once()
 
-    @patch("bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect"
+    )
     @patch("bankstatements_core.templates.detectors.iban_detector.IBANDetector.detect")
-    @patch("bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect")
-    @patch("bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect")
-    @patch("bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect"
+    )
     def test_detect_uses_default_when_no_match(
         self,
         mock_column_detect,
@@ -175,7 +193,9 @@ class TestTemplateDetector:
         assert result == default_template
         mock_registry.get_default_template.assert_called()
 
-    @patch("bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect"
+    )
     @patch("bankstatements_core.templates.detectors.iban_detector.IBANDetector.detect")
     def test_detect_handles_detector_exception(
         self, mock_iban_detect, mock_exclusion_detect, mock_registry, mock_page
@@ -216,11 +236,19 @@ class TestTemplateDetector:
 
         assert result is None
 
-    @patch("bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect"
+    )
     @patch("bankstatements_core.templates.detectors.iban_detector.IBANDetector.detect")
-    @patch("bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect")
-    @patch("bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect")
-    @patch("bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect"
+    )
     def test_detect_below_minimum_threshold(
         self,
         mock_column_detect,
@@ -254,11 +282,19 @@ class TestTemplateDetector:
 
         assert result == default_template
 
-    @patch("bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect"
+    )
     @patch("bankstatements_core.templates.detectors.iban_detector.IBANDetector.detect")
-    @patch("bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect")
-    @patch("bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect")
-    @patch("bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect"
+    )
     def test_detect_tie_breaking_iban_preference(
         self,
         mock_column_detect,
@@ -323,11 +359,19 @@ class TestTemplateDetector:
         # AIB should win the tie because it has IBAN match
         assert result == aib_template
 
-    @patch("bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect"
+    )
     @patch("bankstatements_core.templates.detectors.iban_detector.IBANDetector.detect")
-    @patch("bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect")
-    @patch("bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect")
-    @patch("bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect"
+    )
     def test_detect_tie_breaking_max_confidence(
         self,
         mock_column_detect,
@@ -372,11 +416,19 @@ class TestTemplateDetector:
         # Revolut wins: same aggregate score but higher max confidence
         assert result == revolut_template
 
-    @patch("bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect"
+    )
     @patch("bankstatements_core.templates.detectors.iban_detector.IBANDetector.detect")
-    @patch("bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect")
-    @patch("bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect")
-    @patch("bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect"
+    )
     def test_detect_tie_breaking_alphabetical(
         self,
         mock_column_detect,
@@ -420,11 +472,19 @@ class TestTemplateDetector:
         # AIB wins: alphabetically first ("aib" < "revolut")
         assert result == aib_template
 
-    @patch("bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect"
+    )
     @patch("bankstatements_core.templates.detectors.iban_detector.IBANDetector.detect")
-    @patch("bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect")
-    @patch("bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect")
-    @patch("bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect"
+    )
     def test_detect_template_not_found_in_registry(
         self,
         mock_column_detect,
@@ -571,11 +631,19 @@ class TestTemplateDetector:
 
         assert result == "credit_card_statement"
 
-    @patch("bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect"
+    )
     @patch("bankstatements_core.templates.detectors.iban_detector.IBANDetector.detect")
-    @patch("bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect")
-    @patch("bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect")
-    @patch("bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect"
+    )
     def test_detect_with_document_type_filtered_templates(
         self,
         mock_column_detect,
@@ -633,11 +701,19 @@ class TestTemplateDetector:
         mock_registry.get_templates_by_type.assert_called_with("credit_card_statement")
         assert result == credit_card_template
 
-    @patch("bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect"
+    )
     @patch("bankstatements_core.templates.detectors.iban_detector.IBANDetector.detect")
-    @patch("bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect")
-    @patch("bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect")
-    @patch("bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect"
+    )
     def test_detect_fallback_when_type_filtered_has_no_templates(
         self,
         mock_column_detect,
@@ -673,11 +749,19 @@ class TestTemplateDetector:
         mock_registry.get_all_templates.assert_called()
         assert result == default_template
 
-    @patch("bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect"
+    )
     @patch("bankstatements_core.templates.detectors.iban_detector.IBANDetector.detect")
-    @patch("bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect")
-    @patch("bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect")
-    @patch("bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect"
+    )
     def test_detect_uses_type_specific_default(
         self,
         mock_column_detect,

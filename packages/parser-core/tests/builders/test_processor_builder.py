@@ -8,7 +8,10 @@ from pathlib import Path
 import pytest
 
 from bankstatements_core.builders import BankStatementProcessorBuilder
-from bankstatements_core.patterns.strategies import AllFieldsDuplicateStrategy, CSVOutputStrategy
+from bankstatements_core.patterns.strategies import (
+    AllFieldsDuplicateStrategy,
+    CSVOutputStrategy,
+)
 
 
 class TestBankStatementProcessorBuilder:
@@ -112,7 +115,9 @@ class TestBankStatementProcessorBuilder:
     def test_with_repository_returns_self(self):
         """Test with_repository returns builder for chaining."""
         builder = BankStatementProcessorBuilder()
-        from bankstatements_core.patterns.repositories import FileSystemTransactionRepository
+        from bankstatements_core.patterns.repositories import (
+            FileSystemTransactionRepository,
+        )
 
         repo = FileSystemTransactionRepository()
         result = builder.with_repository(repo)
