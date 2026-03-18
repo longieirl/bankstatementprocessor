@@ -422,7 +422,7 @@ All refactoring maintained 100% backward compatibility through re-export facades
 
 ## [Unreleased]
 
-[1.0.3]: https://github.com/longieirl/bankstatements/releases/tag/v1.0.3
-[1.0.2]: https://github.com/longieirl/bankstatements/releases/tag/v1.0.2
-[1.0.1]: https://github.com/longieirl/bankstatements/releases/tag/v1.0.1
-[1.0.0]: https://github.com/longieirl/bankstatements/releases/tag/v1.0.0
+[1.0.3]: https://github.com/longieirl/bankstatementprocessor/releases/tag/v1.0.3
+[1.0.2]: https://github.com/longieirl/bankstatementprocessor/releases/tag/v1.0.2
+[1.0.1]: https://github.com/longieirl/bankstatementprocessor/releases/tag/v1.0.1
+[1.0.0]: https://github.com/longieirl/bankstatementprocessor/releases/tag/v1.0.0
