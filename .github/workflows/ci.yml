@@ -274,6 +274,45 @@ jobs:
       run: python -m pytest tests/ -v --tb=short
 
   # ---------------------------------------------------------------------------
+  # Downstream dispatch — notify private repo when parser-core changes on main
+  # Fires only on push to main (not PRs), only when parser-core files changed,
+  # and only after test-core passes.
+  #
+  # Security:
+  #   - Gated on push to main + test-core success — PRs never trigger this
+  #   - DOWNSTREAM_DISPATCH_TOKEN must be a fine-grained PAT scoped to
+  #     longieirl/bankstatements only, with Contents: write permission
+  #   - The private repo validates the run_url payload origin before running
+  # ---------------------------------------------------------------------------
+  dispatch-downstream:
+    name: Dispatch downstream CI (bankstatements)
+    runs-on: ubuntu-latest
+    needs: test-core
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Check if parser-core changed
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            core:
+              - 'packages/parser-core/**'
+
+      - name: Trigger downstream CI in bankstatements
+        if: steps.changes.outputs.core == 'true'
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DOWNSTREAM_DISPATCH_TOKEN }}
+          repository: longieirl/bankstatements
+          event-type: core-updated
+          client-payload: |
+            {
+              "sha": "${{ github.sha }}",
+              "ref": "${{ github.ref }}",
+              "run_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            }
+
+  # ---------------------------------------------------------------------------
   # Summary gate — required status check for branch protection
   # Always runs so docs-only PRs (which skip the workflow) are handled by
   # ci-docs.yml instead. When code jobs run, this aggregates their result.
