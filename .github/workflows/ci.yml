@@ -272,3 +272,25 @@ jobs:
 
     - name: Run tests
       run: python -m pytest tests/ -v --tb=short
+
+  # ---------------------------------------------------------------------------
+  # Summary gate — required status check for branch protection
+  # Always runs so docs-only PRs (which skip the workflow) are handled by
+  # ci-docs.yml instead. When code jobs run, this aggregates their result.
+  # ---------------------------------------------------------------------------
+  ci-pass:
+    name: CI Pass
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [lint-core, lint-free, security, test-core, test-free]
+    steps:
+      - name: Check all jobs passed
+        run: |
+          results="${{ join(needs.*.result, ' ') }}"
+          for r in $results; do
+            if [ "$r" != "success" ] && [ "$r" != "skipped" ]; then
+              echo "Job failed with result: $r"
+              exit 1
+            fi
+          done
+          echo "All jobs passed or skipped."

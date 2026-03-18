@@ -193,11 +193,6 @@ Current templates (in `templates/` directory):
 | `default.json` | Generic | Any | ✓ |
 | `revolut.json` | Revolut | EU | ✓ |
 | `aib_ireland.json` | AIB | IE | ✓ |
-| `aib_credit_card.json` | AIB | IE | ✗ (PAID) |
-| `credit_card_default.json` | Generic | Any | ✗ (PAID) |
-
-**FREE tier**: Templates with IBAN patterns
-**PAID tier**: Templates without IBAN requirement (credit cards)
 
 ---
 
@@ -428,7 +423,7 @@ See [TEMPLATE_EXTENSIBILITY_PLAN.md](TEMPLATE_EXTENSIBILITY_PLAN.md) for detaile
 
 - **Banks covered**: 10+ major banks
 - **Countries**: Ireland, UK, US, EU
-- **Document types**: Bank statements, credit cards (PAID)
+- **Document types**: Bank statements
 
 ---
 
