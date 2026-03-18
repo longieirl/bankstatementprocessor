@@ -1,6 +1,7 @@
 # CI/CD Pipeline — bankstatementprocessor monorepo
 #
 # Jobs (all lint jobs run in parallel):
+#   changes     — detect which paths changed (skips heavy jobs on workflow-only PRs)
 #   lint-core   — black, isort, flake8, mypy on packages/parser-core
 #   lint-free   — black, isort, flake8 on packages/parser-free
 #   security    — bandit + safety on both packages
@@ -46,13 +47,39 @@ permissions:
   actions: read
 
 # ---------------------------------------------------------------------------
-# Lint jobs (all parallel)
+# Jobs
 # ---------------------------------------------------------------------------
 jobs:
+  # Detect which paths changed so downstream jobs can skip when irrelevant
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+      contents: read
+    outputs:
+      core: ${{ steps.filter.outputs.core }}
+      free: ${{ steps.filter.outputs.free }}
+      any-src: ${{ steps.filter.outputs.any-src }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            core:
+              - 'packages/parser-core/**'
+            free:
+              - 'packages/parser-free/**'
+            any-src:
+              - 'packages/**'
+
   lint-core:
     name: Lint — parser-core
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: changes
+    if: needs.changes.outputs.core == 'true'
     defaults:
       run:
         working-directory: packages/parser-core
@@ -102,6 +129,8 @@ jobs:
     name: Lint — parser-free
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: changes
+    if: needs.changes.outputs.free == 'true'
     defaults:
       run:
         working-directory: packages/parser-free
@@ -140,6 +169,8 @@ jobs:
     name: Security — bandit + safety
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: changes
+    if: needs.changes.outputs.any-src == 'true'
 
     steps:
     - uses: actions/checkout@v6
@@ -321,7 +352,7 @@ jobs:
     name: CI Pass
     runs-on: ubuntu-latest
     if: always()
-    needs: [lint-core, lint-free, security, test-core, test-free]
+    needs: [changes, lint-core, lint-free, security, test-core, test-free]
     steps:
       - name: Check all jobs passed
         run: |
