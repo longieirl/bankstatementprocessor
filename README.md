@@ -1,4 +1,4 @@
-# bankstatementprocessor
+# Bank Statement Processor
 
 [![CI](https://github.com/longieirl/bankstatementprocessor/actions/workflows/ci.yml/badge.svg)](https://github.com/longieirl/bankstatementprocessor/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -85,6 +85,23 @@ bankstatementprocessor/
     ├── boundary-check.yml    enforce parser-free cannot import premium code
     └── release-core.yml      publish bankstatements-core to PyPI on core-v* tags
 ```
+
+---
+
+## Docker
+
+**Free tier (this repo):** a `Dockerfile` and `docker-compose.yml` are provided for local development. They build both `bankstatements-core` and `bankstatements-free` from source — no remote image is pulled and no license is required.
+
+```bash
+git clone https://github.com/longieirl/bankstatementprocessor.git
+cd bankstatementprocessor
+
+docker-compose up --build
+```
+
+Place PDFs in `./input/` before running. Results are written to `./output/`.
+
+**Premium tier:** production Docker images are built and published from the private `bankstatements-premium` repository.
 
 ---
 

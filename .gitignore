@@ -189,11 +189,6 @@ marketplace/
 /src/
 # Old root-level tests — replaced by packages/*/tests/
 /tests/
-# Old Docker artefacts (Docker images published from private repo only)
-/Dockerfile
-/docker-compose.yml
-/docker-compose.network-isolated.yml
-/entrypoint.sh
 /license.json
 # Docker env files (private repo only)
 /.env.remote

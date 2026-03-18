@@ -1,0 +1,115 @@
+# docker-compose.network-isolated.yml
+# Network-isolated Docker Compose configuration for GDPR-compliant processing
+# Use this configuration when processing sensitive financial data
+#
+# Usage:
+#   docker-compose -f docker-compose.network-isolated.yml up --build
+#
+# Security Features:
+# - Network mode: none (complete network isolation)
+# - Read-only root filesystem
+# - No new privileges
+# - Dropped all capabilities
+# - Resource limits enforced
+
+services:
+  bank-processor:
+    image: ${DOCKER_IMAGE:-bankstatementsprocessor}:${VERSION:-latest}
+    build:
+      context: .
+      target: production
+      args:
+        VERSION: ${VERSION:-dev}
+        BUILD_DATE: ${BUILD_DATE:-}
+        VCS_REF: ${VCS_REF:-}
+    pull_policy: ${PULL_POLICY:-build}
+    container_name: bank-statement-processor-isolated
+    platform: linux/arm64
+
+    # ========================================================================
+    # SECURITY: Network Isolation (GDPR Compliance)
+    # ========================================================================
+    # Complete network isolation - no network access at all
+    # This ensures sensitive financial data cannot be transmitted
+    network_mode: none
+
+    # ========================================================================
+    # SECURITY: Filesystem Isolation
+    # ========================================================================
+    # Read-only root filesystem (writable volumes mounted explicitly)
+    read_only: true
+
+    # Temporary directories for runtime writes
+    tmpfs:
+      - /tmp
+      - /home/appuser/.cache
+
+    # ========================================================================
+    # SECURITY: Volume Mounts (Local Filesystem Only)
+    # ========================================================================
+    volumes:
+      # Input statements (read-only recommended)
+      - ./input:/app/input:ro
+
+      # Output CSV files (read-write)
+      - ./output:/app/output
+
+      # Processing activity logs (read-write)
+      - ./logs:/app/logs
+
+      # Optional: Custom templates (read-only)
+      # - ./custom_templates:/app/custom_templates:ro
+
+    # ========================================================================
+    # SECURITY: Process Capabilities
+    # ========================================================================
+    # Drop all Linux capabilities (principle of least privilege)
+    cap_drop:
+      - ALL
+
+    # Prevent privilege escalation
+    security_opt:
+      - no-new-privileges:true
+
+    # ========================================================================
+    # APPLICATION CONFIGURATION
+    # ========================================================================
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - EXIT_AFTER_PROCESSING=${EXIT_AFTER_PROCESSING:-true}
+      - ENABLE_DYNAMIC_BOUNDARY=${ENABLE_DYNAMIC_BOUNDARY:-false}
+      - SORT_BY_DATE=${SORT_BY_DATE:-true}
+      - OUTPUT_FORMATS=${OUTPUT_FORMATS:-csv}
+      - GENERATE_MONTHLY_SUMMARY=${GENERATE_MONTHLY_SUMMARY:-false}
+      - GENERATE_EXPENSE_ANALYSIS=${GENERATE_EXPENSE_ANALYSIS:-false}
+      - TOTALS_COLUMNS=${TOTALS_COLUMNS:-debit,credit}
+      - TABLE_TOP_Y=${TABLE_TOP_Y:-250}
+      - DATA_RETENTION_DAYS=${DATA_RETENTION_DAYS:-0}
+      - AUTO_CLEANUP_ON_EXIT=${AUTO_CLEANUP_ON_EXIT:-false}
+      - LOGS_DIR=${LOGS_DIR:-logs}
+
+    # ========================================================================
+    # RESOURCE LIMITS
+    # ========================================================================
+    # Memory and CPU limits to prevent resource exhaustion
+    mem_limit: 8g
+    mem_reservation: 4g
+    cpus: 4.0
+    shm_size: 2g
+
+    # ========================================================================
+    # PROCESS LIMITS
+    # ========================================================================
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+      nproc:
+        soft: 4096
+        hard: 4096
+
+# No networks defined - network_mode: none overrides this
+networks: {}
+
+# No volumes defined - using bind mounts only
+volumes: {}
