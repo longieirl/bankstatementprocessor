@@ -277,6 +277,12 @@ jobs:
   # Downstream dispatch — notify private repo when parser-core changes on main
   # Fires only on push to main (not PRs), only when parser-core files changed,
   # and only after test-core passes.
+  #
+  # Security:
+  #   - Gated on push to main + test-core success — PRs never trigger this
+  #   - DOWNSTREAM_DISPATCH_TOKEN must be a fine-grained PAT scoped to
+  #     longieirl/bankstatements only, with Contents: write permission
+  #   - The private repo validates the run_url payload origin before running
   # ---------------------------------------------------------------------------
   dispatch-downstream:
     name: Dispatch downstream CI (bankstatements)
