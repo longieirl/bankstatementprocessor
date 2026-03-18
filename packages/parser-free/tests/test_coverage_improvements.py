@@ -11,9 +11,9 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 
-from bankstatements_free.app import main
 from bankstatements_core.patterns.repositories import reset_config_singleton
 from bankstatements_core.processor import calculate_column_totals
+from bankstatements_free.app import main
 
 
 class TestAppErrorHandling(unittest.TestCase):
