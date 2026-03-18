@@ -13,14 +13,14 @@ pytest-xdist==3.8.0  # Parallel testing
 
 # Test data factories
 factory-boy==3.3.3
-faker==40.8.0
+faker==40.11.0
 
 # HTTP testing
 responses==0.26.0
 httpretty==1.1.4
 
 # Code coverage
-coverage==7.13.4
+coverage==7.13.5
 
 # Performance testing
 pytest-benchmark==5.2.3

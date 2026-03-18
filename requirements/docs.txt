@@ -5,9 +5,9 @@
 -r base.txt
 
 # Documentation
-sphinx==9.0.4
+sphinx==9.1.0
 sphinx-rtd-theme==3.1.0
-sphinx-autodoc-typehints==3.6.1
+sphinx-autodoc-typehints==3.9.8
 myst-parser==5.0.0  # Markdown support
 
 # API documentation
