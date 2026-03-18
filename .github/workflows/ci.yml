@@ -237,7 +237,7 @@ jobs:
       if: matrix.python-version == '3.12'
       uses: codecov/codecov-action@v5
       with:
-        file: packages/parser-core/coverage.xml
+        files: packages/parser-core/coverage.xml
         flags: parser-core
         fail_ci_if_error: false
 
