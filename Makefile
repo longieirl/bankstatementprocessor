@@ -130,7 +130,7 @@ docker-push:	## Push Docker images to GHCR
 
 docker-test:	## Test Docker image functionality
 	@echo "🐳 Testing Docker image..."
-	docker run --rm bankstatementsprocessor:latest python3 -m src.app --version
+	docker run --rm bankstatementsprocessor:latest python -c "from bankstatements_core.__version__ import __version__; print(__version__)"
 
 docker-clean:	## Clean up Docker images and containers
 	@echo "🐳 Cleaning Docker resources..."

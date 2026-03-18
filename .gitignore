@@ -214,6 +214,8 @@ site/
 CLAUDE.md
 !resources/**/CLAUDE.md
 .pr_template_content.md
+HANDOFF.md
+MEMORY.md
 
 # ==============================================================================
 # Package Manager
