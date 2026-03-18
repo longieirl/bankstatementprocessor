@@ -19,9 +19,16 @@ from bankstatements_core.config.processor_config import ExtractionConfig
 from bankstatements_core.entitlements import Entitlements
 
 if TYPE_CHECKING:
-    from bankstatements_core.domain.protocols.services import IPDFDiscovery, ITransactionFilter
-    from bankstatements_core.patterns.repositories import FileSystemTransactionRepository
-    from bankstatements_core.services.extraction_orchestrator import ExtractionOrchestrator
+    from bankstatements_core.domain.protocols.services import (
+        IPDFDiscovery,
+        ITransactionFilter,
+    )
+    from bankstatements_core.patterns.repositories import (
+        FileSystemTransactionRepository,
+    )
+    from bankstatements_core.services.extraction_orchestrator import (
+        ExtractionOrchestrator,
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -60,9 +67,13 @@ class PDFProcessingOrchestrator:
             extraction_orchestrator: Service for extracting data from PDFs (optional, creates default if None)
             filter_service: Service for filtering transactions (optional, creates default if None)
         """
-        from bankstatements_core.services.extraction_orchestrator import ExtractionOrchestrator
+        from bankstatements_core.services.extraction_orchestrator import (
+            ExtractionOrchestrator,
+        )
         from bankstatements_core.services.pdf_discovery import PDFDiscoveryService
-        from bankstatements_core.services.transaction_filter import TransactionFilterService
+        from bankstatements_core.services.transaction_filter import (
+            TransactionFilterService,
+        )
 
         self.extraction_config = extraction_config
         self.column_names = column_names

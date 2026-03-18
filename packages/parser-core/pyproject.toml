@@ -134,6 +134,10 @@ strict_equality = true
 show_error_codes = true
 mypy_path = "stubs"
 
+[tool.black]
+line-length = 88
+target-version = ['py311', 'py312', 'py313']
+
 [tool.isort]
 profile = "black"
 multi_line_output = 3

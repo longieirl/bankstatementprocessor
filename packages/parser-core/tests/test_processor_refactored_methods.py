@@ -12,7 +12,10 @@ from unittest.mock import MagicMock, call, mock_open, patch
 
 import pandas as pd
 
-from bankstatements_core.config.processor_config import ExtractionConfig, ProcessorConfig
+from bankstatements_core.config.processor_config import (
+    ExtractionConfig,
+    ProcessorConfig,
+)
 from bankstatements_core.processor import BankStatementProcessor
 
 # Module-level defaults to avoid B008 (function call in defaults)
@@ -48,7 +51,9 @@ class TestProcessorRefactoredMethods(unittest.TestCase):
         """Set up test processor instance"""
         self.processor = create_test_processor()
 
-    @patch("bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf")
+    @patch(
+        "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
+    )
     def test_process_all_pdfs_multiple_files(self, mock_extract):
         """Test _process_all_pdfs with multiple PDF files"""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -83,7 +88,9 @@ class TestProcessorRefactoredMethods(unittest.TestCase):
                 self.assertEqual(all_rows[1]["Details"], "Test2")
                 self.assertIsInstance(pdf_ibans, dict)
 
-    @patch("bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf")
+    @patch(
+        "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
+    )
     def test_process_all_pdfs_no_files(self, mock_extract):
         """Test _process_all_pdfs with no PDF files"""
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -230,7 +237,9 @@ class TestProcessorRefactoredMethods(unittest.TestCase):
             duplicate_rows = []
             df_unique = pd.DataFrame()
 
-            with patch("bankstatements_core.processor.generate_monthly_summary") as mock_gen_summary:
+            with patch(
+                "bankstatements_core.processor.generate_monthly_summary"
+            ) as mock_gen_summary:
                 output_paths = self.processor._output_orchestrator.write_output_files(
                     unique_rows, duplicate_rows, df_unique
                 )
@@ -291,7 +300,9 @@ class TestProcessorRefactoredMethods(unittest.TestCase):
 class TestProcessorRefactoredIntegration(unittest.TestCase):
     """Integration tests for refactored run() method"""
 
-    @patch("bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf")
+    @patch(
+        "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
+    )
     def test_run_uses_refactored_methods(self, mock_extract):
         """Test that run() correctly orchestrates refactored methods"""
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -12,7 +12,10 @@ from bankstatements_core.services.transaction_type_classifier import (
     TemplateKeywordClassifier,
     create_transaction_type_classifier_chain,
 )
-from bankstatements_core.templates.template_model import BankTemplate, TemplateProcessingConfig
+from bankstatements_core.templates.template_model import (
+    BankTemplate,
+    TemplateProcessingConfig,
+)
 
 # ---- Fixtures ----
 

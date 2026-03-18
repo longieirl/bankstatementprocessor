@@ -4,7 +4,11 @@ from __future__ import annotations
 
 import logging
 
-from bankstatements_core.domain import Transaction, dicts_to_transactions, transactions_to_dicts
+from bankstatements_core.domain import (
+    Transaction,
+    dicts_to_transactions,
+    transactions_to_dicts,
+)
 from bankstatements_core.exceptions import InputValidationError
 
 logger = logging.getLogger(__name__)

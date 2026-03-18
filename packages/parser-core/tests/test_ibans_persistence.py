@@ -3,7 +3,9 @@ from pathlib import Path
 
 from bankstatements_core.config.processor_config import ExtractionConfig
 from bankstatements_core.patterns.repositories import FileSystemTransactionRepository
-from bankstatements_core.services.pdf_processing_orchestrator import PDFProcessingOrchestrator
+from bankstatements_core.services.pdf_processing_orchestrator import (
+    PDFProcessingOrchestrator,
+)
 
 
 def test_ibans_file_masks_ibans(tmp_path: Path):

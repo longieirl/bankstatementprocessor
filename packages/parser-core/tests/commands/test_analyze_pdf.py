@@ -142,7 +142,10 @@ class TestPDFAnalyzer:
         source = inspect.getsource(analyze_pdf)
 
         # Check for actual imports or instantiations (not comments)
-        import_check = "from bankstatements_core.patterns.factories import ProcessorFactory" in source
+        import_check = (
+            "from bankstatements_core.patterns.factories import ProcessorFactory"
+            in source
+        )
         instantiation_check = "ProcessorFactory.create" in source
 
         assert not import_check, "analyze_pdf must NOT import ProcessorFactory"

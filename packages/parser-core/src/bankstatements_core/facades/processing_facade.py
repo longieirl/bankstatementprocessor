@@ -146,7 +146,9 @@ class BankStatementProcessingFacade:
         # Let unexpected errors bubble up
 
         # Create processing activity log for GDPR audit trail
-        from bankstatements_core.services.processing_activity_log import ProcessingActivityLog
+        from bankstatements_core.services.processing_activity_log import (
+            ProcessingActivityLog,
+        )
 
         activity_log = ProcessingActivityLog(self.config.logs_dir)
 

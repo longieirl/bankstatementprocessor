@@ -4,7 +4,11 @@ from __future__ import annotations
 
 import pytest
 
-from bankstatements_core.domain.currency import CurrencyParseError, format_currency, to_float
+from bankstatements_core.domain.currency import (
+    CurrencyParseError,
+    format_currency,
+    to_float,
+)
 
 
 class TestToFloat:

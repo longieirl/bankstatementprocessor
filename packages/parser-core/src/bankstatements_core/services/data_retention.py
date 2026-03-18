@@ -11,7 +11,9 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from bankstatements_core.domain.protocols.file_io import IFileDeleter
-    from bankstatements_core.services.processing_activity_log import ProcessingActivityLog
+    from bankstatements_core.services.processing_activity_log import (
+        ProcessingActivityLog,
+    )
 
 logger = logging.getLogger(__name__)
 

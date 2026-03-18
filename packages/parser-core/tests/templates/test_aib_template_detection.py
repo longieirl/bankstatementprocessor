@@ -34,7 +34,9 @@ class TestAIBTemplateDetection:
         aib_cc = registry.get_template("aib_credit_card")
 
         if aib_cc is None:
-            pytest.skip("aib_credit_card is a premium template not included in this build")
+            pytest.skip(
+                "aib_credit_card is a premium template not included in this build"
+            )
         keywords = aib_cc.detection.header_keywords
 
         # Should have specific keywords, not just "Allied Irish Banks"
@@ -66,7 +68,9 @@ class TestAIBTemplateDetection:
         aib_cc = registry.get_template("aib_credit_card")
 
         if aib_cc is None:
-            pytest.skip("aib_credit_card is a premium template not included in this build")
+            pytest.skip(
+                "aib_credit_card is a premium template not included in this build"
+            )
         assert hasattr(aib_cc.detection, "exclude_keywords")
 
         exclude_keywords = aib_cc.detection.exclude_keywords
@@ -86,8 +90,12 @@ class TestAIBTemplateDetection:
 class TestAIBTemplateDetectionScenarios:
     """Test AIB template detection with mocked PDF content."""
 
-    @patch("bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect")
-    @patch("bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect"
+    )
     @patch("bankstatements_core.templates.detectors.iban_detector.IBANDetector.detect")
     def test_bank_statement_with_iban_detected_as_aib_ireland(
         self, mock_iban_detector, mock_header_detector, mock_exclusion_detector
@@ -144,8 +152,12 @@ class TestAIBTemplateDetectionScenarios:
             detected.id == "aib_ireland"
         ), "PDF with IBAN should be detected as AIB Ireland bank statement"
 
-    @patch("bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect")
-    @patch("bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect"
+    )
     @patch("bankstatements_core.templates.detectors.iban_detector.IBANDetector.detect")
     def test_credit_card_without_iban_detected_as_aib_credit_card(
         self, mock_iban_detector, mock_header_detector, mock_exclusion_detector
@@ -162,7 +174,9 @@ class TestAIBTemplateDetectionScenarios:
         aib_cc = registry.get_template("aib_credit_card")
 
         if aib_cc is None:
-            pytest.skip("aib_credit_card is a premium template not included in this build")
+            pytest.skip(
+                "aib_credit_card is a premium template not included in this build"
+            )
 
         # Mock PDF that looks like credit card statement
         mock_pdf = MagicMock()
@@ -216,7 +230,9 @@ class TestAIBColumnBoundaries:
 
         assert aib_ireland is not None
         if aib_cc is None:
-            pytest.skip("aib_credit_card is a premium template not included in this build")
+            pytest.skip(
+                "aib_credit_card is a premium template not included in this build"
+            )
 
         # Column sets should be different
         ireland_cols = set(aib_ireland.extraction.columns.keys())
@@ -276,7 +292,9 @@ class TestAIBDocumentTypes:
         aib_cc = registry.get_template("aib_credit_card")
 
         if aib_cc is None:
-            pytest.skip("aib_credit_card is a premium template not included in this build")
+            pytest.skip(
+                "aib_credit_card is a premium template not included in this build"
+            )
         assert aib_cc.document_type == "credit_card_statement"
 
 

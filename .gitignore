@@ -130,6 +130,7 @@ logs/processing_activity.jsonl
 temp/
 reports/
 analysis/
+!packages/**/analysis/
 scout-report.sarif
 .tmp/
 

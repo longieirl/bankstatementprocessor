@@ -58,3 +58,13 @@ markers = [
 filterwarnings = [
     "ignore:TestResult has no addDuration method:RuntimeWarning",
 ]
+
+[tool.black]
+line-length = 88
+target-version = ['py311', 'py312', 'py313']
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["bankstatements_free", "bankstatements_core"]

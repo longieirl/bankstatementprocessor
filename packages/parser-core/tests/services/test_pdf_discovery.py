@@ -130,7 +130,9 @@ class TestPDFDiscoveryService(unittest.TestCase):
         (self.input_dir / "file1.pdf").write_text("top level")
         (subdir / "file2.pdf").write_text("nested")
 
-        with self.assertLogs("bankstatements_core.services.pdf_discovery", level="WARNING"):
+        with self.assertLogs(
+            "bankstatements_core.services.pdf_discovery", level="WARNING"
+        ):
             pdfs = service.discover_pdfs(self.input_dir, recursive=True)
 
         # Should only find top-level file (fallback to non-recursive)
