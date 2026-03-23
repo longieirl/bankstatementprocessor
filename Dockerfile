@@ -27,7 +27,7 @@ RUN pip install --no-cache-dir ./packages/parser-core
 RUN pip install --no-cache-dir ./packages/parser-free
 
 # Expose site-packages via a stable path so the production COPY is version-agnostic
-RUN ln -s "$(python -c 'import sysconfig; print(sysconfig.get_path(\"purelib\"))')" /pkg
+RUN python -c "import sysconfig; print(sysconfig.get_path('purelib'))" | xargs -I{} ln -s {} /pkg
 
 # ============================================================================
 # STAGE 2: Production
@@ -47,9 +47,8 @@ WORKDIR /app
 # We use --mount=type=bind to read from the builder's resolved symlink path,
 # then cp into the correct versioned site-packages directory.
 RUN --mount=type=bind,from=builder,source=/pkg,target=/mnt/pkg \
-    dest="$(python -c 'import sysconfig; print(sysconfig.get_path("purelib"))')" && \
-    mkdir -p "$dest" && \
-    cp -a /mnt/pkg/. "$dest/"
+    python -c "import sysconfig; print(sysconfig.get_path('purelib'))" | \
+    xargs -I{} sh -c 'mkdir -p "$1" && cp -a /mnt/pkg/. "$1/"' -- {}
 COPY --from=builder /usr/local/bin/bankstatements /usr/local/bin/bankstatements
 
 COPY entrypoint.sh .
