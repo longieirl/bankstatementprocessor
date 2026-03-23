@@ -11,6 +11,11 @@ on:
       - 'Dockerfile'
       - 'requirements/**'
       - '.github/workflows/security-scan.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Dockerfile'
+      - 'entrypoint.sh'
 
 permissions:
   contents: read
@@ -19,10 +24,55 @@ permissions:
   issues: write
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # PR scan — builds the image from source and scans it (no GHCR access needed)
+  # ---------------------------------------------------------------------------
+  scan-pr-image:
+    name: Scan PR Docker Image
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name == 'pull_request'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v6
+
+    - uses: docker/setup-buildx-action@v4
+
+    - name: Build PR image
+      uses: docker/build-push-action@v7
+      with:
+        context: .
+        target: production
+        push: false
+        load: true
+        tags: bankstatementsprocessor:pr-scan
+
+    - name: Run Trivy vulnerability scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'bankstatementsprocessor:pr-scan'
+        format: 'table'
+        severity: 'CRITICAL,HIGH'
+        exit-code: '1'
+        ignore-unfixed: true
+
+    - name: Run Trivy scan for secrets
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'bankstatementsprocessor:pr-scan'
+        format: 'table'
+        scanners: 'secret'
+        exit-code: '1'
+
+  # ---------------------------------------------------------------------------
+  # Scheduled / push scan — scans the production image from GHCR
+  # ---------------------------------------------------------------------------
   scan-latest-image:
     name: Scan Latest Docker Image
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    if: github.event_name != 'pull_request'
 
     steps:
     - name: Checkout code
@@ -102,7 +152,7 @@ jobs:
           ghcr.io/longieirl/bankstatements:latest | \
           jq '[.Results[]?.Vulnerabilities // [] | .[] | select(.Severity == "CRITICAL")] | length')
 
-        echo "critical_count=${CRITICAL_COUNT}" >> $GITHUB_OUTPUT
+        echo "critical_count=${CRITICAL_COUNT}" >> "$GITHUB_OUTPUT"
         echo "Found ${CRITICAL_COUNT} critical vulnerabilities"
 
     - name: Create issue for critical vulnerabilities
@@ -188,15 +238,17 @@ jobs:
     - name: Post scan summary
       if: always()
       run: |
-        echo "## 🔍 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Image**: ghcr.io/longieirl/bankstatements:latest" >> $GITHUB_STEP_SUMMARY
-        echo "**Scan Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
-        echo "**Critical Vulnerabilities**: ${{ steps.check-critical.outputs.critical_count }}" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Actions" >> $GITHUB_STEP_SUMMARY
-        echo "- [View detailed report in artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Documentation" >> $GITHUB_STEP_SUMMARY
-        echo "- [Security Scanning Guide](docs/SECURITY_SCANNING.md)" >> $GITHUB_STEP_SUMMARY
-        echo "- [Docker Maintenance Guide](docs/DOCKER_MAINTENANCE.md)" >> $GITHUB_STEP_SUMMARY
+        {
+          echo "## 🔍 Security Scan Summary"
+          echo ""
+          echo "**Image**: ghcr.io/longieirl/bankstatements:latest"
+          echo "**Scan Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          echo "**Critical Vulnerabilities**: ${{ steps.check-critical.outputs.critical_count }}"
+          echo ""
+          echo "### Actions"
+          echo "- [View detailed report in artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          echo ""
+          echo "### Documentation"
+          echo "- [Security Scanning Guide](docs/SECURITY_SCANNING.md)"
+          echo "- [Docker Maintenance Guide](docs/DOCKER_MAINTENANCE.md)"
+        } >> "$GITHUB_STEP_SUMMARY"
