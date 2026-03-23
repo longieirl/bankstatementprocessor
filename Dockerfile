@@ -3,7 +3,7 @@
 # Stage 1: Builder - installs dependencies
 # Stage 2: Production - minimal runtime image
 
-FROM python:3.12-slim AS base
+FROM python:3.14-slim AS base
 
 ARG VERSION=dev
 ARG BUILD_DATE
