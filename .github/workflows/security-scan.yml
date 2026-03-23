@@ -152,7 +152,7 @@ jobs:
           ghcr.io/longieirl/bankstatements:latest | \
           jq '[.Results[]?.Vulnerabilities // [] | .[] | select(.Severity == "CRITICAL")] | length')
 
-        echo "critical_count=${CRITICAL_COUNT}" >> $GITHUB_OUTPUT
+        echo "critical_count=${CRITICAL_COUNT}" >> "$GITHUB_OUTPUT"
         echo "Found ${CRITICAL_COUNT} critical vulnerabilities"
 
     - name: Create issue for critical vulnerabilities
@@ -238,15 +238,15 @@ jobs:
     - name: Post scan summary
       if: always()
       run: |
-        echo "## 🔍 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Image**: ghcr.io/longieirl/bankstatements:latest" >> $GITHUB_STEP_SUMMARY
-        echo "**Scan Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
-        echo "**Critical Vulnerabilities**: ${{ steps.check-critical.outputs.critical_count }}" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Actions" >> $GITHUB_STEP_SUMMARY
-        echo "- [View detailed report in artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Documentation" >> $GITHUB_STEP_SUMMARY
-        echo "- [Security Scanning Guide](docs/SECURITY_SCANNING.md)" >> $GITHUB_STEP_SUMMARY
-        echo "- [Docker Maintenance Guide](docs/DOCKER_MAINTENANCE.md)" >> $GITHUB_STEP_SUMMARY
+        echo "## 🔍 Security Scan Summary" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "**Image**: ghcr.io/longieirl/bankstatements:latest" >> "$GITHUB_STEP_SUMMARY"
+        echo "**Scan Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> "$GITHUB_STEP_SUMMARY"
+        echo "**Critical Vulnerabilities**: ${{ steps.check-critical.outputs.critical_count }}" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "### Actions" >> "$GITHUB_STEP_SUMMARY"
+        echo "- [View detailed report in artifacts](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "### Documentation" >> "$GITHUB_STEP_SUMMARY"
+        echo "- [Security Scanning Guide](docs/SECURITY_SCANNING.md)" >> "$GITHUB_STEP_SUMMARY"
+        echo "- [Docker Maintenance Guide](docs/DOCKER_MAINTENANCE.md)" >> "$GITHUB_STEP_SUMMARY"
