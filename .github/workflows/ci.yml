@@ -334,6 +334,7 @@ jobs:
           context: .
           target: production
           push: false
+          load: true
           tags: bankstatementsprocessor:pr-${{ github.event.pull_request.number }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -358,7 +359,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Run actionlint
-        uses: rhysd/actionlint@latest
+        uses: rhysd/actionlint@v1.7.7
         with:
           ignore: 'SC2016'
 

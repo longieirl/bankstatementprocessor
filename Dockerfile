@@ -44,8 +44,12 @@ WORKDIR /app
 
 # Copy installed packages using the version-agnostic symlink created in builder.
 # Both stages share the same base image so the Python version always matches.
+# We use --mount=type=bind to read from the builder's resolved symlink path,
+# then cp into the correct versioned site-packages directory.
 RUN --mount=type=bind,from=builder,source=/pkg,target=/mnt/pkg \
-    cp -a /mnt/pkg/. "$(python -c 'import sysconfig; print(sysconfig.get_path(\"purelib\"))')"
+    dest="$(python -c 'import sysconfig; print(sysconfig.get_path("purelib"))')" && \
+    mkdir -p "$dest" && \
+    cp -a /mnt/pkg/. "$dest/"
 COPY --from=builder /usr/local/bin/bankstatements /usr/local/bin/bankstatements
 
 COPY entrypoint.sh .
