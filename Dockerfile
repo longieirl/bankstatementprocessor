@@ -26,6 +26,9 @@ COPY packages/parser-free/ ./packages/parser-free/
 RUN pip install --no-cache-dir ./packages/parser-core
 RUN pip install --no-cache-dir ./packages/parser-free
 
+# Expose site-packages via a stable path so the production COPY is version-agnostic
+RUN ln -s "$(python -c 'import sysconfig; print(sysconfig.get_path(\"purelib\"))')" /pkg
+
 # ============================================================================
 # STAGE 2: Production
 # ============================================================================
@@ -39,7 +42,10 @@ RUN groupadd -r appuser && useradd -r -g appuser -u 1000 appuser
 
 WORKDIR /app
 
-COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+# Copy installed packages using the version-agnostic symlink created in builder.
+# Both stages share the same base image so the Python version always matches.
+RUN --mount=type=bind,from=builder,source=/pkg,target=/mnt/pkg \
+    cp -a /mnt/pkg/. "$(python -c 'import sysconfig; print(sysconfig.get_path(\"purelib\"))')"
 COPY --from=builder /usr/local/bin/bankstatements /usr/local/bin/bankstatements
 
 COPY entrypoint.sh .
