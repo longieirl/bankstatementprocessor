@@ -75,11 +75,13 @@ jobs:
           BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           VCS_REF=$(git rev-parse --short HEAD)
 
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "major=${MAJOR}" >> "$GITHUB_OUTPUT"
-          echo "minor=${MINOR}" >> "$GITHUB_OUTPUT"
-          echo "build_date=${BUILD_DATE}" >> "$GITHUB_OUTPUT"
-          echo "vcs_ref=${VCS_REF}" >> "$GITHUB_OUTPUT"
+          {
+            echo "version=${VERSION}"
+            echo "major=${MAJOR}"
+            echo "minor=${MINOR}"
+            echo "build_date=${BUILD_DATE}"
+            echo "vcs_ref=${VCS_REF}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v7
@@ -166,13 +168,15 @@ jobs:
 
       - name: Release summary
         run: |
-          echo "## 🚀 Release v${{ needs.validate-version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "### Docker Images" >> "$GITHUB_STEP_SUMMARY"
-          echo "- \`ghcr.io/longieirl/bankstatements:${{ needs.validate-version.outputs.version }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- \`ghcr.io/longieirl/bankstatements:latest\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "### Pull Command" >> "$GITHUB_STEP_SUMMARY"
-          echo "\`\`\`bash" >> "$GITHUB_STEP_SUMMARY"
-          echo "docker pull ghcr.io/longieirl/bankstatements:${{ needs.validate-version.outputs.version }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "\`\`\`" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## 🚀 Release v${{ needs.validate-version.outputs.version }}"
+            echo ""
+            echo "### Docker Images"
+            echo "- \`ghcr.io/longieirl/bankstatements:${{ needs.validate-version.outputs.version }}\`"
+            echo "- \`ghcr.io/longieirl/bankstatements:latest\`"
+            echo ""
+            echo "### Pull Command"
+            echo "\`\`\`bash"
+            echo "docker pull ghcr.io/longieirl/bankstatements:${{ needs.validate-version.outputs.version }}"
+            echo "\`\`\`"
+          } >> "$GITHUB_STEP_SUMMARY"
