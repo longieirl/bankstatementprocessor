@@ -63,7 +63,7 @@ jobs:
       any-src: ${{ steps.filter.outputs.any-src }}
     steps:
       - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
@@ -323,7 +323,7 @@ jobs:
     steps:
       - name: Check if parser-core changed
         id: changes
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         with:
           filters: |
             core:
@@ -331,7 +331,7 @@ jobs:
 
       - name: Trigger downstream CI in bankstatements
         if: steps.changes.outputs.core == 'true'
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@v4
         with:
           token: ${{ secrets.DOWNSTREAM_DISPATCH_TOKEN }}
           repository: longieirl/bankstatements
