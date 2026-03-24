@@ -477,3 +477,369 @@ class TestTransactionRepr:
 
         assert "02/12/2023" in repr_str
         assert "Cr=2500.00" in repr_str
+
+
+class TestTransactionEnrichmentFields:
+    """Tests for TXEN-01 through TXEN-04: source_page, confidence_score, extraction_warnings."""
+
+    # --- TXEN-01: source_page ---
+
+    def test_source_page_defaults_to_none(self):
+        """TXEN-01: Transaction() with no source_page → source_page is None."""
+        tx = Transaction(
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
+        )
+        assert tx.source_page is None
+
+    def test_source_page_can_be_set(self):
+        """TXEN-01: Transaction(source_page=3) → source_page == 3."""
+        tx = Transaction(
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
+            source_page=3,
+        )
+        assert tx.source_page == 3
+
+    def test_to_dict_source_page_int_serialises_as_string(self):
+        """TXEN-01: to_dict() with source_page=3 → result['source_page'] == '3'."""
+        tx = Transaction(
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
+            source_page=3,
+        )
+        assert tx.to_dict()["source_page"] == "3"
+
+    def test_to_dict_source_page_none_serialises_as_none(self):
+        """TXEN-01: to_dict() with source_page=None → result['source_page'] is None."""
+        tx = Transaction(
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
+        )
+        assert tx.to_dict()["source_page"] is None
+
+    def test_from_dict_source_page_string_parses_to_int(self):
+        """TXEN-01: from_dict({'source_page': '3', ...}) → source_page == 3 (int)."""
+        tx = Transaction.from_dict(
+            {
+                "Date": "01/01/2024",
+                "Details": "Test",
+                "Debit €": None,
+                "Credit €": "10.00",
+                "Balance €": "100.00",
+                "Filename": "test.pdf",
+                "source_page": "3",
+            }
+        )
+        assert tx.source_page == 3
+        assert isinstance(tx.source_page, int)
+
+    def test_from_dict_source_page_absent_defaults_to_none(self):
+        """TXEN-01: from_dict({}) (key absent) → source_page is None."""
+        tx = Transaction.from_dict(
+            {
+                "Date": "01/01/2024",
+                "Details": "Test",
+            }
+        )
+        assert tx.source_page is None
+
+    def test_source_page_roundtrip_with_value(self):
+        """TXEN-01: from_dict(tx.to_dict()) where source_page=3 → source_page == 3."""
+        original = Transaction(
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
+            source_page=3,
+        )
+        restored = Transaction.from_dict(original.to_dict())
+        assert restored.source_page == 3
+
+    def test_source_page_roundtrip_with_none(self):
+        """TXEN-01: from_dict(tx.to_dict()) where source_page=None → source_page is None."""
+        original = Transaction(
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
+        )
+        restored = Transaction.from_dict(original.to_dict())
+        assert restored.source_page is None
+
+    # --- TXEN-02: extraction_warnings ---
+
+    def test_extraction_warnings_defaults_to_empty_list(self):
+        """TXEN-02: Transaction() with no extraction_warnings → extraction_warnings == []."""
+        tx = Transaction(
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
+        )
+        assert tx.extraction_warnings == []
+
+    def test_extraction_warnings_can_be_set(self):
+        """TXEN-02: Transaction(extraction_warnings=['missing balance']) stores value."""
+        tx = Transaction(
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
+            extraction_warnings=["missing balance"],
+        )
+        assert tx.extraction_warnings == ["missing balance"]
+
+    def test_extraction_warnings_no_shared_mutable_default(self):
+        """TXEN-02: Two Transaction() instances have separate extraction_warnings lists."""
+        tx1 = Transaction(
+            date="01/01/2024",
+            details="Test1",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
+        )
+        tx2 = Transaction(
+            date="01/01/2024",
+            details="Test2",
+            debit=None,
+            credit="20.00",
+            balance="120.00",
+            filename="test.pdf",
+        )
+        tx1.extraction_warnings.append("warning")
+        assert tx2.extraction_warnings == []
+
+    def test_to_dict_extraction_warnings_serialises_as_json_string(self):
+        """TXEN-02: to_dict() with extraction_warnings=['missing balance'] → JSON string."""
+        tx = Transaction(
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
+            extraction_warnings=["missing balance"],
+        )
+        assert tx.to_dict()["extraction_warnings"] == '["missing balance"]'
+
+    def test_to_dict_extraction_warnings_empty_serialises_as_json_array(self):
+        """TXEN-02: to_dict() with extraction_warnings=[] → '[]'."""
+        tx = Transaction(
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
+        )
+        assert tx.to_dict()["extraction_warnings"] == "[]"
+
+    def test_from_dict_extraction_warnings_parses_json_string(self):
+        """TXEN-02: from_dict({'extraction_warnings': '["missing balance"]'}) → list."""
+        tx = Transaction.from_dict(
+            {
+                "Date": "01/01/2024",
+                "Details": "Test",
+                "Filename": "test.pdf",
+                "extraction_warnings": '["missing balance"]',
+            }
+        )
+        assert tx.extraction_warnings == ["missing balance"]
+
+    def test_from_dict_extraction_warnings_absent_defaults_to_empty_list(self):
+        """TXEN-02: from_dict({}) (key absent) → extraction_warnings == []."""
+        tx = Transaction.from_dict(
+            {
+                "Date": "01/01/2024",
+                "Details": "Test",
+            }
+        )
+        assert tx.extraction_warnings == []
+
+    def test_extraction_warnings_roundtrip(self):
+        """TXEN-02: from_dict(tx.to_dict()) preserves extraction_warnings."""
+        original = Transaction(
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
+            extraction_warnings=["missing balance"],
+        )
+        restored = Transaction.from_dict(original.to_dict())
+        assert restored.extraction_warnings == ["missing balance"]
+
+    def test_extraction_warnings_not_in_additional_fields(self):
+        """TXEN-02: extraction_warnings JSON key is gated by standard_keys — not absorbed into additional_fields."""
+        tx = Transaction.from_dict(
+            {
+                "Date": "01/01/2024",
+                "Details": "Test",
+                "Filename": "test.pdf",
+                "extraction_warnings": '["x"]',
+            }
+        )
+        assert "extraction_warnings" not in tx.additional_fields
+
+    # --- TXEN-03: confidence_score ---
+
+    def test_confidence_score_defaults_to_one(self):
+        """TXEN-03: Transaction() with no confidence_score → confidence_score == 1.0."""
+        tx = Transaction(
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
+        )
+        assert tx.confidence_score == 1.0
+
+    def test_confidence_score_can_be_set(self):
+        """TXEN-03: Transaction(confidence_score=0.8) → confidence_score == 0.8."""
+        tx = Transaction(
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
+            confidence_score=0.8,
+        )
+        assert tx.confidence_score == 0.8
+
+    def test_to_dict_confidence_score_serialises_as_string(self):
+        """TXEN-03: to_dict() with confidence_score=0.8 → result['confidence_score'] == '0.8'."""
+        tx = Transaction(
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
+            confidence_score=0.8,
+        )
+        assert tx.to_dict()["confidence_score"] == "0.8"
+
+    def test_from_dict_confidence_score_parses_to_float(self):
+        """TXEN-03: from_dict({'confidence_score': '0.8', ...}) → confidence_score == 0.8 (float)."""
+        tx = Transaction.from_dict(
+            {
+                "Date": "01/01/2024",
+                "Details": "Test",
+                "Filename": "test.pdf",
+                "confidence_score": "0.8",
+            }
+        )
+        assert tx.confidence_score == 0.8
+        assert isinstance(tx.confidence_score, float)
+
+    def test_from_dict_confidence_score_absent_defaults_to_one(self):
+        """TXEN-03: from_dict({}) (key absent) → confidence_score == 1.0."""
+        tx = Transaction.from_dict(
+            {
+                "Date": "01/01/2024",
+                "Details": "Test",
+            }
+        )
+        assert tx.confidence_score == 1.0
+
+    def test_confidence_score_roundtrip(self):
+        """TXEN-03: from_dict(tx.to_dict()) where confidence_score=0.8 → 0.8."""
+        original = Transaction(
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
+            confidence_score=0.8,
+        )
+        restored = Transaction.from_dict(original.to_dict())
+        assert restored.confidence_score == 0.8
+
+    # --- TXEN-04: standard_keys membership and full round-trip ---
+
+    def test_source_page_in_standard_keys(self):
+        """TXEN-04: 'source_page' is gated by standard_keys — not absorbed into additional_fields."""
+        tx = Transaction.from_dict(
+            {
+                "Date": "01/01/2024",
+                "Details": "Test",
+                "Filename": "test.pdf",
+                "source_page": "5",
+            }
+        )
+        assert "source_page" not in tx.additional_fields
+
+    def test_confidence_score_in_standard_keys(self):
+        """TXEN-04: 'confidence_score' is gated by standard_keys — not absorbed into additional_fields."""
+        tx = Transaction.from_dict(
+            {
+                "Date": "01/01/2024",
+                "Details": "Test",
+                "Filename": "test.pdf",
+                "confidence_score": "0.9",
+            }
+        )
+        assert "confidence_score" not in tx.additional_fields
+
+    def test_full_roundtrip_all_three_enrichment_fields(self):
+        """TXEN-04: Full round-trip preserves source_page, confidence_score, and extraction_warnings."""
+        original = Transaction(
+            date="01/01/2024",
+            details="Test roundtrip",
+            debit="50.00",
+            credit=None,
+            balance="950.00",
+            filename="statement.pdf",
+            source_page=3,
+            confidence_score=0.8,
+            extraction_warnings=["missing balance"],
+        )
+        restored = Transaction.from_dict(original.to_dict())
+        assert restored.source_page == 3
+        assert restored.confidence_score == 0.8
+        assert restored.extraction_warnings == ["missing balance"]
+
+    def test_backward_compat_old_dict_without_new_keys(self):
+        """TXEN-04: Old dict without new keys → from_dict() succeeds with defaults."""
+        old_data = {
+            "Date": "01/12/2023",
+            "Details": "TESCO STORES",
+            "Debit €": "45.23",
+            "Credit €": None,
+            "Balance €": "1234.56",
+            "Filename": "statement.pdf",
+        }
+        tx = Transaction.from_dict(old_data)
+        assert tx.source_page is None
+        assert tx.confidence_score == 1.0
+        assert tx.extraction_warnings == []
