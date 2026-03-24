@@ -15,9 +15,9 @@ from bankstatements_core.domain.models.transaction import Transaction
 
 class TestExtractionResultImports:
     def test_importable_from_module(self):
-        from bankstatements_core.domain.models.extraction_result import (
+        from bankstatements_core.domain.models.extraction_result import (  # noqa: F401
             ExtractionResult,
-        )  # noqa: F401
+        )
 
     def test_importable_from_models_package(self):
         from bankstatements_core.domain.models import ExtractionResult  # noqa: F401
