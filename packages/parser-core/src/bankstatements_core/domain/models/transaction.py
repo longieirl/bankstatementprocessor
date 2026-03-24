@@ -223,7 +223,9 @@ class Transaction:
         raw_confidence = data.get("confidence_score")
         confidence_score = float(raw_confidence) if raw_confidence is not None else 1.0
         raw_warnings = data.get("extraction_warnings")
-        extraction_warnings = json.loads(raw_warnings) if raw_warnings is not None else []
+        extraction_warnings = (
+            json.loads(raw_warnings) if raw_warnings is not None else []
+        )
 
         return cls(
             date=date or "",
@@ -279,7 +281,9 @@ class Transaction:
         }
 
         # Add enrichment metadata fields
-        result["source_page"] = str(self.source_page) if self.source_page is not None else None
+        result["source_page"] = (
+            str(self.source_page) if self.source_page is not None else None
+        )
         result["confidence_score"] = str(self.confidence_score)
         result["extraction_warnings"] = json.dumps(self.extraction_warnings)
 
