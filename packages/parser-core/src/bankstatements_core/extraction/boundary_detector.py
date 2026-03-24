@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
-from bankstatements_core.extraction.row_classifiers import create_row_classifier_chain
+from bankstatements_core.extraction.row_classifiers import RowClassifier, create_row_classifier_chain
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +49,7 @@ class TableBoundaryDetector:
         min_section_gap: int = 50,
         structure_breakdown_threshold: int = 8,
         dynamic_boundary_threshold: int = 15,
+        row_classifier: RowClassifier | None = None,
     ):
         """
         Initialize boundary detector.
@@ -60,11 +61,12 @@ class TableBoundaryDetector:
             min_section_gap: Minimum gap in pixels to consider a section boundary
             structure_breakdown_threshold: Number of empty columns to consider structure broken
             dynamic_boundary_threshold: Consecutive non-transaction rows before ending extraction
+            row_classifier: Optional RowClassifier chain; creates default if not provided
         """
         self.columns = columns
         self.fallback_bottom_y = fallback_bottom_y
         self.table_top_y = table_top_y
-        self._row_classifier = create_row_classifier_chain()
+        self._row_classifier = row_classifier if row_classifier is not None else create_row_classifier_chain()
 
         # Configuration parameters
         self.min_gap_threshold = min_section_gap
