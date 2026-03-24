@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 from bankstatements_core.config.processor_config import ExtractionConfig
 from bankstatements_core.entitlements import Entitlements
-from bankstatements_core.pdf_table_extractor import extract_tables_from_pdf
+from bankstatements_core.extraction.extraction_facade import extract_tables_from_pdf
 from bankstatements_core.templates import TemplateDetector, TemplateRegistry
 from bankstatements_core.templates.template_model import BankTemplate
 

@@ -123,8 +123,9 @@ class PDFProcessingOrchestrator:
             logger.info("Processing PDF %d of %d", idx, len(pdf_files))
 
             try:
-                result = self._process_single_pdf(pdf)
-                rows, page_count, iban = result
+                rows, page_count, iban = self.extraction_orchestrator.extract_from_pdf(
+                    pdf
+                )
                 pages_read += page_count
 
                 # Check if should be excluded (no IBAN and no data)
@@ -181,23 +182,6 @@ class PDFProcessingOrchestrator:
             self._save_excluded_files(excluded_files)
 
         return all_rows, pages_read, pdf_ibans
-
-    def _process_single_pdf(
-        self,
-        pdf: Path,
-    ) -> tuple[list[dict], int, str | None]:
-        """Process a single PDF file.
-
-        Args:
-            pdf: Path to PDF file
-
-        Returns:
-            Tuple of (rows, page_count, iban)
-        """
-        # Extract transactions using orchestrator
-        rows, page_count, iban = self.extraction_orchestrator.extract_from_pdf(pdf)
-
-        return rows, page_count, iban
 
     def _save_ibans(self, pdf_ibans: dict[str, str]) -> None:
         """Save extracted IBANs to JSON file.
