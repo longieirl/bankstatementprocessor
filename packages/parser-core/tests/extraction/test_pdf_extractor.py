@@ -8,6 +8,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from bankstatements_core.extraction.pdf_extractor import PDFTableExtractor
+from bankstatements_core.extraction.row_post_processor import (
+    RowPostProcessor,
+    extract_filename_date,
+)
 
 # Test columns configuration
 TEST_COLUMNS = {
@@ -46,21 +50,15 @@ class TestPDFTableExtractor:
 
     def test_extract_filename_date_valid(self):
         """Test extracting date from filename with valid pattern."""
-        extractor = PDFTableExtractor(columns=TEST_COLUMNS)
-        date = extractor._extract_filename_date("statement_20230115.pdf")
-        assert date == "15 Jan 2023"
+        assert extract_filename_date("statement_20230115.pdf") == "15 Jan 2023"
 
     def test_extract_filename_date_no_pattern(self):
         """Test extracting date from filename without date pattern."""
-        extractor = PDFTableExtractor(columns=TEST_COLUMNS)
-        date = extractor._extract_filename_date("statement.pdf")
-        assert date == ""
+        assert extract_filename_date("statement.pdf") == ""
 
     def test_extract_filename_date_invalid_date(self):
         """Test extracting invalid date from filename."""
-        extractor = PDFTableExtractor(columns=TEST_COLUMNS)
-        date = extractor._extract_filename_date("statement_99999999.pdf")
-        assert date == ""
+        assert extract_filename_date("statement_99999999.pdf") == ""
 
     def test_extract_rows_from_words(self):
         """Test extracting rows from word list."""
@@ -77,7 +75,7 @@ class TestPDFTableExtractor:
             {"text": "Sale", "x0": 60, "x1": 90, "top": 370.0},
             {"text": "25.00", "x0": 260, "x1": 290, "top": 370.0},
         ]
-        rows = extractor._extract_rows_from_words(words)
+        rows = extractor._row_builder.build_rows(words)
         assert len(rows) == 2
         assert "01 Jan" in rows[0]["Date"]
         assert "Purchase" in rows[0]["Details"]
@@ -96,13 +94,20 @@ class TestPDFTableExtractor:
             {"text": "Date", "x0": 30, "x1": 60, "top": 370},
             {"text": "Details", "x0": 60, "x1": 110, "top": 370},
         ]
-        rows = extractor._extract_rows_from_words(words)
+        rows = extractor._row_builder.build_rows(words)
         # Should only have the transaction, not the header
         assert len(rows) == 1
 
     def test_process_row_with_date(self):
         """Test processing row with date present."""
         extractor = PDFTableExtractor(columns=TEST_COLUMNS)
+        proc = RowPostProcessor(
+            columns=TEST_COLUMNS,
+            row_classifier=extractor._row_classifier,
+            template=None,
+            filename_date="",
+            filename="test.pdf",
+        )
         row = {
             "Date": "01 Jan 2023",
             "Details": "Purchase",
@@ -110,15 +115,20 @@ class TestPDFTableExtractor:
             "Credit €": "",
             "Balance €": "100.00",
         }
-        current_date = extractor._process_row(
-            row, current_date="", filename_date="", filename="test.pdf"
-        )
+        current_date = proc.process(row, current_date="")
         assert current_date == "01 Jan 2023"
         assert row["Filename"] == "test.pdf"
 
     def test_process_row_without_date_uses_current(self):
         """Test processing row without date uses current date."""
         extractor = PDFTableExtractor(columns=TEST_COLUMNS)
+        proc = RowPostProcessor(
+            columns=TEST_COLUMNS,
+            row_classifier=extractor._row_classifier,
+            template=None,
+            filename_date="",
+            filename="test.pdf",
+        )
         row = {
             "Date": "",
             "Details": "Purchase",
@@ -126,18 +136,20 @@ class TestPDFTableExtractor:
             "Credit €": "",
             "Balance €": "100.00",
         }
-        current_date = extractor._process_row(
-            row,
-            current_date="31 Dec 2022",
-            filename_date="",
-            filename="test.pdf",
-        )
+        current_date = proc.process(row, current_date="31 Dec 2022")
         assert row["Date"] == "31 Dec 2022"
         assert current_date == "31 Dec 2022"
 
     def test_process_row_without_date_uses_filename_date(self):
         """Test processing row without date uses filename date."""
         extractor = PDFTableExtractor(columns=TEST_COLUMNS)
+        proc = RowPostProcessor(
+            columns=TEST_COLUMNS,
+            row_classifier=extractor._row_classifier,
+            template=None,
+            filename_date="15 Jan 2023",
+            filename="test.pdf",
+        )
         row = {
             "Date": "",
             "Details": "Purchase",
@@ -145,12 +157,7 @@ class TestPDFTableExtractor:
             "Credit €": "",
             "Balance €": "100.00",
         }
-        current_date = extractor._process_row(
-            row,
-            current_date="",
-            filename_date="15 Jan 2023",
-            filename="test.pdf",
-        )
+        current_date = proc.process(row, current_date="")
         assert row["Date"] == "15 Jan 2023"
         assert current_date == "15 Jan 2023"
 
