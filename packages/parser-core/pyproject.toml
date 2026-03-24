@@ -93,6 +93,7 @@ markers = [
 ]
 filterwarnings = [
     "ignore:TestResult has no addDuration method:RuntimeWarning",
+    "ignore::DeprecationWarning:bankstatements_core.pdf_table_extractor",
 ]
 
 [tool.coverage.run]
