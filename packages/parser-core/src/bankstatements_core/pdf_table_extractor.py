@@ -97,16 +97,12 @@ _CONTENT_DENSITY_SERVICE = ContentDensityService()
 
 
 # Wrapper functions (backward compatibility)
-def validate_page_structure(
-    rows: list, columns: dict
-) -> bool:
+def validate_page_structure(rows: list, columns: dict) -> bool:
     """Validate page structure (backward compatibility wrapper)."""
     return _PAGE_VALIDATION_SERVICE.validate_page_structure(rows, columns)
 
 
-def calculate_column_coverage(
-    rows: list, columns: dict
-) -> float:
+def calculate_column_coverage(rows: list, columns: dict) -> float:
     """Calculate column coverage (backward compatibility wrapper)."""
     return _PAGE_VALIDATION_SERVICE.calculate_column_coverage(rows, columns)
 
@@ -119,25 +115,19 @@ def has_column_type(
     return _PAGE_VALIDATION_SERVICE.has_column_type(columns, required_types)
 
 
-def detect_table_headers(
-    words: list, columns: dict
-) -> bool:
+def detect_table_headers(words: list, columns: dict) -> bool:
     """Detect table headers (backward compatibility wrapper)."""
     return _HEADER_SERVICE.detect_headers(
         words, columns, min_keywords=_MIN_HEADER_KEYWORDS
     )
 
 
-def merge_continuation_lines(
-    rows: list, columns: dict
-) -> list:
+def merge_continuation_lines(rows: list, columns: dict) -> list:
     """Merge continuation lines (backward compatibility wrapper)."""
     return _ROW_MERGER_SERVICE.merge_continuation_lines(rows, columns)
 
 
-def classify_row_type(
-    row: dict, columns: dict
-) -> str:
+def classify_row_type(row: dict, columns: dict) -> str:
     """Classify row type (backward compatibility wrapper)."""
     return _ROW_CLASSIFIER_CHAIN.classify(row, columns)
 
@@ -166,9 +156,7 @@ def _looks_like_date(text: str) -> bool:
     return service.looks_like_date(text)
 
 
-def calculate_row_completeness_score(
-    row: dict, columns: dict
-) -> float:
+def calculate_row_completeness_score(row: dict, columns: dict) -> float:
     """Score row completeness (backward compatibility wrapper)."""
     from bankstatements_core.services.row_analysis import RowAnalysisService
 

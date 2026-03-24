@@ -148,7 +148,9 @@ class PDFTableExtractor:
                 PageValidationService,
             )
 
-            if not PageValidationService().validate_page_structure(page_rows, self.columns):
+            if not PageValidationService().validate_page_structure(
+                page_rows, self.columns
+            ):
                 logger.info(
                     f"Page {page_num}: Invalid table structure detected, "
                     f"skipping {len(page_rows)} rows"
