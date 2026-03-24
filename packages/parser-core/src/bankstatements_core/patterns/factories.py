@@ -149,6 +149,7 @@ class ProcessorFactory:
         table_bottom_y: int = 700,
         duplicate_strategy: DuplicateDetectionStrategy | None = None,
         output_strategies: dict[str, OutputFormatStrategy] | None = None,
+        entitlements: Any | None = None,
         **kwargs: Any,
     ) -> "BankStatementProcessor":
         """
@@ -164,6 +165,7 @@ class ProcessorFactory:
             table_bottom_y: Bottom Y coordinate for table extraction
             duplicate_strategy: Custom duplicate detection strategy
             output_strategies: Custom output format strategies (default: CSV and JSON)
+            entitlements: Optional Entitlements for tier-based feature access control.
             **kwargs: Additional processor options (sort_by_date, etc.)
 
         Returns:
@@ -212,6 +214,7 @@ class ProcessorFactory:
             config=config,
             output_strategies=output_strategies,
             duplicate_strategy=duplicate_strategy,
+            entitlements=entitlements,
         )
 
         return processor

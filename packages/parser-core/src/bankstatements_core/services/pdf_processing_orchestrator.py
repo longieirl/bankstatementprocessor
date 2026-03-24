@@ -90,6 +90,15 @@ class PDFProcessingOrchestrator:
                 extraction_config=extraction_config, entitlements=entitlements
             )
         )
+        if (
+            extraction_orchestrator is not None
+            and extraction_orchestrator._entitlements != entitlements
+        ):
+            raise ValueError(
+                "ExtractionOrchestrator entitlements must match PDFProcessingOrchestrator "
+                "entitlements. Pass a consistent entitlements object to both, or omit "
+                "extraction_orchestrator to have it created automatically."
+            )
         self.filter_service = filter_service or TransactionFilterService(column_names)
 
     def process_all_pdfs(
