@@ -163,12 +163,25 @@ class TestRowPostProcessor:
 class TestStatefulPageRowProcessor:
     def test_date_persists_across_pages(self):
         """Date seen on page 1 is used to fill rows on page 2."""
-        from bankstatements_core.extraction.row_post_processor import StatefulPageRowProcessor
+        from bankstatements_core.extraction.row_post_processor import (
+            StatefulPageRowProcessor,
+        )
+
         proc = _make_processor()
         wrapper = StatefulPageRowProcessor(proc)
 
-        page1 = [{"Date": "01/01/2024", "Details": "A", "Debit €": "", "Credit €": "", "Balance €": ""}]
-        page2 = [{"Date": "", "Details": "B", "Debit €": "", "Credit €": "", "Balance €": ""}]
+        page1 = [
+            {
+                "Date": "01/01/2024",
+                "Details": "A",
+                "Debit €": "",
+                "Credit €": "",
+                "Balance €": "",
+            }
+        ]
+        page2 = [
+            {"Date": "", "Details": "B", "Debit €": "", "Credit €": "", "Balance €": ""}
+        ]
 
         wrapper.process_page(page1)
         result = wrapper.process_page(page2)
@@ -178,11 +191,24 @@ class TestStatefulPageRowProcessor:
 
     def test_skipped_page_preserves_date(self):
         """process_page(None) is a no-op — date state is unchanged."""
-        from bankstatements_core.extraction.row_post_processor import StatefulPageRowProcessor
+        from bankstatements_core.extraction.row_post_processor import (
+            StatefulPageRowProcessor,
+        )
+
         proc = _make_processor()
         wrapper = StatefulPageRowProcessor(proc)
 
-        wrapper.process_page([{"Date": "05/05/2024", "Details": "X", "Debit €": "", "Credit €": "", "Balance €": ""}])
+        wrapper.process_page(
+            [
+                {
+                    "Date": "05/05/2024",
+                    "Details": "X",
+                    "Debit €": "",
+                    "Credit €": "",
+                    "Balance €": "",
+                }
+            ]
+        )
         assert wrapper.current_date() == "05/05/2024"
 
         rows = wrapper.process_page(None)
@@ -191,18 +217,44 @@ class TestStatefulPageRowProcessor:
 
     def test_last_date_source_row(self):
         """last_date_source() returns 'row' when date came from the row."""
-        from bankstatements_core.extraction.row_post_processor import StatefulPageRowProcessor
+        from bankstatements_core.extraction.row_post_processor import (
+            StatefulPageRowProcessor,
+        )
+
         proc = _make_processor()
         wrapper = StatefulPageRowProcessor(proc)
-        wrapper.process_page([{"Date": "01/01/2024", "Details": "A", "Debit €": "", "Credit €": "", "Balance €": ""}])
+        wrapper.process_page(
+            [
+                {
+                    "Date": "01/01/2024",
+                    "Details": "A",
+                    "Debit €": "",
+                    "Credit €": "",
+                    "Balance €": "",
+                }
+            ]
+        )
         assert wrapper.last_date_source() == "row"
 
     def test_reset_clears_state(self):
         """reset() clears current_date and last_date_source."""
-        from bankstatements_core.extraction.row_post_processor import StatefulPageRowProcessor
+        from bankstatements_core.extraction.row_post_processor import (
+            StatefulPageRowProcessor,
+        )
+
         proc = _make_processor()
         wrapper = StatefulPageRowProcessor(proc)
-        wrapper.process_page([{"Date": "01/01/2024", "Details": "A", "Debit €": "", "Credit €": "", "Balance €": ""}])
+        wrapper.process_page(
+            [
+                {
+                    "Date": "01/01/2024",
+                    "Details": "A",
+                    "Debit €": "",
+                    "Credit €": "",
+                    "Balance €": "",
+                }
+            ]
+        )
         wrapper.reset()
         assert wrapper.current_date() == ""
         assert wrapper.last_date_source() == ""
