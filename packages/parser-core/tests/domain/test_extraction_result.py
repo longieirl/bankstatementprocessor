@@ -15,7 +15,9 @@ from bankstatements_core.domain.models.transaction import Transaction
 
 class TestExtractionResultImports:
     def test_importable_from_module(self):
-        from bankstatements_core.domain.models.extraction_result import ExtractionResult  # noqa: F401
+        from bankstatements_core.domain.models.extraction_result import (
+            ExtractionResult,
+        )  # noqa: F401
 
     def test_importable_from_models_package(self):
         from bankstatements_core.domain.models import ExtractionResult  # noqa: F401
@@ -27,6 +29,7 @@ class TestExtractionResultImports:
 class TestExtractionResultConstruction:
     def test_all_five_fields_accessible(self):
         from bankstatements_core.domain.models.extraction_result import ExtractionResult
+
         result = ExtractionResult(
             transactions=[],
             page_count=3,
@@ -41,6 +44,7 @@ class TestExtractionResultConstruction:
 
     def test_warnings_defaults_to_empty_list(self):
         from bankstatements_core.domain.models.extraction_result import ExtractionResult
+
         result = ExtractionResult(
             transactions=[], page_count=1, iban=None, source_file=Path("x.pdf")
         )
@@ -48,6 +52,7 @@ class TestExtractionResultConstruction:
 
     def test_warnings_accepts_explicit_list(self):
         from bankstatements_core.domain.models.extraction_result import ExtractionResult
+
         result = ExtractionResult(
             transactions=[],
             page_count=1,
@@ -59,6 +64,7 @@ class TestExtractionResultConstruction:
 
     def test_iban_can_be_none(self):
         from bankstatements_core.domain.models.extraction_result import ExtractionResult
+
         result = ExtractionResult(
             transactions=[], page_count=1, iban=None, source_file=Path("x.pdf")
         )
@@ -66,9 +72,14 @@ class TestExtractionResultConstruction:
 
     def test_transactions_can_contain_transaction_objects(self):
         from bankstatements_core.domain.models.extraction_result import ExtractionResult
+
         tx = Transaction(
-            date="01/01/2024", details="Test", debit=None,
-            credit="10.00", balance="100.00", filename="test.pdf"
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
         )
         result = ExtractionResult(
             transactions=[tx], page_count=1, iban=None, source_file=Path("x.pdf")
@@ -81,6 +92,7 @@ class TestExtractionResultMutableDefault:
     def test_warnings_no_shared_mutable_default(self):
         """Two ExtractionResult instances must not share the same warnings list."""
         from bankstatements_core.domain.models.extraction_result import ExtractionResult
+
         result1 = ExtractionResult(
             transactions=[], page_count=1, iban=None, source_file=Path("a.pdf")
         )
@@ -96,9 +108,14 @@ class TestExtractionResultWarningIsolation:
         """EXTR-02: A document-level warning in ExtractionResult.warnings must not
         appear in any Transaction.extraction_warnings."""
         from bankstatements_core.domain.models.extraction_result import ExtractionResult
+
         tx = Transaction(
-            date="01/01/2024", details="Test", debit=None,
-            credit="10.00", balance="100.00", filename="test.pdf",
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
         )
         result = ExtractionResult(
             transactions=[tx],
@@ -114,9 +131,14 @@ class TestExtractionResultWarningIsolation:
         """EXTR-02 reverse: per-row Transaction.extraction_warnings must not appear
         in ExtractionResult.warnings unless explicitly added."""
         from bankstatements_core.domain.models.extraction_result import ExtractionResult
+
         tx = Transaction(
-            date="01/01/2024", details="Test", debit=None,
-            credit="10.00", balance="100.00", filename="test.pdf",
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
             extraction_warnings=["row-level anomaly"],
         )
         result = ExtractionResult(
