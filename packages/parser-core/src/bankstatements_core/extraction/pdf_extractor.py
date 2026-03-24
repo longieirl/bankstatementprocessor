@@ -19,6 +19,7 @@ from bankstatements_core.extraction.row_builder import RowBuilder
 from bankstatements_core.extraction.row_classifiers import create_row_classifier_chain
 from bankstatements_core.extraction.row_post_processor import (
     RowPostProcessor,
+    StatefulPageRowProcessor,
     extract_filename_date,
 )
 
@@ -81,16 +82,17 @@ class PDFTableExtractor:
             Tuple of (extracted rows, total page count, IBAN if found)
         """
         rows: list[dict] = []
-        current_date = ""
         iban = None
 
         filename_date = extract_filename_date(pdf_path.name)
-        post_processor = RowPostProcessor(
-            columns=self.columns,
-            row_classifier=self._row_classifier,
-            template=self.template,
-            filename_date=filename_date,
-            filename=pdf_path.name,
+        page_processor = StatefulPageRowProcessor(
+            RowPostProcessor(
+                columns=self.columns,
+                row_classifier=self._row_classifier,
+                template=self.template,
+                filename_date=filename_date,
+                filename=pdf_path.name,
+            )
         )
 
         with self._pdf_reader.open(pdf_path) as pdf:
@@ -120,10 +122,7 @@ class PDFTableExtractor:
                     f"processing {len(page_rows)} rows"
                 )
 
-                for row in page_rows:
-                    current_date = post_processor.process(row, current_date)
-                    if row:
-                        rows.append(row)
+                rows.extend(page_processor.process_page(page_rows))
 
             return rows, len(pdf.pages), iban
 

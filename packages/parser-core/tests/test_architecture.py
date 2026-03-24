@@ -55,3 +55,26 @@ def test_facade_modules_deleted():
     ]:
         with pytest.raises(ModuleNotFoundError):
             importlib.import_module(module)
+
+
+def test_extraction_result_defined_in_domain_models():
+    """ExtractionResult must be defined in domain/models/, not extraction/ or services/."""
+    src_root = Path(__file__).parent.parent / "src"
+    wrong_dirs = [
+        src_root / "bankstatements_core" / "extraction",
+        src_root / "bankstatements_core" / "services",
+    ]
+    pattern = re.compile(r"^class ExtractionResult")
+    violations = []
+    for wrong_dir in wrong_dirs:
+        for py_file in wrong_dir.rglob("*.py"):
+            text = py_file.read_text(encoding="utf-8")
+            for i, line in enumerate(text.splitlines(), 1):
+                if pattern.search(line):
+                    violations.append(
+                        f"{py_file.relative_to(src_root)}:{i}: {line.strip()}"
+                    )
+    assert not violations, (
+        "ExtractionResult must be defined in domain/models/, not extraction/ or services/.\n\n"
+        "Violations:\n" + "\n".join(violations)
+    )
