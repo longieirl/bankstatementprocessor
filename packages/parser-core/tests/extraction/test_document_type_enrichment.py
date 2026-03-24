@@ -9,6 +9,7 @@ from __future__ import annotations
 import pytest
 
 from bankstatements_core.extraction.pdf_extractor import PDFTableExtractor
+from bankstatements_core.extraction.row_post_processor import RowPostProcessor
 from bankstatements_core.templates.template_model import (
     BankTemplate,
     TemplateDetectionConfig,
@@ -115,15 +116,17 @@ class TestDocumentTypeEnrichment:
     def test_bank_statement_document_type(self, bank_statement_template, basic_columns):
         """Test that bank statement template adds correct document_type."""
         extractor = PDFTableExtractor(
-            columns=basic_columns,
-            template=bank_statement_template,
+            columns=basic_columns, template=bank_statement_template
         )
-
-        # Test _process_row directly
+        proc = RowPostProcessor(
+            columns=basic_columns,
+            row_classifier=extractor._row_classifier,
+            template=bank_statement_template,
+            filename_date="",
+            filename="test_bank.pdf",
+        )
         row = {"Date": "01/12/2023", "Details": "Purchase", "Debit €": "100.00"}
-        extractor._process_row(row, "", "", "test_bank.pdf")
-
-        # Should have document_type = "bank_statement"
+        proc.process(row, "")
         assert "document_type" in row
         assert row["document_type"] == "bank_statement"
         assert row["Filename"] == "test_bank.pdf"
@@ -131,15 +134,17 @@ class TestDocumentTypeEnrichment:
     def test_credit_card_document_type(self, credit_card_template, basic_columns):
         """Test that credit card template adds correct document_type."""
         extractor = PDFTableExtractor(
-            columns=basic_columns,
-            template=credit_card_template,
+            columns=basic_columns, template=credit_card_template
         )
-
-        # Test _process_row directly
+        proc = RowPostProcessor(
+            columns=basic_columns,
+            row_classifier=extractor._row_classifier,
+            template=credit_card_template,
+            filename_date="",
+            filename="test_card.pdf",
+        )
         row = {"Date": "02/12/2023", "Details": "Card Purchase", "Debit €": "50.00"}
-        extractor._process_row(row, "", "", "test_card.pdf")
-
-        # Should have document_type = "credit_card_statement"
+        proc.process(row, "")
         assert "document_type" in row
         assert row["document_type"] == "credit_card_statement"
         assert row["Filename"] == "test_card.pdf"
@@ -147,31 +152,33 @@ class TestDocumentTypeEnrichment:
     def test_loan_statement_document_type(self, loan_statement_template, basic_columns):
         """Test that loan statement template adds correct document_type."""
         extractor = PDFTableExtractor(
-            columns=basic_columns,
-            template=loan_statement_template,
+            columns=basic_columns, template=loan_statement_template
         )
-
-        # Test _process_row directly
+        proc = RowPostProcessor(
+            columns=basic_columns,
+            row_classifier=extractor._row_classifier,
+            template=loan_statement_template,
+            filename_date="",
+            filename="test_loan.pdf",
+        )
         row = {"Date": "03/12/2023", "Details": "Loan Payment", "Debit €": "200.00"}
-        extractor._process_row(row, "", "", "test_loan.pdf")
-
-        # Should have document_type = "loan_statement"
+        proc.process(row, "")
         assert "document_type" in row
         assert row["document_type"] == "loan_statement"
         assert row["Filename"] == "test_loan.pdf"
 
     def test_no_template_defaults_to_bank_statement(self, basic_columns):
         """Test that absence of template defaults to 'bank_statement'."""
-        extractor = PDFTableExtractor(
+        extractor = PDFTableExtractor(columns=basic_columns, template=None)
+        proc = RowPostProcessor(
             columns=basic_columns,
-            template=None,  # No template provided
+            row_classifier=extractor._row_classifier,
+            template=None,
+            filename_date="",
+            filename="test_unknown.pdf",
         )
-
-        # Test _process_row directly
         row = {"Date": "04/12/2023", "Details": "Unknown", "Debit €": "75.00"}
-        extractor._process_row(row, "", "", "test_unknown.pdf")
-
-        # Should default to "bank_statement"
+        proc.process(row, "")
         assert "document_type" in row
         assert row["document_type"] == "bank_statement"
 
@@ -180,15 +187,17 @@ class TestDocumentTypeEnrichment:
     ):
         """Test that document_type is added alongside Filename."""
         extractor = PDFTableExtractor(
-            columns=basic_columns,
-            template=credit_card_template,
+            columns=basic_columns, template=credit_card_template
         )
-
-        # Test _process_row directly
+        proc = RowPostProcessor(
+            columns=basic_columns,
+            row_classifier=extractor._row_classifier,
+            template=credit_card_template,
+            filename_date="",
+            filename="test_card.pdf",
+        )
         row = {"Date": "05/12/2023", "Details": "Purchase", "Debit €": "25.00"}
-        extractor._process_row(row, "", "", "test_card.pdf")
-
-        # Should have both Filename and document_type
+        proc.process(row, "")
         assert "Filename" in row
         assert "document_type" in row
         assert row["Filename"] == "test_card.pdf"
@@ -201,20 +210,22 @@ class TestDocumentTypeIntegration:
     def test_multiple_rows_same_template(self, credit_card_template, basic_columns):
         """Test that multiple rows from same template have same document_type."""
         extractor = PDFTableExtractor(
-            columns=basic_columns,
-            template=credit_card_template,
+            columns=basic_columns, template=credit_card_template
         )
-
+        proc = RowPostProcessor(
+            columns=basic_columns,
+            row_classifier=extractor._row_classifier,
+            template=credit_card_template,
+            filename_date="",
+            filename="card.pdf",
+        )
         rows = [
             {"Date": "01/12/2023", "Details": "Purchase 1", "Debit €": "100.00"},
             {"Date": "02/12/2023", "Details": "Purchase 2", "Debit €": "50.00"},
             {"Date": "03/12/2023", "Details": "Purchase 3", "Debit €": "75.00"},
         ]
-
         for row in rows:
-            extractor._process_row(row, "", "", "card.pdf")
-
-        # All rows should have same document_type
+            proc.process(row, "")
         assert all(row["document_type"] == "credit_card_statement" for row in rows)
 
     def test_document_type_field_is_string(
@@ -222,14 +233,17 @@ class TestDocumentTypeIntegration:
     ):
         """Test that document_type field is always a string."""
         extractor = PDFTableExtractor(
-            columns=basic_columns,
-            template=bank_statement_template,
+            columns=basic_columns, template=bank_statement_template
         )
-
+        proc = RowPostProcessor(
+            columns=basic_columns,
+            row_classifier=extractor._row_classifier,
+            template=bank_statement_template,
+            filename_date="",
+            filename="test.pdf",
+        )
         row = {"Date": "01/12/2023", "Details": "Test", "Debit €": "100.00"}
-        extractor._process_row(row, "", "", "test.pdf")
-
-        # Verify document_type is a string
+        proc.process(row, "")
         assert isinstance(row.get("document_type"), str)
         assert row["document_type"] in [
             "bank_statement",

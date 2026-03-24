@@ -278,7 +278,12 @@ class TestCreditCardDetection:
         mock_header.extract_text.return_value = "Statement for Card Number 1234"
         mock_page.crop.return_value = mock_header
 
-        assert extractor._is_credit_card_statement(mock_page) is True
+        assert (
+            extractor._header_analyser.is_credit_card_statement(
+                mock_page, extractor.table_top_y
+            )
+            is True
+        )
 
     def test_is_credit_card_statement_method_no_match(self):
         """Test _is_credit_card_statement with no match."""
@@ -293,7 +298,12 @@ class TestCreditCardDetection:
         mock_header.extract_text.return_value = "Bank Statement IBAN IE291234"
         mock_page.crop.return_value = mock_header
 
-        assert extractor._is_credit_card_statement(mock_page) is False
+        assert (
+            extractor._header_analyser.is_credit_card_statement(
+                mock_page, extractor.table_top_y
+            )
+            is False
+        )
 
     def test_visa_in_transaction_not_detected(self):
         """Test that 'VISA' in transaction lines does not trigger false positive."""
@@ -315,4 +325,9 @@ class TestCreditCardDetection:
 
         # Even though full page would have VISA in transactions,
         # we only check header, so should NOT be detected
-        assert extractor._is_credit_card_statement(mock_page) is False
+        assert (
+            extractor._header_analyser.is_credit_card_statement(
+                mock_page, extractor.table_top_y
+            )
+            is False
+        )
