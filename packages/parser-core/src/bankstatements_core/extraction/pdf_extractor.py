@@ -248,7 +248,11 @@ class PDFTableExtractor:
             )
 
             dynamic_bottom_y = detect_table_end_boundary_smart(
-                all_words, table_top_y, self.columns, table_bottom_y
+                all_words,
+                table_top_y,
+                self.columns,
+                table_bottom_y,
+                row_classifier=self._row_classifier,
             )
 
             # Safety check: Cap dynamic boundary at static boundary to prevent over-extraction

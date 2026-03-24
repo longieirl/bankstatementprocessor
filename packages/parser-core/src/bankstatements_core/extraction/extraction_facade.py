@@ -14,6 +14,7 @@ from bankstatements_core.config.column_config import DEFAULT_COLUMNS
 from bankstatements_core.extraction.extraction_params import TABLE_BOTTOM_Y, TABLE_TOP_Y
 
 if TYPE_CHECKING:
+    from bankstatements_core.extraction.row_classifiers import RowClassifier
     from bankstatements_core.templates.template_model import BankTemplate
 
 
@@ -25,6 +26,7 @@ def detect_table_end_boundary_smart(
     min_section_gap: int = 50,
     structure_breakdown_threshold: int = 8,
     dynamic_boundary_threshold: int = 15,
+    row_classifier: "RowClassifier | None" = None,
 ) -> int:
     """
     Detect table end intelligently (facade).
@@ -39,6 +41,7 @@ def detect_table_end_boundary_smart(
         min_section_gap: Minimum gap in pixels to consider a section boundary
         structure_breakdown_threshold: Number of empty columns to consider structure broken
         dynamic_boundary_threshold: Consecutive non-transaction rows before ending extraction
+        row_classifier: Optional RowClassifier chain; creates default if not provided
 
     Returns:
         Detected bottom Y coordinate
@@ -52,6 +55,7 @@ def detect_table_end_boundary_smart(
         min_section_gap=min_section_gap,
         structure_breakdown_threshold=structure_breakdown_threshold,
         dynamic_boundary_threshold=dynamic_boundary_threshold,
+        row_classifier=row_classifier,
     )
 
     return detector.detect_boundary(words)

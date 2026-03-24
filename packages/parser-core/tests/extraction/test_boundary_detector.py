@@ -379,3 +379,21 @@ class TestTableBoundaryDetector:
         assert detector.min_gap_threshold == 100
         assert detector.structure_breakdown_threshold == 10
         assert detector.consecutive_threshold == 20
+
+    def test_injected_classifier_is_used(self):
+        from unittest.mock import Mock
+
+        from bankstatements_core.extraction.row_classifiers import RowClassifier
+
+        mock_chain = Mock(spec=RowClassifier)
+        mock_chain.classify.return_value = "metadata"
+        detector = TableBoundaryDetector(
+            columns=TEST_COLUMNS, row_classifier=mock_chain
+        )
+        words = [{"text": "Footer", "x0": 60, "top": 350}]
+        detector.detect_boundary(words)
+        mock_chain.classify.assert_called()
+
+    def test_default_classifier_created_when_not_injected(self):
+        detector = TableBoundaryDetector(columns=TEST_COLUMNS)
+        assert detector._row_classifier is not None
