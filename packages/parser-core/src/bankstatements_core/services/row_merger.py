@@ -157,12 +157,13 @@ class RowMergerService:
         Returns:
             String classification: 'transaction', 'continuation', etc.
         """
-        # Import here to avoid circular dependency
-        from bankstatements_core.extraction.row_classification_facade import (
-            classify_row_type,
+        from bankstatements_core.extraction.row_classifiers import (
+            create_row_classifier_chain,
         )
 
-        return classify_row_type(row, columns)
+        if not hasattr(self, "_classifier"):
+            self._classifier = create_row_classifier_chain()
+        return self._classifier.classify(row, columns)
 
     def _preserve_balance_from_continuation(
         self,
