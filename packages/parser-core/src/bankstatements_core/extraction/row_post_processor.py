@@ -55,11 +55,16 @@ class RowPostProcessor:
         self._filename_date = filename_date
         self._filename = filename
         self._date_col = ColumnTypeIdentifier.find_first_column_of_type(columns, "date")
+        self._last_source: str = ""
 
     def process(self, row: dict, current_date: str) -> str:
         """Tag row with metadata and propagate date. Returns updated current_date.
 
         Only processes rows classified as 'transaction'; others are left unchanged.
+
+        Sets self._last_source to indicate where the returned date came from:
+        "row" if taken from the row itself, "propagated" if filled in from
+        current_date or filename_date, "" if no date column or non-transaction row.
 
         Args:
             row: Row dictionary (modified in-place)
@@ -68,17 +73,20 @@ class RowPostProcessor:
         Returns:
             Updated current_date
         """
+        self._last_source = ""
         if self._row_classifier.classify(row, self._columns) != "transaction":
             return current_date
 
         # Date propagation
         if self._date_col and row.get(self._date_col):
             current_date = row[self._date_col]
+            self._last_source = "row"
         elif self._date_col and (current_date or self._filename_date):
             fallback_date = current_date or self._filename_date
             row[self._date_col] = fallback_date
             if not current_date:
                 current_date = fallback_date
+            self._last_source = "propagated"
 
         # Metadata tagging
         row["Filename"] = self._filename
@@ -90,3 +98,59 @@ class RowPostProcessor:
             row["template_id"] = None
 
         return current_date
+
+
+class StatefulPageRowProcessor:
+    """Wraps RowPostProcessor to own the current_date state across pages.
+
+    Removes the need for callers to thread a current_date variable through
+    their page loop. A skipped page (page_rows is None) is handled explicitly
+    rather than being invisible — state is preserved but the skip is visible
+    via last_date_source().
+
+    Usage::
+
+        wrapper = StatefulPageRowProcessor(post_processor)
+        for page_rows in pages:
+            rows = wrapper.process_page(page_rows)  # None = skipped page
+    """
+
+    def __init__(self, post_processor: RowPostProcessor) -> None:
+        self._post_processor = post_processor
+        self._current_date: str = ""
+        self._last_source: str = ""
+
+    def process_page(self, page_rows: list[dict] | None) -> list[dict]:
+        """Process all rows on a page, maintaining date state.
+
+        Args:
+            page_rows: Rows extracted from one page, or None if the page was
+                       skipped (table structure not found). A None value is a
+                       no-op — date state is preserved unchanged.
+
+        Returns:
+            Non-empty processed rows, or [] if page_rows is None/empty.
+        """
+        if page_rows is None:
+            return []
+
+        result: list[dict] = []
+        for row in page_rows:
+            self._current_date = self._post_processor.process(row, self._current_date)
+            self._last_source = self._post_processor._last_source
+            if row:
+                result.append(row)
+        return result
+
+    def current_date(self) -> str:
+        """Return the most recently seen date across all processed pages."""
+        return self._current_date
+
+    def last_date_source(self) -> str:
+        """Return where the last date update came from: 'row', 'propagated', or ''."""
+        return self._last_source
+
+    def reset(self) -> None:
+        """Reset date state — useful when reusing the wrapper for a new PDF."""
+        self._current_date = ""
+        self._last_source = ""
