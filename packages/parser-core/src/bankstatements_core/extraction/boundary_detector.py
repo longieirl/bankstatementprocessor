@@ -9,7 +9,10 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
-from bankstatements_core.extraction.row_classifiers import RowClassifier, create_row_classifier_chain
+from bankstatements_core.extraction.row_classifiers import (
+    RowClassifier,
+    create_row_classifier_chain,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +69,11 @@ class TableBoundaryDetector:
         self.columns = columns
         self.fallback_bottom_y = fallback_bottom_y
         self.table_top_y = table_top_y
-        self._row_classifier = row_classifier if row_classifier is not None else create_row_classifier_chain()
+        self._row_classifier = (
+            row_classifier
+            if row_classifier is not None
+            else create_row_classifier_chain()
+        )
 
         # Configuration parameters
         self.min_gap_threshold = min_section_gap

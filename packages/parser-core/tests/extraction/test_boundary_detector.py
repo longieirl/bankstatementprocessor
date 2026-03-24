@@ -387,7 +387,9 @@ class TestTableBoundaryDetector:
 
         mock_chain = Mock(spec=RowClassifier)
         mock_chain.classify.return_value = "metadata"
-        detector = TableBoundaryDetector(columns=TEST_COLUMNS, row_classifier=mock_chain)
+        detector = TableBoundaryDetector(
+            columns=TEST_COLUMNS, row_classifier=mock_chain
+        )
         words = [{"text": "Footer", "x0": 60, "top": 350}]
         detector.detect_boundary(words)
         mock_chain.classify.assert_called()
