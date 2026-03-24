@@ -96,7 +96,7 @@ def calculate_column_coverage(rows: list, columns: dict) -> float:
 
 def has_column_type(
     columns: dict,
-    required_types,
+    required_types: str | list[str],
 ) -> bool:
     """Check if columns contain required types (backward compatibility wrapper)."""
     return _PAGE_VALIDATION_SERVICE.has_column_type(columns, required_types)
