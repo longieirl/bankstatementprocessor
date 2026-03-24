@@ -246,3 +246,6 @@ tmp/
 *.tgz
 *.rar
 *.7z
+
+# GSD planning artifacts
+.planning/
