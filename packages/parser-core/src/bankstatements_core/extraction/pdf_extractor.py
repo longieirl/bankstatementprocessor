@@ -188,11 +188,11 @@ class PDFTableExtractor:
             all_words = initial_area.extract_words(use_text_flow=True)
 
             if self.header_check_enabled:
-                from bankstatements_core.services.header_detection import (
-                    HeaderDetectionService,
-                )
                 from bankstatements_core.extraction.extraction_params import (
                     MIN_HEADER_KEYWORDS,
+                )
+                from bankstatements_core.services.header_detection import (
+                    HeaderDetectionService,
                 )
 
                 header_top = (
@@ -236,11 +236,11 @@ class PDFTableExtractor:
         words = table_area.extract_words(use_text_flow=True)
 
         if self.header_check_enabled:
-            from bankstatements_core.services.header_detection import (
-                HeaderDetectionService,
-            )
             from bankstatements_core.extraction.extraction_params import (
                 MIN_HEADER_KEYWORDS,
+            )
+            from bankstatements_core.services.header_detection import (
+                HeaderDetectionService,
             )
 
             header_top = (

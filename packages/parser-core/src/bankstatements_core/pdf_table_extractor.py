@@ -39,32 +39,49 @@ from bankstatements_core.extraction.extraction_facade import (  # noqa: E402, F4
     extract_tables_from_pdf,
 )
 
+# Direct service imports — replacing the three thin facade modules
 # Re-export extraction parameters (backward compatibility)
 from bankstatements_core.extraction.extraction_params import (  # noqa: E402, F401
     ADMINISTRATIVE_PATTERNS,
     CONTENT_DENSITY_THRESHOLD,
     ENABLE_PAGE_VALIDATION,
+)
+from bankstatements_core.extraction.extraction_params import (  # noqa: E402, F401
     MIN_COLUMN_COVERAGE,
-    MIN_HEADER_KEYWORDS,
-    MIN_TABLE_ROWS,
-    MIN_TRANSACTION_RATIO,
+)
+from bankstatements_core.extraction.extraction_params import (
+    MIN_COLUMN_COVERAGE as _MIN_COLUMN_COVERAGE,
+)
+from bankstatements_core.extraction.extraction_params import MIN_HEADER_KEYWORDS
+from bankstatements_core.extraction.extraction_params import (
+    MIN_HEADER_KEYWORDS as _MIN_HEADER_KEYWORDS,
+)
+from bankstatements_core.extraction.extraction_params import MIN_TABLE_ROWS
+from bankstatements_core.extraction.extraction_params import (
+    MIN_TABLE_ROWS as _MIN_TABLE_ROWS,
+)
+from bankstatements_core.extraction.extraction_params import MIN_TRANSACTION_RATIO
+from bankstatements_core.extraction.extraction_params import (
+    MIN_TRANSACTION_RATIO as _MIN_TRANSACTION_RATIO,
+)
+from bankstatements_core.extraction.extraction_params import (  # noqa: E402, F401
     MIN_TRANSACTION_SCORE,
-    REQUIRE_AMOUNT_COLUMN,
-    REQUIRE_DATE_COLUMN,
-    SLIDING_WINDOW_SIZE,
+)
+from bankstatements_core.extraction.extraction_params import REQUIRE_AMOUNT_COLUMN
+from bankstatements_core.extraction.extraction_params import (
+    REQUIRE_AMOUNT_COLUMN as _REQUIRE_AMOUNT_COLUMN,
+)
+from bankstatements_core.extraction.extraction_params import REQUIRE_DATE_COLUMN
+from bankstatements_core.extraction.extraction_params import (
+    REQUIRE_DATE_COLUMN as _REQUIRE_DATE_COLUMN,
+)
+from bankstatements_core.extraction.extraction_params import SLIDING_WINDOW_SIZE
+from bankstatements_core.extraction.extraction_params import (
+    SLIDING_WINDOW_SIZE as _SLIDING_WINDOW_SIZE,
+)
+from bankstatements_core.extraction.extraction_params import (  # noqa: E402, F401
     TABLE_BOTTOM_Y,
     TABLE_TOP_Y,
-)
-
-# Direct service imports — replacing the three thin facade modules
-from bankstatements_core.extraction.extraction_params import (  # noqa: E402, F401
-    MIN_COLUMN_COVERAGE as _MIN_COLUMN_COVERAGE,
-    MIN_TABLE_ROWS as _MIN_TABLE_ROWS,
-    MIN_TRANSACTION_RATIO as _MIN_TRANSACTION_RATIO,
-    REQUIRE_AMOUNT_COLUMN as _REQUIRE_AMOUNT_COLUMN,
-    REQUIRE_DATE_COLUMN as _REQUIRE_DATE_COLUMN,
-    MIN_HEADER_KEYWORDS as _MIN_HEADER_KEYWORDS,
-    SLIDING_WINDOW_SIZE as _SLIDING_WINDOW_SIZE,
 )
 from bankstatements_core.extraction.row_classifiers import (  # noqa: E402, F401
     create_row_classifier_chain,
@@ -78,9 +95,7 @@ from bankstatements_core.services.header_detection import (  # noqa: E402, F401
 from bankstatements_core.services.page_validation import (  # noqa: E402, F401
     PageValidationService,
 )
-from bankstatements_core.services.row_merger import (  # noqa: E402, F401
-    RowMergerService,
-)
+from bankstatements_core.services.row_merger import RowMergerService  # noqa: E402, F401
 
 # Module-level singletons (instantiated once, not per-call)
 _PAGE_VALIDATION_SERVICE = PageValidationService(
