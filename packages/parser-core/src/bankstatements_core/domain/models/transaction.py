@@ -5,6 +5,7 @@ This module defines the core Transaction entity with validation and business log
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 
@@ -47,6 +48,9 @@ class Transaction:
     balance: str | None
     filename: str
     additional_fields: dict[str, str] = field(default_factory=dict)
+    source_page: int | None = None
+    confidence_score: float = 1.0
+    extraction_warnings: list[str] = field(default_factory=list)
 
     def is_debit(self) -> bool:
         """Check if transaction is a debit (money out).
@@ -204,12 +208,24 @@ class Transaction:
             "Filename",
             "filename",
             "source_pdf",
+            "source_page",
+            "confidence_score",
+            "extraction_warnings",
         }
         additional_fields = {
             k: str(v)
             for k, v in data.items()
             if k not in standard_keys and v is not None
         }
+
+        raw_source_page = data.get("source_page")
+        source_page = int(raw_source_page) if raw_source_page is not None else None
+        raw_confidence = data.get("confidence_score")
+        confidence_score = float(raw_confidence) if raw_confidence is not None else 1.0
+        raw_warnings = data.get("extraction_warnings")
+        extraction_warnings = (
+            json.loads(raw_warnings) if raw_warnings is not None else []
+        )
 
         return cls(
             date=date or "",
@@ -219,6 +235,9 @@ class Transaction:
             balance=balance,
             filename=filename,
             additional_fields=additional_fields,
+            source_page=source_page,
+            confidence_score=confidence_score,
+            extraction_warnings=extraction_warnings,
         )
 
     @staticmethod
@@ -260,6 +279,13 @@ class Transaction:
             "Balance €": self.balance,
             "Filename": self.filename,
         }
+
+        # Add enrichment metadata fields
+        result["source_page"] = (
+            str(self.source_page) if self.source_page is not None else None
+        )
+        result["confidence_score"] = str(self.confidence_score)
+        result["extraction_warnings"] = json.dumps(self.extraction_warnings)
 
         # Add any additional fields
         result.update(self.additional_fields)
