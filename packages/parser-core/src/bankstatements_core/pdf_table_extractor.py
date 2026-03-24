@@ -39,47 +39,19 @@ from bankstatements_core.extraction.extraction_facade import (  # noqa: E402, F4
     extract_tables_from_pdf,
 )
 
-# Direct service imports — replacing the three thin facade modules
 # Re-export extraction parameters (backward compatibility)
 from bankstatements_core.extraction.extraction_params import (  # noqa: E402, F401
     ADMINISTRATIVE_PATTERNS,
     CONTENT_DENSITY_THRESHOLD,
     ENABLE_PAGE_VALIDATION,
-)
-from bankstatements_core.extraction.extraction_params import (  # noqa: E402, F401
     MIN_COLUMN_COVERAGE,
-)
-from bankstatements_core.extraction.extraction_params import (
-    MIN_COLUMN_COVERAGE as _MIN_COLUMN_COVERAGE,
-)
-from bankstatements_core.extraction.extraction_params import MIN_HEADER_KEYWORDS
-from bankstatements_core.extraction.extraction_params import (
-    MIN_HEADER_KEYWORDS as _MIN_HEADER_KEYWORDS,
-)
-from bankstatements_core.extraction.extraction_params import MIN_TABLE_ROWS
-from bankstatements_core.extraction.extraction_params import (
-    MIN_TABLE_ROWS as _MIN_TABLE_ROWS,
-)
-from bankstatements_core.extraction.extraction_params import MIN_TRANSACTION_RATIO
-from bankstatements_core.extraction.extraction_params import (
-    MIN_TRANSACTION_RATIO as _MIN_TRANSACTION_RATIO,
-)
-from bankstatements_core.extraction.extraction_params import (  # noqa: E402, F401
+    MIN_HEADER_KEYWORDS,
+    MIN_TABLE_ROWS,
+    MIN_TRANSACTION_RATIO,
     MIN_TRANSACTION_SCORE,
-)
-from bankstatements_core.extraction.extraction_params import REQUIRE_AMOUNT_COLUMN
-from bankstatements_core.extraction.extraction_params import (
-    REQUIRE_AMOUNT_COLUMN as _REQUIRE_AMOUNT_COLUMN,
-)
-from bankstatements_core.extraction.extraction_params import REQUIRE_DATE_COLUMN
-from bankstatements_core.extraction.extraction_params import (
-    REQUIRE_DATE_COLUMN as _REQUIRE_DATE_COLUMN,
-)
-from bankstatements_core.extraction.extraction_params import SLIDING_WINDOW_SIZE
-from bankstatements_core.extraction.extraction_params import (
-    SLIDING_WINDOW_SIZE as _SLIDING_WINDOW_SIZE,
-)
-from bankstatements_core.extraction.extraction_params import (  # noqa: E402, F401
+    REQUIRE_AMOUNT_COLUMN,
+    REQUIRE_DATE_COLUMN,
+    SLIDING_WINDOW_SIZE,
     TABLE_BOTTOM_Y,
     TABLE_TOP_Y,
 )
@@ -99,11 +71,11 @@ from bankstatements_core.services.row_merger import RowMergerService  # noqa: E4
 
 # Module-level singletons (instantiated once, not per-call)
 _PAGE_VALIDATION_SERVICE = PageValidationService(
-    min_table_rows=_MIN_TABLE_ROWS,
-    min_column_coverage=_MIN_COLUMN_COVERAGE,
-    min_transaction_ratio=_MIN_TRANSACTION_RATIO,
-    require_date_column=_REQUIRE_DATE_COLUMN,
-    require_amount_column=_REQUIRE_AMOUNT_COLUMN,
+    min_table_rows=MIN_TABLE_ROWS,
+    min_column_coverage=MIN_COLUMN_COVERAGE,
+    min_transaction_ratio=MIN_TRANSACTION_RATIO,
+    require_date_column=REQUIRE_DATE_COLUMN,
+    require_amount_column=REQUIRE_AMOUNT_COLUMN,
 )
 _ROW_CLASSIFIER_CHAIN = create_row_classifier_chain()
 _HEADER_SERVICE = HeaderDetectionService()
@@ -133,7 +105,7 @@ def has_column_type(
 def detect_table_headers(words: list, columns: dict) -> bool:
     """Detect table headers (backward compatibility wrapper)."""
     return _HEADER_SERVICE.detect_headers(
-        words, columns, min_keywords=_MIN_HEADER_KEYWORDS
+        words, columns, min_keywords=MIN_HEADER_KEYWORDS
     )
 
 
@@ -150,7 +122,7 @@ def classify_row_type(row: dict, columns: dict) -> str:
 def analyze_content_density(
     word_groups: dict,
     columns: dict,
-    window_size: int = _SLIDING_WINDOW_SIZE,
+    window_size: int = SLIDING_WINDOW_SIZE,
 ) -> list:
     """Calculate transaction density in sliding windows (backward compat wrapper).
 
