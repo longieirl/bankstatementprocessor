@@ -12,6 +12,17 @@ from the new extraction modules. The implementation has been split into:
 from __future__ import annotations
 
 import logging
+import warnings
+
+warnings.warn(
+    "bankstatements_core.pdf_table_extractor is a backward-compatibility shim "
+    "and will be removed in a future version. "
+    "Import directly from bankstatements_core.extraction.extraction_facade, "
+    "bankstatements_core.extraction.validation_facade, or "
+    "bankstatements_core.extraction.row_classification_facade instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 import pdfplumber  # noqa: F401 - used by extraction module
 
