@@ -378,6 +378,8 @@ jobs:
     needs: test-core
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
+      - uses: actions/checkout@v6
+
       - name: Check if parser-core changed
         id: changes
         uses: dorny/paths-filter@v4
