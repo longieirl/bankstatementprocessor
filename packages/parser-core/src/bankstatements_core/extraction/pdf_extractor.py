@@ -144,22 +144,20 @@ class PDFTableExtractor:
         page_rows = self._row_builder.build_rows(words)
 
         if self.page_validation_enabled:
-            from bankstatements_core.extraction.validation_facade import (
-                validate_page_structure,
+            from bankstatements_core.services.page_validation import (
+                PageValidationService,
             )
 
-            if not validate_page_structure(page_rows, self.columns):
+            if not PageValidationService().validate_page_structure(page_rows, self.columns):
                 logger.info(
                     f"Page {page_num}: Invalid table structure detected, "
                     f"skipping {len(page_rows)} rows"
                 )
                 return None
 
-        from bankstatements_core.extraction.validation_facade import (
-            merge_continuation_lines,
-        )
+        from bankstatements_core.services.row_merger import RowMergerService
 
-        return merge_continuation_lines(page_rows, self.columns)
+        return RowMergerService().merge_continuation_lines(page_rows, self.columns)
 
     def _determine_boundaries_and_extract(
         self, page: Any, page_num: int
@@ -188,8 +186,11 @@ class PDFTableExtractor:
             all_words = initial_area.extract_words(use_text_flow=True)
 
             if self.header_check_enabled:
-                from bankstatements_core.extraction.validation_facade import (
-                    detect_table_headers,
+                from bankstatements_core.services.header_detection import (
+                    HeaderDetectionService,
+                )
+                from bankstatements_core.extraction.extraction_params import (
+                    MIN_HEADER_KEYWORDS,
                 )
 
                 header_top = (
@@ -200,7 +201,9 @@ class PDFTableExtractor:
                 header_area = page.crop((0, header_top, page.width, page.height))
                 header_words = header_area.extract_words(use_text_flow=True)
 
-                if not detect_table_headers(header_words, self.columns):
+                if not HeaderDetectionService().detect_headers(
+                    header_words, self.columns, min_keywords=MIN_HEADER_KEYWORDS
+                ):
                     logger.info(f"Page {page_num}: No table headers detected, skipping")
                     return None
 
@@ -231,8 +234,11 @@ class PDFTableExtractor:
         words = table_area.extract_words(use_text_flow=True)
 
         if self.header_check_enabled:
-            from bankstatements_core.extraction.validation_facade import (
-                detect_table_headers,
+            from bankstatements_core.services.header_detection import (
+                HeaderDetectionService,
+            )
+            from bankstatements_core.extraction.extraction_params import (
+                MIN_HEADER_KEYWORDS,
             )
 
             header_top = (
@@ -243,7 +249,9 @@ class PDFTableExtractor:
             header_area = page.crop((0, header_top, page.width, table_bottom_y))
             header_words = header_area.extract_words(use_text_flow=True)
 
-            if not detect_table_headers(header_words, self.columns):
+            if not HeaderDetectionService().detect_headers(
+                header_words, self.columns, min_keywords=MIN_HEADER_KEYWORDS
+            ):
                 logger.info(f"Page {page_num}: No table headers detected, skipping")
                 return None
 
