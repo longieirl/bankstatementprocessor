@@ -144,7 +144,9 @@ class PDFTableExtractor:
         page_rows = self._row_builder.build_rows(words)
 
         if self.page_validation_enabled:
-            from bankstatements_core.extraction.validation_facade import validate_page_structure
+            from bankstatements_core.extraction.validation_facade import (
+                validate_page_structure,
+            )
 
             if not validate_page_structure(page_rows, self.columns):
                 logger.info(
@@ -153,7 +155,9 @@ class PDFTableExtractor:
                 )
                 return None
 
-        from bankstatements_core.extraction.validation_facade import merge_continuation_lines
+        from bankstatements_core.extraction.validation_facade import (
+            merge_continuation_lines,
+        )
 
         return merge_continuation_lines(page_rows, self.columns)
 
@@ -184,7 +188,9 @@ class PDFTableExtractor:
             all_words = initial_area.extract_words(use_text_flow=True)
 
             if self.header_check_enabled:
-                from bankstatements_core.extraction.validation_facade import detect_table_headers
+                from bankstatements_core.extraction.validation_facade import (
+                    detect_table_headers,
+                )
 
                 header_top = (
                     header_check_top_y
@@ -225,7 +231,9 @@ class PDFTableExtractor:
         words = table_area.extract_words(use_text_flow=True)
 
         if self.header_check_enabled:
-            from bankstatements_core.extraction.validation_facade import detect_table_headers
+            from bankstatements_core.extraction.validation_facade import (
+                detect_table_headers,
+            )
 
             header_top = (
                 header_check_top_y

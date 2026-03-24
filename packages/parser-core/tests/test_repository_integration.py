@@ -85,6 +85,7 @@ class TestRepositoryIntegration:
         assert len(mock_repo.saved_json) == 1
         assert mock_repo.saved_json[0] == (test_data, test_path)
 
+
 class TestFileSystemTransactionRepository:
     """Test FileSystemTransactionRepository implementation."""
 

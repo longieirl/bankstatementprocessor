@@ -123,7 +123,9 @@ class PDFProcessingOrchestrator:
             logger.info("Processing PDF %d of %d", idx, len(pdf_files))
 
             try:
-                rows, page_count, iban = self.extraction_orchestrator.extract_from_pdf(pdf)
+                rows, page_count, iban = self.extraction_orchestrator.extract_from_pdf(
+                    pdf
+                )
                 pages_read += page_count
 
                 # Check if should be excluded (no IBAN and no data)

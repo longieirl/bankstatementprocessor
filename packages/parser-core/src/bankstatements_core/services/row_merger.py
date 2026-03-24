@@ -158,7 +158,9 @@ class RowMergerService:
             String classification: 'transaction', 'continuation', etc.
         """
         # Import here to avoid circular dependency
-        from bankstatements_core.extraction.row_classification_facade import classify_row_type
+        from bankstatements_core.extraction.row_classification_facade import (
+            classify_row_type,
+        )
 
         return classify_row_type(row, columns)
 
