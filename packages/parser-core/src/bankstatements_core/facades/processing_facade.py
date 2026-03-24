@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any
 
 from bankstatements_core.config.app_config import AppConfig, ConfigurationError
 from bankstatements_core.entitlements import EntitlementError, Entitlements
-from bankstatements_core.pdf_table_extractor import get_columns_config
+from bankstatements_core.config.column_config import get_columns_config
 
 if TYPE_CHECKING:
     from bankstatements_core.processor import BankStatementProcessor
