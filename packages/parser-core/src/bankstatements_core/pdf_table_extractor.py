@@ -14,6 +14,8 @@ from __future__ import annotations
 import logging
 import warnings
 
+import pdfplumber  # noqa: F401 - used by extraction module
+
 warnings.warn(
     "bankstatements_core.pdf_table_extractor is a backward-compatibility shim "
     "and will be removed in a future version. "
@@ -23,8 +25,6 @@ warnings.warn(
     DeprecationWarning,
     stacklevel=2,
 )
-
-import pdfplumber  # noqa: F401 - used by extraction module
 
 logger = logging.getLogger(__name__)
 

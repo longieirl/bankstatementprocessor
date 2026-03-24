@@ -4,7 +4,6 @@ import json  # noqa: F401 - imported for test mocking
 import logging
 from collections import defaultdict  # noqa: F401 - imported for test mocking
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 
 import pandas as pd
