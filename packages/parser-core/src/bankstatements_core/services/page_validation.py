@@ -190,6 +190,6 @@ class PageValidationService:
             String classification: 'transaction', etc.
         """
         # Import here to avoid circular dependency
-        from bankstatements_core.pdf_table_extractor import classify_row_type
+        from bankstatements_core.extraction.row_classification_facade import classify_row_type
 
         return classify_row_type(row, columns)
