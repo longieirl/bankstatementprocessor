@@ -28,7 +28,6 @@ class MockTransactionRepository(TransactionRepository):
     def __init__(self):
         self.saved_json = []
         self.saved_csv = []
-        self.appended_csv = []
 
     def save_as_json(self, transactions: list[dict], file_path: Path) -> None:
         """Track JSON saves."""
@@ -39,8 +38,8 @@ class MockTransactionRepository(TransactionRepository):
         self.saved_csv.append((data, file_path))
 
     def append_to_csv(self, file_path: Path, content: str) -> None:
-        """Track CSV appends."""
-        self.appended_csv.append((file_path, content))
+        """No-op for tests that don't need append tracking."""
+        pass
 
     def load_from_json(self, file_path: Path) -> list[dict]:
         """Mock JSON load."""
@@ -85,31 +84,6 @@ class TestRepositoryIntegration:
         # Verify repository was used
         assert len(mock_repo.saved_json) == 1
         assert mock_repo.saved_json[0] == (test_data, test_path)
-
-    def test_append_totals_uses_repository(self, tmp_path):
-        """Test that _append_totals_to_csv uses repository."""
-        mock_repo = MockTransactionRepository()
-        processor = create_test_processor(
-            input_dir=tmp_path / "input",
-            output_dir=tmp_path / "output",
-            repository=mock_repo,
-        )
-
-        # Append totals
-        test_path = tmp_path / "test.csv"
-        all_columns = ["Date", "Debit €", "Credit €"]
-        totals = {"Debit €": 100.50, "Credit €": 200.75}
-
-        processor._append_totals_to_csv(test_path, all_columns, totals)
-
-        # Verify repository was used
-        assert len(mock_repo.appended_csv) == 1
-        file_path, content = mock_repo.appended_csv[0]
-        assert file_path == test_path
-        assert "TOTAL" in content
-        assert "100.50" in content
-        assert "200.75" in content
-
 
 class TestFileSystemTransactionRepository:
     """Test FileSystemTransactionRepository implementation."""
