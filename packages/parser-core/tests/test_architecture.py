@@ -6,8 +6,11 @@ expressed purely through type-checking or linting.
 
 from __future__ import annotations
 
+import importlib
 import re
 from pathlib import Path
+
+import pytest
 
 
 def test_no_production_shim_imports():
@@ -15,10 +18,8 @@ def test_no_production_shim_imports():
 
     bankstatements_core.pdf_table_extractor is a backward-compatibility shim
     for external callers only. Internal production code must import directly
-    from the real facades:
-      - bankstatements_core.extraction.extraction_facade
-      - bankstatements_core.extraction.validation_facade
-      - bankstatements_core.extraction.row_classification_facade
+    from bankstatements_core.extraction.extraction_facade or
+    bankstatements_core.services instead.
     """
     src_root = Path(__file__).parent.parent / "src"
     pattern = re.compile(
@@ -39,7 +40,18 @@ def test_no_production_shim_imports():
     assert not violations, (
         "Production source imports from deprecated shim "
         "(bankstatements_core.pdf_table_extractor).\n"
-        "Use bankstatements_core.extraction.extraction_facade, "
-        "validation_facade, or row_classification_facade instead.\n\n"
+        "Use bankstatements_core.extraction.extraction_facade or "
+        "bankstatements_core.services instead.\n\n"
         "Violations:\n" + "\n".join(violations)
     )
+
+
+def test_facade_modules_deleted():
+    """Confirm the three thin facade pass-throughs are gone."""
+    for module in [
+        "bankstatements_core.extraction.content_analysis_facade",
+        "bankstatements_core.extraction.validation_facade",
+        "bankstatements_core.extraction.row_classification_facade",
+    ]:
+        with pytest.raises(ModuleNotFoundError):
+            importlib.import_module(module)
