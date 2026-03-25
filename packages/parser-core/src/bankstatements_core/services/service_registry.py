@@ -95,9 +95,7 @@ class ServiceRegistry:
             Fully wired ServiceRegistry instance.
         """
         from bankstatements_core.config.column_config import get_column_names
-        from bankstatements_core.patterns.strategies import (
-            AllFieldsDuplicateStrategy,
-        )
+        from bankstatements_core.patterns.strategies import AllFieldsDuplicateStrategy
         from bankstatements_core.processor import find_matching_columns
         from bankstatements_core.services.duplicate_detector import (
             DuplicateDetectionService,
