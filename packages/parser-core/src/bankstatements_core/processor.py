@@ -30,6 +30,8 @@ from bankstatements_core.services.transaction_processing_orchestrator import (
     TransactionProcessingOrchestrator,
 )
 from bankstatements_core.utils import is_date_column, to_float  # noqa: F401
+from bankstatements_core.domain import ExtractionResult
+from bankstatements_core.domain.converters import transactions_to_dicts
 
 logger = logging.getLogger(__name__)
 
@@ -276,33 +278,16 @@ class BankStatementProcessor:
         """
         return self._duplicate_service.detect_and_separate(all_rows)
 
-    def _process_all_pdfs(self) -> tuple[list[dict], int, dict[str, str]]:
+    def _process_all_pdfs(self) -> list[ExtractionResult]:
         """Process all PDF files in the input directory and extract transaction data.
 
         Returns:
-            Tuple of (all_rows, total_pages_read, pdf_ibans)
+            list[ExtractionResult] — one per processed PDF
         """
-        from bankstatements_core.domain.converters import transactions_to_dicts
-
         # Delegate to PDF processing orchestrator with recursive_scan setting
-        results = self._pdf_orchestrator.process_all_pdfs(
+        return self._pdf_orchestrator.process_all_pdfs(
             self.input_dir, recursive=self.recursive_scan
         )
-
-        # Adapt list[ExtractionResult] → (all_rows, pages_read, pdf_ibans) for caller
-        all_rows: list[dict] = []
-        pages_read = 0
-        pdf_ibans: dict[str, str] = {}
-        for result in results:
-            pages_read += result.page_count
-            # Skip excluded results (no IBAN, no transactions, but had pages)
-            if result.iban is None and len(result.transactions) == 0 and result.page_count > 0:
-                continue
-            if result.iban:
-                pdf_ibans[result.source_file.name] = result.iban
-            all_rows.extend(transactions_to_dicts(result.transactions))
-
-        return all_rows, pages_read, pdf_ibans
 
     def _sort_transactions_by_date(self, rows: list[dict]) -> list[dict]:
         """
@@ -325,7 +310,15 @@ class BankStatementProcessor:
         start_time = datetime.now()
 
         # Step 1: Extract transactions from all PDFs (delegated to orchestrator)
-        all_rows, pages_read, pdf_ibans = self._process_all_pdfs()
+        extraction_results = self._process_all_pdfs()  # list[ExtractionResult]
+        all_rows: list[dict] = []
+        pages_read = 0
+        pdf_ibans: dict[str, str] = {}
+        for result in extraction_results:
+            pages_read += result.page_count
+            if result.iban:
+                pdf_ibans[result.source_file.name] = result.iban
+            all_rows.extend(transactions_to_dicts(result.transactions))
         pdf_count = len(sorted(self.input_dir.glob("*.pdf")))
 
         # Step 2: Group transactions by IBAN (delegated to orchestrator)

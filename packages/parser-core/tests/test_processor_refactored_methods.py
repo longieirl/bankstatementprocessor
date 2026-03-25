@@ -87,14 +87,16 @@ class TestProcessorRefactoredMethods(unittest.TestCase):
                     ),
                 ]
 
-                all_rows, pages_read, pdf_ibans = processor._process_all_pdfs()
+                results = processor._process_all_pdfs()
 
                 # Verify results
-                self.assertEqual(len(all_rows), 2)
-                self.assertEqual(pages_read, 8)  # 5 + 3
-                self.assertEqual(all_rows[0]["Details"], "Test1")
-                self.assertEqual(all_rows[1]["Details"], "Test2")
-                self.assertIsInstance(pdf_ibans, dict)
+                self.assertEqual(len(results), 2)
+                self.assertEqual(results[0].page_count, 5)
+                self.assertEqual(results[1].page_count, 3)
+                self.assertEqual(results[0].transactions[0].to_dict()["Details"], "Test1")
+                self.assertEqual(results[1].transactions[0].to_dict()["Details"], "Test2")
+                self.assertIsNone(results[0].iban)
+                self.assertIsNone(results[1].iban)
 
     @patch(
         "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
@@ -114,12 +116,10 @@ class TestProcessorRefactoredMethods(unittest.TestCase):
             with patch.object(Path, "glob") as mock_glob:
                 mock_glob.return_value = []
 
-                all_rows, pages_read, pdf_ibans = processor._process_all_pdfs()
+                results = processor._process_all_pdfs()
 
                 # Should return empty results
-                self.assertEqual(len(all_rows), 0)
-                self.assertEqual(pages_read, 0)
-                self.assertEqual(len(pdf_ibans), 0)
+                self.assertEqual(len(results), 0)
                 mock_extract.assert_not_called()
 
     def test_sort_transactions_by_date_mixed_dates(self):
