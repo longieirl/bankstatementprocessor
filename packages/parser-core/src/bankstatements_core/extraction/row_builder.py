@@ -9,6 +9,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from bankstatements_core.extraction.word_utils import assign_words_to_columns, group_words_by_y
+
 if TYPE_CHECKING:
     from bankstatements_core.extraction.row_classifiers import RowClassifier
 
@@ -31,8 +33,6 @@ class RowBuilder:
     ) -> None:
         self._columns = columns
         self._row_classifier = row_classifier
-        self._column_names = list(columns.keys())
-        self._rightmost_column = self._column_names[-1] if self._column_names else None
 
     def build_rows(self, words: list[dict]) -> list[dict]:
         """Group words by Y position, assign to columns, return transaction/continuation rows.
@@ -43,35 +43,12 @@ class RowBuilder:
         Returns:
             List of row dictionaries classified as 'transaction' or 'continuation'
         """
-        lines: dict[float, list[dict]] = {}
-        for w in words:
-            y_key = round(w["top"], 0)
-            lines.setdefault(y_key, []).append(w)
-
+        lines = group_words_by_y(words)
         page_rows = []
         for _, line_words in sorted(lines.items()):
-            row = dict.fromkeys(self._columns, "")
-
-            for w in line_words:
-                x0 = w["x0"]
-                x1 = w.get("x1", x0 + max(len(w["text"]) * 3, 10))
-                text = w["text"]
-
-                for col, (xmin, xmax) in self._columns.items():
-                    if col == self._rightmost_column:
-                        if xmin <= x0 and x1 <= xmax:
-                            row[col] += text + " "
-                            break
-                    else:
-                        if xmin <= x0 < xmax:
-                            row[col] += text + " "
-                            break
-
-            row = {k: v.strip() for k, v in row.items()}
-
+            row = assign_words_to_columns(line_words, self._columns, strict_rightmost=True)
             if any(row.values()):
                 row_type = self._row_classifier.classify(row, self._columns)
                 if row_type in ["transaction", "continuation"]:
                     page_rows.append(row)
-
         return page_rows
