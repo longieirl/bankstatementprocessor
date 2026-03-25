@@ -12,6 +12,9 @@ from abc import ABC, abstractmethod
 from typing import Sequence
 
 from bankstatements_core.extraction.column_identifier import ColumnTypeIdentifier
+from bankstatements_core.services.row_analysis import RowAnalysisService
+
+_row_analysis_service = RowAnalysisService()
 
 
 class RowClassifier(ABC):
@@ -324,16 +327,7 @@ class TransactionClassifier(RowClassifier):
     @staticmethod
     def _looks_like_date(text: str) -> bool:
         """Check if text looks like a valid date."""
-        # Common date patterns
-        date_patterns = [
-            r"^\d{1,2}/\d{1,2}/\d{2,4}$",  # DD/MM/YY or DD/MM/YYYY
-            r"^\d{1,2}-\d{1,2}-\d{2,4}$",  # DD-MM-YY or DD-MM-YYYY
-            r"^\d{1,2}\s+[A-Za-z]{3,9}\s+\d{2,4}$",  # DD MMM YYYY or DD Month YYYY
-            r"^\d{1,2}\s+[A-Za-z]{3,9}$",  # DD MMM (without year)
-            r"^\d{2}[A-Z]{3}\d{2,4}$",  # DDMMMYY or DDMMMYYYY
-        ]
-        text = text.strip()
-        return any(re.match(pattern, text) for pattern in date_patterns)
+        return _row_analysis_service.looks_like_date(text)
 
 
 class DefaultMetadataClassifier(RowClassifier):

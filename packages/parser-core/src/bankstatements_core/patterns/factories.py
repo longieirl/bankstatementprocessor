@@ -86,19 +86,32 @@ class ProcessorFactory:
         if duplicate_strategy is None:
             duplicate_strategy = AllFieldsDuplicateStrategy()
 
+        # Build ProcessorConfig from AppConfig fields
+        processor_config = ProcessorConfig(
+            input_dir=config.input_dir,
+            output_dir=config.output_dir,
+            extraction=ExtractionConfig(
+                table_top_y=config.table_top_y,
+                table_bottom_y=config.table_bottom_y,
+                columns=columns,
+                enable_dynamic_boundary=config.enable_dynamic_boundary,
+            ),
+            processing=ProcessingConfig(
+                sort_by_date=config.sort_by_date,
+                recursive_scan=config.recursive_scan,
+                totals_columns=config.totals_columns,
+                generate_monthly_summary=config.generate_monthly_summary,
+                generate_expense_analysis=config.generate_expense_analysis,
+            ),
+            output=OutputConfig(
+                output_formats=config.output_formats,
+            ),
+        )
+
         # Build processor using fluent interface
         builder = (
             BankStatementProcessorBuilder()
-            .with_input_dir(config.input_dir)
-            .with_output_dir(config.output_dir)
-            .with_table_bounds(config.table_top_y, config.table_bottom_y)
-            .with_columns(columns)
-            .with_dynamic_boundary(config.enable_dynamic_boundary)
-            .with_date_sorting(config.sort_by_date)
-            .with_recursive_scan(config.recursive_scan)
-            .with_totals(config.totals_columns)
-            .with_monthly_summary(config.generate_monthly_summary)
-            .with_expense_analysis(config.generate_expense_analysis)
+            .with_processor_config(processor_config)
             .with_output_strategies(output_strategies)
             .with_duplicate_strategy(duplicate_strategy)
         )

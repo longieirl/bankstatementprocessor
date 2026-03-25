@@ -9,9 +9,11 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 
-from bankstatements_core.domain import dicts_to_transactions, transactions_to_dicts
+from bankstatements_core.services.date_parser import DateParserService
 
 logger = logging.getLogger(__name__)
+
+_date_parser_service = DateParserService()
 
 
 class SortingStrategy(ABC):
@@ -32,12 +34,7 @@ class SortingStrategy(ABC):
 
 
 class ChronologicalSortingStrategy(SortingStrategy):
-    """Strategy that sorts transactions chronologically by date.
-
-    Note:
-        Accepts list[dict] for backward compatibility but sorts using
-        Transaction objects internally for type-safe field access.
-    """
+    """Strategy that sorts transactions chronologically by date."""
 
     def sort(self, transactions: list[dict]) -> list[dict]:
         """
@@ -52,18 +49,14 @@ class ChronologicalSortingStrategy(SortingStrategy):
         if not transactions:
             return transactions
 
-        from bankstatements_core.processor import parse_transaction_date
+        logger.debug("Sorting %d transactions chronologically", len(transactions))
 
-        # Convert to domain objects
-        tx_objects = dicts_to_transactions(transactions)
-
-        logger.debug("Sorting %d transactions chronologically", len(tx_objects))
-
-        # Sort using domain object's date field (type-safe)
-        sorted_txs = sorted(tx_objects, key=lambda tx: parse_transaction_date(tx.date))
-
-        # Convert back to dicts for backward compatibility
-        return transactions_to_dicts(sorted_txs)
+        return sorted(
+            transactions,
+            key=lambda tx: _date_parser_service.parse_transaction_date(
+                tx.get("Date") or tx.get("date") or ""
+            ),
+        )
 
 
 class NoSortingStrategy(SortingStrategy):
