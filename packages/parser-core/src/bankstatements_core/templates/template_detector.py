@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import re
 from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 
 from pdfplumber.page import Page
@@ -25,35 +26,109 @@ from bankstatements_core.templates.template_registry import TemplateRegistry
 
 logger = logging.getLogger(__name__)
 
-# Detector weights for Phase 2 aggregated scoring
-# Higher weight = more reliable/specific detector
-DETECTOR_WEIGHTS = {
-    "IBAN": 2.0,  # Most reliable for bank statements (IBAN is unique)
-    "CardNumber": 2.0,  # NEW: Most reliable for credit card statements
-    "LoanReference": 2.0,  # NEW: Most reliable for loan statements
-    "ColumnHeader": 1.5,  # Strong indicator of template structure
-    "Header": 1.0,  # Baseline weight
-    "Filename": 0.8,  # Less reliable (users can rename files)
-    "Exclusion": 0.0,  # Binary filter, not used in scoring
-}
 
-# Minimum aggregate confidence required to select a template
-# Prevents weak matches from being selected
-# Threshold of 0.6 allows single detector matches (e.g., Filename @ 0.85 * 0.8 = 0.68)
-# while rejecting very weak matches (< 0.6)
-MIN_CONFIDENCE_THRESHOLD = 0.6
+@dataclass(frozen=True)
+class ScoringConfig:
+    """Injectable scoring policy for TemplateDetector.
+
+    Controls detector weights and the minimum aggregate confidence required
+    to select a template. Use ScoringConfig.default() for production behaviour.
+
+    Attributes:
+        weights: Mapping of detector name to score multiplier. Unknown detector
+                 names fall back to 1.0.
+        min_confidence_threshold: Minimum weighted aggregate score a template
+                                  must reach to be selected (exclusive lower bound
+                                  vs default; >= threshold passes).
+    """
+
+    weights: dict[str, float]
+    min_confidence_threshold: float
+
+    def __post_init__(self) -> None:
+        if not 0.0 < self.min_confidence_threshold <= 1.0:
+            raise ValueError(
+                f"min_confidence_threshold must be in (0.0, 1.0], "
+                f"got {self.min_confidence_threshold}"
+            )
+        for name, w in self.weights.items():
+            if w < 0.0:
+                raise ValueError(
+                    f"Weight for detector '{name}' must be >= 0.0, got {w}"
+                )
+
+    @classmethod
+    def default(cls) -> "ScoringConfig":
+        """Production scoring — used when no config is injected."""
+        return cls(
+            weights={
+                "IBAN": 2.0,
+                "CardNumber": 2.0,
+                "LoanReference": 2.0,
+                "ColumnHeader": 1.5,
+                "Header": 1.0,
+                "Filename": 0.8,
+                "Exclusion": 0.0,
+            },
+            min_confidence_threshold=0.6,
+        )
+
+    def weight_for(self, detector_name: str) -> float:
+        """Return the weight for a detector name, defaulting to 1.0 for unknowns."""
+        return self.weights.get(detector_name, 1.0)
+
+
+@dataclass
+class DetectionExplanation:
+    """Structured account of why a template was (or was not) selected.
+
+    Returned by TemplateDetector.get_detection_explanation(). Useful for
+    debugging mis-detections and writing tests that assert on scoring
+    outcomes without mocking individual detectors.
+
+    Attributes:
+        selected_template_id: ID of the selected template, or None if default used.
+        selected_score: Weighted aggregate score of the selected template (0.0 if
+                        default fallback was used).
+        threshold: The min_confidence_threshold that was applied.
+        passed_threshold: True if selected_score >= threshold.
+        per_template_scores: Weighted aggregate score for every candidate template.
+        per_template_breakdown: Human-readable per-detector contribution strings,
+                                e.g. {"aib": ["IBAN=0.95*2.0=1.90", ...]}.
+        tie_broken: True if multiple templates shared the top score.
+        tie_winner_reason: One of "IBAN match", "max confidence", "alphabetical",
+                           or None if no tie occurred.
+        used_default: True when the returned template is the registry default.
+        default_reason: Why the default was used, or None if a real match was found.
+    """
+
+    selected_template_id: str | None
+    selected_score: float
+    threshold: float
+    passed_threshold: bool
+    per_template_scores: dict[str, float]
+    per_template_breakdown: dict[str, list[str]]
+    tie_broken: bool
+    tie_winner_reason: str | None
+    used_default: bool
+    default_reason: str | None
 
 
 class TemplateDetector:
     """Orchestrates multi-signal template detection using confidence-based scoring."""
 
-    def __init__(self, registry: TemplateRegistry):
+    def __init__(
+        self, registry: TemplateRegistry, scoring: ScoringConfig | None = None
+    ):
         """Initialize detector with template registry.
 
         Args:
             registry: TemplateRegistry containing available templates
+            scoring: Optional scoring config (weights + threshold). Defaults to
+                     ScoringConfig.default() — production weights, threshold 0.6.
         """
         self.registry = registry
+        self._scoring = scoring if scoring is not None else ScoringConfig.default()
 
         # Initialize detector chain
         # ExclusionDetector runs FIRST to filter out excluded templates
@@ -193,43 +268,9 @@ class TemplateDetector:
             logger.warning("No enabled templates found, using default")
             return self.registry.get_default_template()
 
-        # Phase 2: Aggregate scores from all detectors
-        template_scores: dict[str, float] = defaultdict(float)
-        template_details: dict[str, list[DetectionResult]] = defaultdict(list)
-        excluded_templates: set[str] = set()
-
-        for detector in self.detectors:
-            try:
-                results = detector.detect(pdf_path, first_page, templates)
-                if results:
-                    for result in results:
-                        # Skip excluded templates (confidence = 0.0)
-                        if result.confidence == 0.0:
-                            logger.debug(
-                                f"Template '{result.template.id}' excluded by "
-                                f"{result.detector_name}"
-                            )
-                            # Mark as excluded
-                            excluded_templates.add(result.template.id)
-                            continue
-
-                        # Skip templates that were already excluded
-                        if result.template.id in excluded_templates:
-                            continue
-
-                        # Apply detector-specific weight
-                        weight = DETECTOR_WEIGHTS.get(result.detector_name, 1.0)
-                        weighted_score = result.confidence * weight
-
-                        template_scores[result.template.id] += weighted_score
-                        template_details[result.template.id].append(result)
-
-            except (AttributeError, ValueError, TypeError, OSError) as e:
-                # Expected errors: PDF access issues, text extraction failures, type errors
-                logger.error(
-                    f"Error in {detector.name} detector for {pdf_path.name}: {e}"
-                )
-            # Let unexpected errors bubble up
+        template_scores, template_details, excluded_templates = self._run_scoring(
+            pdf_path, first_page, templates
+        )
 
         # Remove excluded templates
         valid_scores = {
@@ -272,10 +313,10 @@ class TemplateDetector:
         best_score = valid_scores[best_template_id]
 
         # Phase 2: Check minimum confidence threshold
-        if best_score < MIN_CONFIDENCE_THRESHOLD:
+        if best_score < self._scoring.min_confidence_threshold:
             logger.warning(
                 f"Best match '{best_template_id}' has confidence {best_score:.2f}, "
-                f"below threshold {MIN_CONFIDENCE_THRESHOLD}. Using default template."
+                f"below threshold {self._scoring.min_confidence_threshold}. Using default template."
             )
             if document_type:
                 return self.registry.get_default_for_type(document_type)
@@ -307,6 +348,54 @@ class TemplateDetector:
             f"(aggregate confidence={best_score:.2f}) for {pdf_path.name}"
         )
         return best_template
+
+    def _run_scoring(
+        self,
+        pdf_path: Path,
+        first_page: Page,
+        templates: list[BankTemplate],
+    ) -> tuple[dict[str, float], dict[str, list[DetectionResult]], set[str]]:
+        """Run all detectors and aggregate weighted scores per template.
+
+        Args:
+            pdf_path: Path to the PDF file.
+            first_page: First page of the PDF.
+            templates: Candidate templates to score.
+
+        Returns:
+            Tuple of (template_scores, template_details, excluded_templates).
+        """
+        template_scores: dict[str, float] = defaultdict(float)
+        template_details: dict[str, list[DetectionResult]] = defaultdict(list)
+        excluded_templates: set[str] = set()
+
+        for detector in self.detectors:
+            try:
+                results = detector.detect(pdf_path, first_page, templates)
+                if results:
+                    for result in results:
+                        if result.confidence == 0.0:
+                            logger.debug(
+                                f"Template '{result.template.id}' excluded by "
+                                f"{result.detector_name}"
+                            )
+                            excluded_templates.add(result.template.id)
+                            continue
+
+                        if result.template.id in excluded_templates:
+                            continue
+
+                        weight = self._scoring.weight_for(result.detector_name)
+                        weighted_score = result.confidence * weight
+                        template_scores[result.template.id] += weighted_score
+                        template_details[result.template.id].append(result)
+
+            except (AttributeError, ValueError, TypeError, OSError) as e:
+                logger.error(
+                    f"Error in {detector.name} detector for {pdf_path.name}: {e}"
+                )
+
+        return dict(template_scores), dict(template_details), excluded_templates
 
     def _break_tie(
         self,
@@ -353,6 +442,143 @@ class TemplateDetector:
         alphabetical_first = sorted(tied_templates)[0]
         logger.debug(f"Tie-breaker: {alphabetical_first} (alphabetically first)")
         return alphabetical_first
+
+    def get_detection_explanation(
+        self, pdf_path: Path, first_page: Page
+    ) -> DetectionExplanation:
+        """Return a structured explanation of template scoring for a given PDF.
+
+        Runs the same scoring logic as detect_template() but returns full
+        diagnostic detail rather than just the winning template.
+
+        Args:
+            pdf_path: Path to the PDF file.
+            first_page: First page of the PDF.
+
+        Returns:
+            DetectionExplanation with per-template scores, breakdown, and
+            tie-break metadata.
+        """
+        document_type = self._classify_document_type(first_page)
+
+        if document_type:
+            templates = self.registry.get_templates_by_type(document_type)
+            if not templates:
+                templates = self.registry.get_all_templates()
+        else:
+            templates = self.registry.get_all_templates()
+
+        threshold = self._scoring.min_confidence_threshold
+
+        if not templates:
+            return DetectionExplanation(
+                selected_template_id=None,
+                selected_score=0.0,
+                threshold=threshold,
+                passed_threshold=False,
+                per_template_scores={},
+                per_template_breakdown={},
+                tie_broken=False,
+                tie_winner_reason=None,
+                used_default=True,
+                default_reason="no templates available",
+            )
+
+        template_scores, template_details, excluded_templates = self._run_scoring(
+            pdf_path, first_page, templates
+        )
+
+        valid_scores = {
+            tid: score
+            for tid, score in template_scores.items()
+            if tid not in excluded_templates and score > 0.0
+        }
+
+        per_template_breakdown: dict[str, list[str]] = {
+            tid: [
+                f"{d.detector_name}={d.confidence:.2f}"
+                f"*{self._scoring.weight_for(d.detector_name):.1f}"
+                f"={d.confidence * self._scoring.weight_for(d.detector_name):.2f}"
+                for d in sorted(details, key=lambda x: x.confidence, reverse=True)
+            ]
+            for tid, details in template_details.items()
+        }
+
+        if not valid_scores:
+            return DetectionExplanation(
+                selected_template_id=None,
+                selected_score=0.0,
+                threshold=threshold,
+                passed_threshold=False,
+                per_template_scores=valid_scores,
+                per_template_breakdown=per_template_breakdown,
+                tie_broken=False,
+                tie_winner_reason=None,
+                used_default=True,
+                default_reason="no templates scored above zero",
+            )
+
+        best_template_id = max(valid_scores, key=lambda x: valid_scores[x])
+        best_score = valid_scores[best_template_id]
+
+        if best_score < threshold:
+            return DetectionExplanation(
+                selected_template_id=best_template_id,
+                selected_score=best_score,
+                threshold=threshold,
+                passed_threshold=False,
+                per_template_scores=valid_scores,
+                per_template_breakdown=per_template_breakdown,
+                tie_broken=False,
+                tie_winner_reason=None,
+                used_default=True,
+                default_reason=f"best score {best_score:.2f} below threshold {threshold}",
+            )
+
+        tied_templates = [
+            tid for tid, score in valid_scores.items() if score == best_score
+        ]
+        tie_broken = len(tied_templates) > 1
+        tie_winner_reason: str | None = None
+
+        if tie_broken:
+            # Determine reason without re-running full tie-break
+            has_iban = {
+                tid: any(
+                    d.detector_name == "IBAN" for d in template_details.get(tid, [])
+                )
+                for tid in tied_templates
+            }
+            if any(has_iban.values()):
+                tie_winner_reason = "IBAN match"
+            else:
+                max_confs = {
+                    tid: max(
+                        (d.confidence for d in template_details.get(tid, [])),
+                        default=0.0,
+                    )
+                    for tid in tied_templates
+                }
+                top_max = max(max_confs.values())
+                winners_by_max = [tid for tid, c in max_confs.items() if c == top_max]
+                if len(winners_by_max) == 1:
+                    tie_winner_reason = "max confidence"
+                else:
+                    tie_winner_reason = "alphabetical"
+            best_template_id = self._break_tie(tied_templates, template_details)
+
+        return DetectionExplanation(
+            selected_template_id=best_template_id,
+            selected_score=best_score,
+            threshold=threshold,
+            passed_threshold=True,
+            per_template_scores=valid_scores,
+            per_template_breakdown=per_template_breakdown,
+            tie_broken=tie_broken,
+            tie_winner_reason=tie_winner_reason,
+            used_default=False,
+            default_reason=None,
+        )
 
     def force_template(self, template_id: str) -> BankTemplate | None:
         """Force use of specific template by ID.

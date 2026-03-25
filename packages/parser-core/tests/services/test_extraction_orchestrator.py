@@ -8,6 +8,8 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from bankstatements_core.config.processor_config import ExtractionConfig
+from bankstatements_core.domain import ExtractionResult
+from bankstatements_core.domain.converters import dicts_to_transactions
 from bankstatements_core.services.extraction_orchestrator import ExtractionOrchestrator
 
 
@@ -34,17 +36,21 @@ class TestExtractionOrchestrator(unittest.TestCase):
         pdf_path.write_text("fake pdf")
 
         # Mock successful extraction
-        mock_extract.return_value = (
-            [{"Date": "01/01/23", "Details": "Test"}],
-            5,
-            "IE12BOFI90000112345",
+        mock_extract.return_value = ExtractionResult(
+            transactions=dicts_to_transactions(
+                [{"Date": "01/01/23", "Details": "Test"}]
+            ),
+            page_count=5,
+            iban="IE12BOFI90000112345",
+            source_file=pdf_path,
         )
 
-        rows, pages, iban = self.orchestrator.extract_from_pdf(pdf_path)
+        result = self.orchestrator.extract_from_pdf(pdf_path)
 
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(pages, 5)
-        self.assertEqual(iban, "IE12BOFI90000112345")
+        self.assertIsInstance(result, ExtractionResult)
+        self.assertEqual(len(result.transactions), 1)
+        self.assertEqual(result.page_count, 5)
+        self.assertEqual(result.iban, "IE12BOFI90000112345")
         mock_extract.assert_called_once()
 
     @patch(
@@ -59,14 +65,20 @@ class TestExtractionOrchestrator(unittest.TestCase):
         mock_template = MagicMock()
         mock_template.name = "TestTemplate"
 
-        mock_extract.return_value = ([{"Date": "01/01/23"}], 3, None)
+        mock_extract.return_value = ExtractionResult(
+            transactions=dicts_to_transactions([{"Date": "01/01/23"}]),
+            page_count=3,
+            iban=None,
+            source_file=pdf_path,
+        )
 
-        rows, pages, iban = self.orchestrator.extract_from_pdf(
+        result = self.orchestrator.extract_from_pdf(
             pdf_path, forced_template=mock_template
         )
 
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(pages, 3)
+        self.assertIsInstance(result, ExtractionResult)
+        self.assertEqual(len(result.transactions), 1)
+        self.assertEqual(result.page_count, 3)
         # Verify extraction was called with the forced template
         call_args = mock_extract.call_args
         self.assertEqual(call_args[0][0], pdf_path)  # First positional arg
@@ -79,13 +91,16 @@ class TestExtractionOrchestrator(unittest.TestCase):
         pdf_path = Path(self.temp_dir) / "test.pdf"
         pdf_path.write_text("fake pdf")
 
-        mock_extract.return_value = ([], 2, None)
+        mock_extract.return_value = ExtractionResult(
+            transactions=[], page_count=2, iban=None, source_file=pdf_path
+        )
 
-        rows, pages, iban = self.orchestrator.extract_from_pdf(pdf_path)
+        result = self.orchestrator.extract_from_pdf(pdf_path)
 
-        self.assertEqual(len(rows), 0)
-        self.assertEqual(pages, 2)
-        self.assertIsNone(iban)
+        self.assertIsInstance(result, ExtractionResult)
+        self.assertEqual(len(result.transactions), 0)
+        self.assertEqual(result.page_count, 2)
+        self.assertIsNone(result.iban)
 
     @patch(
         "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
@@ -95,21 +110,25 @@ class TestExtractionOrchestrator(unittest.TestCase):
         pdf_path = Path(self.temp_dir) / "test.pdf"
         pdf_path.write_text("fake pdf")
 
-        mock_extract.return_value = (
-            [
-                {"Date": "01/01/23", "Details": "Test1"},
-                {"Date": "02/01/23", "Details": "Test2"},
-            ],
-            3,
-            None,
+        mock_extract.return_value = ExtractionResult(
+            transactions=dicts_to_transactions(
+                [
+                    {"Date": "01/01/23", "Details": "Test1"},
+                    {"Date": "02/01/23", "Details": "Test2"},
+                ]
+            ),
+            page_count=3,
+            iban=None,
+            source_file=pdf_path,
         )
 
-        rows, _, _ = self.orchestrator.extract_from_pdf(pdf_path)
+        result = self.orchestrator.extract_from_pdf(pdf_path)
 
-        # Rows should be returned as-is (Filename is added by caller, not orchestrator)
-        self.assertEqual(len(rows), 2)
-        self.assertEqual(rows[0]["Details"], "Test1")
-        self.assertEqual(rows[1]["Details"], "Test2")
+        self.assertIsInstance(result, ExtractionResult)
+        # transactions are Transaction objects; check via to_dict() for field values
+        self.assertEqual(len(result.transactions), 2)
+        self.assertEqual(result.transactions[0].to_dict()["Details"], "Test1")
+        self.assertEqual(result.transactions[1].to_dict()["Details"], "Test2")
 
     def test_initialization_without_errors(self):
         """Test orchestrator initializes without errors."""

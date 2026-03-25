@@ -61,36 +61,6 @@ class TestTableBoundaryDetector:
         boundary = detector.detect_boundary(words)
         assert boundary == 720
 
-    def test_group_words_by_y(self):
-        """Test grouping words by Y-coordinate."""
-        detector = TableBoundaryDetector(
-            columns=TEST_COLUMNS, fallback_bottom_y=720, table_top_y=300
-        )
-        words = [
-            {"text": "Word1", "x0": 30, "top": 350},
-            {"text": "Word2", "x0": 60, "top": 350},
-            {"text": "Word3", "x0": 30, "top": 370},
-        ]
-        lines = detector._group_words_by_y(words)
-        assert len(lines) == 2
-        assert 350.0 in lines
-        assert 370.0 in lines
-        assert len(lines[350.0]) == 2
-        assert len(lines[370.0]) == 1
-
-    def test_group_words_filters_above_table_top(self):
-        """Test that words above table_top_y are filtered out."""
-        detector = TableBoundaryDetector(
-            columns=TEST_COLUMNS, fallback_bottom_y=720, table_top_y=300
-        )
-        words = [
-            {"text": "Above", "x0": 30, "top": 250},  # Above table_top_y
-            {"text": "Below", "x0": 30, "top": 350},  # Below table_top_y
-        ]
-        lines = detector._group_words_by_y(words)
-        assert len(lines) == 1
-        assert 350.0 in lines
-
     def test_find_transaction_positions(self):
         """Test finding transaction positions."""
         detector = TableBoundaryDetector(
@@ -219,64 +189,6 @@ class TestTableBoundaryDetector:
         )
         # Should return None because there's a transaction after the gap
         assert result is None
-
-    def test_build_row_from_words(self):
-        """Test building a row from words."""
-        detector = TableBoundaryDetector(
-            columns=TEST_COLUMNS, fallback_bottom_y=720, table_top_y=300
-        )
-        words = [
-            {"text": "01", "x0": 30, "top": 350},
-            {"text": "Jan", "x0": 35, "top": 350},
-            {"text": "Purchase", "x0": 60, "top": 350},
-            {"text": "50.00", "x0": 210, "top": 350},
-        ]
-        row = detector._build_row_from_words(words)
-        assert "01 Jan" in row["Date"]
-        assert "Purchase" in row["Details"]
-        assert "50.00" in row["Debit €"]
-
-    def test_calculate_column_coverage_full(self):
-        """Test column coverage calculation with full coverage."""
-        detector = TableBoundaryDetector(
-            columns=TEST_COLUMNS, fallback_bottom_y=720, table_top_y=300
-        )
-        rows = [
-            {
-                "Date": "01 Jan",
-                "Details": "Purchase",
-                "Debit €": "50.00",
-                "Credit €": "",
-                "Balance €": "100.00",
-            }
-        ]
-        coverage = detector._calculate_column_coverage(rows)
-        assert coverage == 0.8  # 4 out of 5 columns (Credit is empty)
-
-    def test_calculate_column_coverage_partial(self):
-        """Test column coverage calculation with partial coverage."""
-        detector = TableBoundaryDetector(
-            columns=TEST_COLUMNS, fallback_bottom_y=720, table_top_y=300
-        )
-        rows = [
-            {
-                "Date": "",
-                "Details": "Text",
-                "Debit €": "",
-                "Credit €": "",
-                "Balance €": "",
-            }
-        ]
-        coverage = detector._calculate_column_coverage(rows)
-        assert coverage == 0.2  # 1 out of 5 columns
-
-    def test_calculate_column_coverage_empty(self):
-        """Test column coverage calculation with empty rows."""
-        detector = TableBoundaryDetector(
-            columns=TEST_COLUMNS, fallback_bottom_y=720, table_top_y=300
-        )
-        coverage = detector._calculate_column_coverage([])
-        assert coverage == 0.0
 
     def test_detect_by_structure_breakdown(self):
         """Test detection by column structure breakdown."""

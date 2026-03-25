@@ -9,6 +9,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from bankstatements_core.config.processor_config import ProcessorConfig
+from bankstatements_core.domain import ExtractionResult
+from bankstatements_core.domain.converters import dicts_to_transactions
 
 
 def create_test_processor(input_dir, output_dir):
@@ -77,11 +79,11 @@ class TestTransactionDataNoBlocking:
             }
         )
 
-        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
         # Should NOT be detected as credit card (VISA only in transaction)
-        assert iban == "IE48AIBK93408921459015"
-        assert page_count == 1
+        assert result.iban == "IE48AIBK93408921459015"
+        assert result.page_count == 1
         # PDF should be processed, not blocked
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
@@ -127,11 +129,11 @@ class TestTransactionDataNoBlocking:
             }
         )
 
-        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
         # Should NOT be detected as credit card
-        assert iban == "IE29AIBK93115212345678"
-        assert page_count == 1
+        assert result.iban == "IE29AIBK93115212345678"
+        assert result.page_count == 1
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_iban_in_transaction_does_not_override_header_iban(self, mock_pdfplumber):
@@ -176,11 +178,11 @@ class TestTransactionDataNoBlocking:
             }
         )
 
-        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
         # Should return header IBAN, not transaction IBAN
-        assert iban == "IE48AIBK93408921459015"  # Normalized without spaces
-        assert page_count == 1
+        assert result.iban == "IE48AIBK93408921459015"  # Normalized without spaces
+        assert result.page_count == 1
 
     def test_processor_does_not_use_transaction_data_for_exclusion(self):
         """Test that processor only uses header data for exclusion decisions."""
@@ -197,17 +199,20 @@ class TestTransactionDataNoBlocking:
             with patch(
                 "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
             ) as mock_extract:
-                # Returns: rows with VISA in them, page count, IBAN from header
-                mock_extract.return_value = (
-                    [
-                        {
-                            "Date": "11 Aug",
-                            "Details": "MOBI CLICK VISA",
-                            "Debit €": "100.00",
-                        }
-                    ],
-                    1,
-                    "IE48AIBK93408921459015",  # IBAN from header
+                # Returns: ExtractionResult with VISA in transactions, IBAN from header
+                mock_extract.return_value = ExtractionResult(
+                    transactions=dicts_to_transactions(
+                        [
+                            {
+                                "Date": "11 Aug",
+                                "Details": "MOBI CLICK VISA",
+                                "Debit €": "100.00",
+                            }
+                        ]
+                    ),
+                    page_count=1,
+                    iban="IE48AIBK93408921459015",
+                    source_file=Path("test.pdf"),
                 )
 
                 processor = create_test_processor(input_dir, output_dir)
@@ -242,13 +247,16 @@ class TestTransactionDataNoBlocking:
             with patch(
                 "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
             ) as mock_extract:
-                mock_extract.return_value = (
-                    [
-                        {"Date": "11 Aug", "Details": detail}
-                        for detail in transaction_details
-                    ],
-                    1,
-                    "IE48AIBK93408921459015",  # Has IBAN
+                mock_extract.return_value = ExtractionResult(
+                    transactions=dicts_to_transactions(
+                        [
+                            {"Date": "11 Aug", "Details": detail}
+                            for detail in transaction_details
+                        ]
+                    ),
+                    page_count=1,
+                    iban="IE48AIBK93408921459015",
+                    source_file=Path("test.pdf"),
                 )
 
                 processor = create_test_processor(input_dir, output_dir)

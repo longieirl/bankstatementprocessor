@@ -10,6 +10,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from bankstatements_core.config.processor_config import ProcessorConfig
+from bankstatements_core.domain import ExtractionResult
+from bankstatements_core.domain.converters import dicts_to_transactions
 from bankstatements_core.extraction.pdf_extractor import PDFTableExtractor
 
 
@@ -40,7 +42,13 @@ class TestExcludedFilesLogging:
             with patch(
                 "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
             ) as mock_extract:
-                mock_extract.return_value = ([], 1, None)  # Empty rows, 1 page, no IBAN
+                mock_extract.return_value = ExtractionResult(
+                    transactions=[],
+                    page_count=1,
+                    iban=None,
+                    source_file=Path("credit_card.pdf"),
+                    warnings=["credit card statement detected, skipped"],
+                )
 
                 processor = create_test_processor(input_dir, output_dir)
                 processor.run()
@@ -77,10 +85,13 @@ class TestExcludedFilesLogging:
             with patch(
                 "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
             ) as mock_extract:
-                mock_extract.return_value = (
-                    [{"Date": "01/12/23", "Details": "Test", "Debit €": "100"}],
-                    1,
-                    "IE29AIBK93115212345678",
+                mock_extract.return_value = ExtractionResult(
+                    transactions=dicts_to_transactions(
+                        [{"Date": "01/12/23", "Details": "Test", "Debit €": "100"}]
+                    ),
+                    page_count=1,
+                    iban="IE29AIBK93115212345678",
+                    source_file=Path("bank_statement.pdf"),
                 )
 
                 processor = create_test_processor(input_dir, output_dir)
@@ -107,7 +118,13 @@ class TestExcludedFilesLogging:
             with patch(
                 "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
             ) as mock_extract:
-                mock_extract.return_value = ([], 2, None)
+                mock_extract.return_value = ExtractionResult(
+                    transactions=[],
+                    page_count=2,
+                    iban=None,
+                    source_file=Path("credit_card.pdf"),
+                    warnings=["credit card statement detected, skipped"],
+                )
 
                 processor = create_test_processor(input_dir, output_dir)
                 processor.run()
@@ -146,12 +163,21 @@ class TestExcludedFilesLogging:
             # Mock PDFTableExtractor to return different results
             def mock_extract_side_effect(pdf_path, *args, **kwargs):
                 if "credit_card" in str(pdf_path):
-                    return ([], 1, None)  # Excluded
+                    return ExtractionResult(
+                        transactions=[],
+                        page_count=1,
+                        iban=None,
+                        source_file=pdf_path,
+                        warnings=["credit card statement detected, skipped"],
+                    )
                 else:
-                    return (
-                        [{"Date": "01/12/23", "Details": "Test", "Debit €": "100"}],
-                        1,
-                        "IE29AIBK93115212345678",
+                    return ExtractionResult(
+                        transactions=dicts_to_transactions(
+                            [{"Date": "01/12/23", "Details": "Test", "Debit €": "100"}]
+                        ),
+                        page_count=1,
+                        iban="IE29AIBK93115212345678",
+                        source_file=pdf_path,
                     )
 
             with patch(
@@ -187,7 +213,13 @@ class TestExcludedFilesLogging:
             with patch(
                 "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
             ) as mock_extract:
-                mock_extract.return_value = ([], 3, None)  # 3 pages
+                mock_extract.return_value = ExtractionResult(
+                    transactions=[],
+                    page_count=3,
+                    iban=None,
+                    source_file=Path("test.pdf"),
+                    warnings=["credit card statement detected, skipped"],
+                )
 
                 processor = create_test_processor(input_dir, output_dir)
                 processor.run()
@@ -302,7 +334,12 @@ class TestExcludedFilesLogging:
             with patch(
                 "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
             ) as mock_extract:
-                mock_extract.return_value = ([], 2, "IE29AIBK93115212345678")
+                mock_extract.return_value = ExtractionResult(
+                    transactions=[],
+                    page_count=2,
+                    iban="IE29AIBK93115212345678",
+                    source_file=Path("bank_statement.pdf"),
+                )
 
                 processor = create_test_processor(input_dir, output_dir)
                 processor.run()
@@ -333,10 +370,21 @@ class TestExcludedFilesLogging:
             def mock_extract_side_effect(pdf_path, *args, **kwargs):
                 if "bank_with_iban" in str(pdf_path):
                     # Has IBAN, empty rows (should NOT be excluded)
-                    return ([], 2, "IE29AIBK93115212345678")
+                    return ExtractionResult(
+                        transactions=[],
+                        page_count=2,
+                        iban="IE29AIBK93115212345678",
+                        source_file=pdf_path,
+                    )
                 else:
                     # No IBAN, empty rows (SHOULD be excluded)
-                    return ([], 1, None)
+                    return ExtractionResult(
+                        transactions=[],
+                        page_count=1,
+                        iban=None,
+                        source_file=pdf_path,
+                        warnings=["credit card statement detected, skipped"],
+                    )
 
             with patch(
                 "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"

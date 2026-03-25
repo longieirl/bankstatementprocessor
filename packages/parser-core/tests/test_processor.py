@@ -16,6 +16,8 @@ from bankstatements_core.config.processor_config import (
     ProcessingConfig,
     ProcessorConfig,
 )
+from bankstatements_core.domain import ExtractionResult
+from bankstatements_core.domain.converters import dicts_to_transactions
 from bankstatements_core.processor import (
     BankStatementProcessor,
     calculate_column_totals,
@@ -220,9 +222,21 @@ class TestBankStatementProcessor(unittest.TestCase):
         with patch(
             "bankstatements_core.services.pdf_processing_orchestrator.PDFProcessingOrchestrator.process_all_pdfs"
         ) as mock_process:
-            # Configure mock to return tuple of (transactions, pages_read, ibans)
-            all_transactions = mock_data_pdf1 + mock_data_pdf2
-            mock_process.return_value = (all_transactions, 2, {})
+            # Configure mock to return list[ExtractionResult]
+            mock_process.return_value = [
+                ExtractionResult(
+                    transactions=dicts_to_transactions(mock_data_pdf1),
+                    page_count=1,
+                    iban=None,
+                    source_file=pdf1,
+                ),
+                ExtractionResult(
+                    transactions=dicts_to_transactions(mock_data_pdf2),
+                    page_count=1,
+                    iban=None,
+                    source_file=pdf2,
+                ),
+            ]
 
             processor = create_test_processor(self.input_dir, self.output_dir)
             result = processor.run()
@@ -274,9 +288,23 @@ class TestBankStatementProcessor(unittest.TestCase):
 
         # Mock: first PDF succeeds, second fails, third succeeds
         mock_extract.side_effect = [
-            ([{"Date": "01 Jan 2024", "Details": "Transaction 1"}], 1, None),
+            ExtractionResult(
+                transactions=dicts_to_transactions(
+                    [{"Date": "01 Jan 2024", "Details": "Transaction 1"}]
+                ),
+                page_count=1,
+                iban=None,
+                source_file=Path("good.pdf"),
+            ),
             OSError("Failed to open PDF"),
-            ([{"Date": "02 Jan 2024", "Details": "Transaction 2"}], 1, None),
+            ExtractionResult(
+                transactions=dicts_to_transactions(
+                    [{"Date": "02 Jan 2024", "Details": "Transaction 2"}]
+                ),
+                page_count=1,
+                iban=None,
+                source_file=Path("good2.pdf"),
+            ),
         ]
 
         processor = create_test_processor(self.input_dir, self.output_dir)
@@ -298,8 +326,21 @@ class TestBankStatementProcessor(unittest.TestCase):
 
         # Mock: first PDF returns no rows, second has data
         mock_extract.side_effect = [
-            ([], 1, None),  # Empty PDF with 1 page
-            ([{"Date": "01 Jan 2024", "Details": "Transaction 1"}], 1, None),
+            ExtractionResult(
+                transactions=[],
+                page_count=1,
+                iban=None,
+                source_file=Path("empty.pdf"),
+                warnings=["credit card statement detected, skipped"],
+            ),
+            ExtractionResult(
+                transactions=dicts_to_transactions(
+                    [{"Date": "01 Jan 2024", "Details": "Transaction 1"}]
+                ),
+                page_count=1,
+                iban=None,
+                source_file=Path("with_data.pdf"),
+            ),
         ]
 
         processor = create_test_processor(self.input_dir, self.output_dir)

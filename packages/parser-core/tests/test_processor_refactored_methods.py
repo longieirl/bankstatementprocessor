@@ -16,6 +16,8 @@ from bankstatements_core.config.processor_config import (
     ExtractionConfig,
     ProcessorConfig,
 )
+from bankstatements_core.domain import ExtractionResult
+from bankstatements_core.domain.converters import dicts_to_transactions
 from bankstatements_core.processor import BankStatementProcessor
 
 # Module-level defaults to avoid B008 (function call in defaults)
@@ -75,18 +77,38 @@ class TestProcessorRefactoredMethods(unittest.TestCase):
 
                 # Mock extract_tables_from_pdf to return different data
                 mock_extract.side_effect = [
-                    ([{"Date": "01/01/23", "Details": "Test1"}], 5, None),
-                    ([{"Date": "02/01/23", "Details": "Test2"}], 3, None),
+                    ExtractionResult(
+                        transactions=dicts_to_transactions(
+                            [{"Date": "01/01/23", "Details": "Test1"}]
+                        ),
+                        page_count=5,
+                        iban=None,
+                        source_file=Path("file1.pdf"),
+                    ),
+                    ExtractionResult(
+                        transactions=dicts_to_transactions(
+                            [{"Date": "02/01/23", "Details": "Test2"}]
+                        ),
+                        page_count=3,
+                        iban=None,
+                        source_file=Path("file2.pdf"),
+                    ),
                 ]
 
-                all_rows, pages_read, pdf_ibans = processor._process_all_pdfs()
+                results = processor._process_all_pdfs()
 
                 # Verify results
-                self.assertEqual(len(all_rows), 2)
-                self.assertEqual(pages_read, 8)  # 5 + 3
-                self.assertEqual(all_rows[0]["Details"], "Test1")
-                self.assertEqual(all_rows[1]["Details"], "Test2")
-                self.assertIsInstance(pdf_ibans, dict)
+                self.assertEqual(len(results), 2)
+                self.assertEqual(results[0].page_count, 5)
+                self.assertEqual(results[1].page_count, 3)
+                self.assertEqual(
+                    results[0].transactions[0].to_dict()["Details"], "Test1"
+                )
+                self.assertEqual(
+                    results[1].transactions[0].to_dict()["Details"], "Test2"
+                )
+                self.assertIsNone(results[0].iban)
+                self.assertIsNone(results[1].iban)
 
     @patch(
         "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
@@ -106,12 +128,10 @@ class TestProcessorRefactoredMethods(unittest.TestCase):
             with patch.object(Path, "glob") as mock_glob:
                 mock_glob.return_value = []
 
-                all_rows, pages_read, pdf_ibans = processor._process_all_pdfs()
+                results = processor._process_all_pdfs()
 
                 # Should return empty results
-                self.assertEqual(len(all_rows), 0)
-                self.assertEqual(pages_read, 0)
-                self.assertEqual(len(pdf_ibans), 0)
+                self.assertEqual(len(results), 0)
                 mock_extract.assert_not_called()
 
     def test_sort_transactions_by_date_mixed_dates(self):
@@ -323,13 +343,16 @@ class TestProcessorRefactoredIntegration(unittest.TestCase):
             )
 
             # Mock extract_tables_from_pdf
-            mock_extract.return_value = (
-                [
-                    {"Date": "15/06/23", "Details": "Second", "Debit €": "200"},
-                    {"Date": "01/01/23", "Details": "First", "Debit €": "100"},
-                ],
-                2,
-                None,
+            mock_extract.return_value = ExtractionResult(
+                transactions=dicts_to_transactions(
+                    [
+                        {"Date": "15/06/23", "Details": "Second", "Debit €": "200"},
+                        {"Date": "01/01/23", "Details": "First", "Debit €": "100"},
+                    ]
+                ),
+                page_count=2,
+                iban=None,
+                source_file=Path("test.pdf"),
             )
 
             result = processor.run()

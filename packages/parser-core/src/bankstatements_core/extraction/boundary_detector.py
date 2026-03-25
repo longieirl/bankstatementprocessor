@@ -13,6 +13,11 @@ from bankstatements_core.extraction.row_classifiers import (
     RowClassifier,
     create_row_classifier_chain,
 )
+from bankstatements_core.extraction.word_utils import (
+    assign_words_to_columns,
+    calculate_column_coverage,
+    group_words_by_y,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +102,8 @@ class TableBoundaryDetector:
             return self.fallback_bottom_y
 
         # Phase 0: Group words and find transaction positions
-        lines = self._group_words_by_y(words)
+        filtered_words = [w for w in words if w["top"] >= self.table_top_y]
+        lines = group_words_by_y(filtered_words)
         if not lines:
             return self.fallback_bottom_y
 
@@ -156,23 +162,6 @@ class TableBoundaryDetector:
         logger.debug("No clear table end detected - using fallback boundary")
         return self.fallback_bottom_y
 
-    def _group_words_by_y(self, words: list[dict]) -> dict[float, list[dict]]:
-        """
-        Group words by Y-coordinate (rounded).
-
-        Args:
-            words: List of word dictionaries with 'top', 'x0', 'text' keys
-
-        Returns:
-            Dictionary mapping Y-coordinate to list of words at that Y
-        """
-        lines: dict[float, list[dict]] = {}
-        for w in words:
-            if w["top"] >= self.table_top_y:
-                y_key = round(w["top"], 0)
-                lines.setdefault(y_key, []).append(w)
-        return lines
-
     def _find_transaction_positions(
         self, lines: dict[float, list[dict]], sorted_y_coords: list[float]
     ) -> tuple[list[float], float | None]:
@@ -190,7 +179,7 @@ class TableBoundaryDetector:
         last_transaction_y = None
 
         for y_coord in sorted_y_coords:
-            row = self._build_row_from_words(lines[y_coord])
+            row = assign_words_to_columns(lines[y_coord], self.columns)
 
             if any(row.values()):
                 row_type = self._row_classifier.classify(row, self.columns)
@@ -278,7 +267,7 @@ class TableBoundaryDetector:
                 post_gap_transactions = 0
 
                 for y_coord in post_gap_y_coords:
-                    row = self._build_row_from_words(lines[y_coord])
+                    row = assign_words_to_columns(lines[y_coord], self.columns)
 
                     if (
                         any(row.values())
@@ -320,11 +309,11 @@ class TableBoundaryDetector:
             if last_transaction_y is not None and y_coord <= last_transaction_y:
                 continue
 
-            row = self._build_row_from_words(lines[y_coord])
+            row = assign_words_to_columns(lines[y_coord], self.columns)
 
             if any(row.values()):
                 # Check if this row has any structure (data in expected columns)
-                column_coverage = self._calculate_column_coverage([row])
+                column_coverage = calculate_column_coverage([row], self.columns)
                 if column_coverage < 0.3:  # Less than 30% of columns have data
                     structure_breakdown_count += 1
                 else:
@@ -369,7 +358,7 @@ class TableBoundaryDetector:
             if last_transaction_y is not None and y_coord <= last_transaction_y:
                 continue
 
-            row = self._build_row_from_words(lines[y_coord])
+            row = assign_words_to_columns(lines[y_coord], self.columns)
 
             if any(row.values()):
                 row_type = self._row_classifier.classify(row, self.columns)
@@ -391,48 +380,3 @@ class TableBoundaryDetector:
                         )
 
         return None
-
-    def _build_row_from_words(self, words: list[dict]) -> dict[str, str]:
-        """
-        Build a row dictionary from words by assigning to columns.
-
-        Args:
-            words: List of words at the same Y-coordinate
-
-        Returns:
-            Dictionary mapping column names to concatenated text
-        """
-        row = dict.fromkeys(self.columns, "")
-
-        for w in words:
-            x0 = w["x0"]
-            text = w["text"]
-            for col, (xmin, xmax) in self.columns.items():
-                if xmin <= x0 < xmax:
-                    row[col] += text + " "
-                    break
-
-        return {k: v.strip() for k, v in row.items()}
-
-    def _calculate_column_coverage(self, rows: list[dict[str, str]]) -> float:
-        """
-        Calculate what percentage of columns have data in the given rows.
-
-        Args:
-            rows: List of row dictionaries
-
-        Returns:
-            Float between 0.0 and 1.0 representing column coverage
-        """
-        if not rows:
-            return 0.0
-
-        total_columns = len(self.columns)
-        columns_with_data = set()
-
-        for row in rows:
-            for col_name, value in row.items():
-                if value and value.strip():
-                    columns_with_data.add(col_name)
-
-        return len(columns_with_data) / total_columns if total_columns > 0 else 0.0

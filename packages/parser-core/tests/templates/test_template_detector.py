@@ -8,7 +8,11 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from bankstatements_core.templates.detectors.base import DetectionResult
-from bankstatements_core.templates.template_detector import TemplateDetector
+from bankstatements_core.templates.template_detector import (
+    DetectionExplanation,
+    ScoringConfig,
+    TemplateDetector,
+)
 from bankstatements_core.templates.template_model import (
     BankTemplate,
     TemplateDetectionConfig,
@@ -808,3 +812,267 @@ class TestTemplateDetector:
         # Should call get_default_for_type with "credit_card_statement"
         mock_registry.get_default_for_type.assert_called_with("credit_card_statement")
         assert result == credit_card_default
+
+    # -----------------------------------------------------------------------
+    # ScoringConfig tests
+    # -----------------------------------------------------------------------
+
+    @patch(
+        "bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect"
+    )
+    @patch("bankstatements_core.templates.detectors.iban_detector.IBANDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.card_number_detector.CardNumberDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.loan_reference_detector.LoanReferenceDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect"
+    )
+    def test_threshold_boundary_passes(
+        self,
+        mock_column_detect,
+        mock_header_detect,
+        mock_filename_detect,
+        mock_loan_detect,
+        mock_card_detect,
+        mock_iban_detect,
+        mock_exclusion_detect,
+        mock_registry,
+        mock_page,
+    ):
+        """Filename score exactly at threshold (0.75 * 0.8 = 0.60 >= 0.60) selects template."""
+        revolut_template = mock_registry.get_all_templates()[1]
+
+        mock_exclusion_detect.return_value = []
+        mock_iban_detect.return_value = []
+        mock_card_detect.return_value = []
+        mock_loan_detect.return_value = []
+        mock_header_detect.return_value = []
+        mock_column_detect.return_value = []
+        mock_filename_detect.return_value = [
+            DetectionResult(
+                template=revolut_template,
+                confidence=0.75,  # 0.75 * 0.8 = 0.60 — exactly at threshold
+                detector_name="Filename",
+                match_details={},
+            )
+        ]
+
+        scoring = ScoringConfig(
+            weights={"Filename": 0.8},
+            min_confidence_threshold=0.60,
+        )
+        detector = TemplateDetector(mock_registry, scoring=scoring)
+        result = detector.detect_template(Path("test.pdf"), mock_page)
+
+        assert result == revolut_template
+
+    @patch(
+        "bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect"
+    )
+    @patch("bankstatements_core.templates.detectors.iban_detector.IBANDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.card_number_detector.CardNumberDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.loan_reference_detector.LoanReferenceDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect"
+    )
+    def test_threshold_boundary_fails(
+        self,
+        mock_column_detect,
+        mock_header_detect,
+        mock_filename_detect,
+        mock_loan_detect,
+        mock_card_detect,
+        mock_iban_detect,
+        mock_exclusion_detect,
+        mock_registry,
+        mock_page,
+    ):
+        """Filename score just below threshold (0.74 * 0.8 = 0.592 < 0.60) uses default."""
+        revolut_template = mock_registry.get_all_templates()[1]
+        default_template = mock_registry.get_default_template()
+
+        mock_exclusion_detect.return_value = []
+        mock_iban_detect.return_value = []
+        mock_card_detect.return_value = []
+        mock_loan_detect.return_value = []
+        mock_header_detect.return_value = []
+        mock_column_detect.return_value = []
+        mock_filename_detect.return_value = [
+            DetectionResult(
+                template=revolut_template,
+                confidence=0.74,  # 0.74 * 0.8 = 0.592 — just below threshold
+                detector_name="Filename",
+                match_details={},
+            )
+        ]
+
+        scoring = ScoringConfig(
+            weights={"Filename": 0.8},
+            min_confidence_threshold=0.60,
+        )
+        detector = TemplateDetector(mock_registry, scoring=scoring)
+        result = detector.detect_template(Path("test.pdf"), mock_page)
+
+        assert result == default_template
+
+    @patch(
+        "bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect"
+    )
+    @patch("bankstatements_core.templates.detectors.iban_detector.IBANDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.card_number_detector.CardNumberDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.loan_reference_detector.LoanReferenceDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect"
+    )
+    def test_weight_ordering_iban_beats_column_header(
+        self,
+        mock_column_detect,
+        mock_header_detect,
+        mock_filename_detect,
+        mock_loan_detect,
+        mock_card_detect,
+        mock_iban_detect,
+        mock_exclusion_detect,
+        mock_registry,
+        mock_page,
+    ):
+        """IBAN weight 2.0 (0.5*2.0=1.0) beats ColumnHeader weight 1.5 (0.6*1.5=0.9)."""
+        aib_template = mock_registry.get_all_templates()[0]
+        revolut_template = mock_registry.get_all_templates()[1]
+
+        mock_exclusion_detect.return_value = []
+        mock_card_detect.return_value = []
+        mock_loan_detect.return_value = []
+        mock_filename_detect.return_value = []
+        mock_header_detect.return_value = []
+        # AIB scores via IBAN: 0.5 * 2.0 = 1.0
+        mock_iban_detect.return_value = [
+            DetectionResult(
+                template=aib_template,
+                confidence=0.5,
+                detector_name="IBAN",
+                match_details={},
+            )
+        ]
+        # Revolut scores via ColumnHeader: 0.6 * 1.5 = 0.9
+        mock_column_detect.return_value = [
+            DetectionResult(
+                template=revolut_template,
+                confidence=0.6,
+                detector_name="ColumnHeader",
+                match_details={},
+            )
+        ]
+
+        scoring = ScoringConfig.default()
+        detector = TemplateDetector(mock_registry, scoring=scoring)
+        result = detector.detect_template(Path("test.pdf"), mock_page)
+
+        # AIB wins: 1.0 > 0.9
+        assert result == aib_template
+
+    @patch(
+        "bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect"
+    )
+    @patch("bankstatements_core.templates.detectors.iban_detector.IBANDetector.detect")
+    @patch(
+        "bankstatements_core.templates.detectors.card_number_detector.CardNumberDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.loan_reference_detector.LoanReferenceDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.filename_detector.FilenameDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.header_detector.HeaderDetector.detect"
+    )
+    @patch(
+        "bankstatements_core.templates.detectors.column_header_detector.ColumnHeaderDetector.detect"
+    )
+    def test_get_detection_explanation_tie_break_reason(
+        self,
+        mock_column_detect,
+        mock_header_detect,
+        mock_filename_detect,
+        mock_loan_detect,
+        mock_card_detect,
+        mock_iban_detect,
+        mock_exclusion_detect,
+        mock_registry,
+        mock_page,
+    ):
+        """get_detection_explanation populates tie_winner_reason when a tie is broken."""
+        aib_template = mock_registry.get_all_templates()[0]
+        revolut_template = mock_registry.get_all_templates()[1]
+
+        mock_exclusion_detect.return_value = []
+        mock_card_detect.return_value = []
+        mock_loan_detect.return_value = []
+        mock_filename_detect.return_value = []
+        # Create a tie: AIB via IBAN (0.25*2.0=0.5) + Header (0.3*1.0=0.3) = 0.8
+        #               Revolut via Header (0.8*1.0=0.8)                    = 0.8
+        mock_iban_detect.return_value = [
+            DetectionResult(
+                template=aib_template,
+                confidence=0.25,
+                detector_name="IBAN",
+                match_details={},
+            )
+        ]
+        mock_header_detect.return_value = [
+            DetectionResult(
+                template=aib_template,
+                confidence=0.3,
+                detector_name="Header",
+                match_details={},
+            ),
+            DetectionResult(
+                template=revolut_template,
+                confidence=0.8,
+                detector_name="Header",
+                match_details={},
+            ),
+        ]
+        mock_column_detect.return_value = []
+
+        detector = TemplateDetector(mock_registry)
+        explanation = detector.get_detection_explanation(Path("test.pdf"), mock_page)
+
+        assert isinstance(explanation, DetectionExplanation)
+        assert explanation.tie_broken is True
+        assert explanation.tie_winner_reason == "IBAN match"
+        assert explanation.selected_template_id == "aib"
+        assert explanation.passed_threshold is True
+        assert explanation.used_default is False
+        assert "aib" in explanation.per_template_scores
+        assert "revolut" in explanation.per_template_scores

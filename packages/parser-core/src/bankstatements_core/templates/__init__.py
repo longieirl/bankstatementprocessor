@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from bankstatements_core.templates.template_detector import TemplateDetector
+from bankstatements_core.templates.template_detector import (
+    DetectionExplanation,
+    ScoringConfig,
+    TemplateDetector,
+)
 from bankstatements_core.templates.template_model import (
     BankTemplate,
     TemplateDetectionConfig,
@@ -13,6 +17,8 @@ from bankstatements_core.templates.template_registry import TemplateRegistry
 
 __all__ = [
     "BankTemplate",
+    "DetectionExplanation",
+    "ScoringConfig",
     "TemplateDetectionConfig",
     "TemplateExtractionConfig",
     "TemplateProcessingConfig",

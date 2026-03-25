@@ -9,6 +9,9 @@ from __future__ import annotations
 import logging
 
 from bankstatements_core.domain.column_types import get_type_as_string
+from bankstatements_core.extraction.word_utils import (
+    calculate_column_coverage as _calculate_column_coverage_impl,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -118,6 +121,8 @@ class PageValidationService:
     ) -> float:
         """Calculate what percentage of columns have meaningful data.
 
+        Delegates to word_utils.calculate_column_coverage for the canonical implementation.
+
         Args:
             rows: List of extracted rows
             columns: Column definitions
@@ -132,18 +137,7 @@ class PageValidationService:
             >>> service.calculate_column_coverage(rows, columns)
             0.666...
         """
-        if not rows or not columns:
-            return 0.0
-
-        column_names = list(columns.keys())
-        columns_with_data = set()
-
-        for row in rows:
-            for col_name in column_names:
-                if row.get(col_name, "").strip():
-                    columns_with_data.add(col_name)
-
-        return len(columns_with_data) / len(column_names)
+        return _calculate_column_coverage_impl(rows, columns)
 
     def has_column_type(
         self,

@@ -6,6 +6,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
+from bankstatements_core.domain import ExtractionResult
+from bankstatements_core.domain.converters import dicts_to_transactions
 from bankstatements_core.extraction.column_identifier import ColumnTypeIdentifier
 from bankstatements_core.pdf_table_extractor import (
     DEFAULT_COLUMNS,
@@ -67,29 +69,31 @@ class TestPdfTableExtractor(unittest.TestCase):
 
         # Test the extraction
         test_pdf_path = Path("/tmp/test.pdf")
-        rows, page_count, iban = extract_tables_from_pdf(
+        result = extract_tables_from_pdf(
             test_pdf_path, enable_page_validation=False, enable_header_check=False
         )
 
         # Verify results
-        self.assertEqual(page_count, 1)
-        self.assertEqual(len(rows), 3)
+        self.assertEqual(result.page_count, 1)
+        self.assertEqual(len(result.transactions), 3)
 
         # Check first transaction (has original date)
-        self.assertEqual(rows[0]["Date"].strip(), "01 Jan 2024")
-        self.assertEqual(rows[0]["Details"].strip(), "Salary Payment")
-        self.assertEqual(rows[0]["Credit €"].strip(), "3000.00")
-        self.assertEqual(rows[0]["Filename"], "test.pdf")
+        self.assertEqual(result.transactions[0].date.strip(), "01 Jan 2024")
+        self.assertEqual(result.transactions[0].details.strip(), "Salary Payment")
+        self.assertEqual(result.transactions[0].credit.strip(), "3000.00")
+        self.assertEqual(result.transactions[0].filename, "test.pdf")
 
         # Check second transaction (should inherit date from first)
-        self.assertEqual(rows[1]["Date"].strip(), "01 Jan 2024")  # Inherited!
-        self.assertEqual(rows[1]["Details"].strip(), "Coffee Shop")
-        self.assertEqual(rows[1]["Debit €"].strip(), "5.50")
+        self.assertEqual(
+            result.transactions[1].date.strip(), "01 Jan 2024"
+        )  # Inherited!
+        self.assertEqual(result.transactions[1].details.strip(), "Coffee Shop")
+        self.assertEqual(result.transactions[1].debit.strip(), "5.50")
 
         # Check third transaction (has new date)
-        self.assertEqual(rows[2]["Date"].strip(), "02 Jan 2024")
-        self.assertEqual(rows[2]["Details"].strip(), "Gas Station")
-        self.assertEqual(rows[2]["Debit €"].strip(), "40.00")
+        self.assertEqual(result.transactions[2].date.strip(), "02 Jan 2024")
+        self.assertEqual(result.transactions[2].details.strip(), "Gas Station")
+        self.assertEqual(result.transactions[2].debit.strip(), "40.00")
 
     @patch("bankstatements_core.pdf_table_extractor.pdfplumber.open")
     def test_extract_tables_filename_tagging(self, mock_pdfplumber):
@@ -117,13 +121,13 @@ class TestPdfTableExtractor(unittest.TestCase):
 
         # Test with specific filename - pass parameters directly instead of using env vars
         test_pdf_path = Path("/tmp/bank_statement_jan2024.pdf")
-        rows, page_count, iban = extract_tables_from_pdf(
+        result = extract_tables_from_pdf(
             test_pdf_path, enable_page_validation=False, enable_header_check=False
         )
 
         # Verify filename tagging
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0]["Filename"], "bank_statement_jan2024.pdf")
+        self.assertEqual(len(result.transactions), 1)
+        self.assertEqual(result.transactions[0].filename, "bank_statement_jan2024.pdf")
 
     @patch("bankstatements_core.pdf_table_extractor.pdfplumber.open")
     def test_extract_tables_empty_rows_filtered(self, mock_pdfplumber):
@@ -153,13 +157,13 @@ class TestPdfTableExtractor(unittest.TestCase):
         mock_cropped.extract_words.return_value = mock_words
 
         test_pdf_path = Path("/tmp/test.pdf")
-        rows, page_count, iban = extract_tables_from_pdf(
+        result = extract_tables_from_pdf(
             test_pdf_path, enable_page_validation=False, enable_header_check=False
         )
 
         # Should only have 2 valid rows (empty row filtered out)
-        self.assertEqual(len(rows), 2)
-        self.assertTrue(all(any(row.values()) for row in rows))
+        self.assertEqual(len(result.transactions), 2)
+        self.assertTrue(all(any(t.to_dict().values()) for t in result.transactions))
 
     def test_classify_row_type(self):
         """Test row classification for transaction vs non-transaction content"""
@@ -405,7 +409,7 @@ class TestPdfTableExtractor(unittest.TestCase):
             test_pdf_path = Path("/tmp/test.pdf")
 
             # Test with dynamic boundary enabled
-            dynamic_rows, _, iban = extract_tables_from_pdf(
+            dynamic_result = extract_tables_from_pdf(
                 test_pdf_path,
                 enable_dynamic_boundary=True,
                 enable_page_validation=False,
@@ -413,8 +417,10 @@ class TestPdfTableExtractor(unittest.TestCase):
             )
 
             # Should have fewer rows (administrative content filtered)
-            self.assertEqual(len(dynamic_rows), 1)
-            self.assertEqual(dynamic_rows[0]["Details"].strip(), "VDC-STORE")
+            self.assertEqual(len(dynamic_result.transactions), 1)
+            self.assertEqual(
+                dynamic_result.transactions[0].details.strip(), "VDC-STORE"
+            )
 
         run_test()
 
@@ -636,26 +642,26 @@ class TestPdfTableExtractor(unittest.TestCase):
         test_pdf_path = Path("/tmp/test.pdf")
 
         # Test with page validation enabled
-        rows, page_count, iban = extract_tables_from_pdf(
-            test_pdf_path, enable_page_validation=True
-        )
+        result = extract_tables_from_pdf(test_pdf_path, enable_page_validation=True)
 
         # Should have processed only the valid page
-        self.assertEqual(page_count, 2)  # Total pages processed
-        self.assertEqual(len(rows), 3)  # Only rows from valid page
+        self.assertEqual(result.page_count, 2)  # Total pages processed
+        self.assertEqual(len(result.transactions), 3)  # Only rows from valid page
 
         # Verify all returned rows are from valid transactions
-        for row in rows:
-            self.assertTrue(any(row.values()))  # Non-empty rows
-            self.assertEqual(row["Filename"], "test.pdf")
+        for tx in result.transactions:
+            self.assertTrue(any(tx.to_dict().values()))  # Non-empty rows
+            self.assertEqual(tx.filename, "test.pdf")
 
         # Test with page validation disabled
-        rows_no_validation, _, iban = extract_tables_from_pdf(
+        result_no_val = extract_tables_from_pdf(
             test_pdf_path, enable_page_validation=False
         )
 
         # Should process both pages (more rows due to invalid page content)
-        self.assertGreaterEqual(len(rows_no_validation), len(rows))
+        self.assertGreaterEqual(
+            len(result_no_val.transactions), len(result.transactions)
+        )
 
     def test_analyze_content_density_empty_word_groups(self):
         """Test analyze_content_density with empty word groups."""
@@ -930,13 +936,13 @@ class TestPdfTableExtractor(unittest.TestCase):
             test_pdf_path = Path("/tmp/test.pdf")
 
             # Should skip the page due to no headers
-            rows, page_count, iban = extract_tables_from_pdf(
+            result = extract_tables_from_pdf(
                 test_pdf_path, enable_dynamic_boundary=True
             )
 
             # Should return empty results since page was skipped
-            self.assertEqual(len(rows), 0)
-            self.assertEqual(page_count, 1)  # Still counts the page
+            self.assertEqual(len(result.transactions), 0)
+            self.assertEqual(result.page_count, 1)  # Still counts the page
 
         finally:
             # Restore environment
@@ -968,12 +974,12 @@ class TestPdfTableExtractor(unittest.TestCase):
             test_pdf_path = Path("/tmp/test.pdf")
 
             # Should skip page in static mode too
-            rows, page_count, iban = extract_tables_from_pdf(
+            result = extract_tables_from_pdf(
                 test_pdf_path, enable_dynamic_boundary=False  # Static mode
             )
 
             # Should return empty results
-            self.assertEqual(len(rows), 0)
+            self.assertEqual(len(result.transactions), 0)
 
         finally:
             if old_header_check:

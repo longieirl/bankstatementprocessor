@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.extraction.pdf_extractor import PDFTableExtractor
 
 # Test columns configuration
@@ -40,12 +41,13 @@ class TestCreditCardDetection:
         """
 
         extractor = PDFTableExtractor(columns=TEST_COLUMNS)
-        rows, page_count, iban = extractor.extract(Path("/tmp/credit_card.pdf"))
+        result = extractor.extract(Path("/tmp/credit_card.pdf"))
 
         # Should return empty rows (skipped)
-        assert len(rows) == 0
-        assert page_count == 1  # Still counts the pages
-        assert iban is None
+        assert isinstance(result, ExtractionResult)
+        assert len(result.transactions) == 0
+        assert result.page_count == 1  # Still counts the pages
+        assert result.iban is None
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_detect_credit_card_statement_case_insensitive(self, mock_pdfplumber):
@@ -67,9 +69,9 @@ class TestCreditCardDetection:
             mock_page.extract_text.return_value = f"Statement\n{text}\nDetails"
 
             extractor = PDFTableExtractor(columns=TEST_COLUMNS)
-            rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+            result = extractor.extract(Path("/tmp/test.pdf"))
 
-            assert len(rows) == 0, f"Failed to detect: {text}"
+            assert len(result.transactions) == 0, f"Failed to detect: {text}"
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_detect_credit_card_statement_with_credit_limit(self, mock_pdfplumber):
@@ -87,11 +89,11 @@ class TestCreditCardDetection:
         """
 
         extractor = PDFTableExtractor(columns=TEST_COLUMNS)
-        rows, page_count, iban = extractor.extract(Path("/tmp/credit_card.pdf"))
+        result = extractor.extract(Path("/tmp/credit_card.pdf"))
 
-        assert len(rows) == 0
-        assert page_count == 1
-        assert iban is None
+        assert len(result.transactions) == 0
+        assert result.page_count == 1
+        assert result.iban is None
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_detect_credit_card_statement_with_credit_card_text(self, mock_pdfplumber):
@@ -107,10 +109,10 @@ class TestCreditCardDetection:
         """
 
         extractor = PDFTableExtractor(columns=TEST_COLUMNS)
-        rows, page_count, iban = extractor.extract(Path("/tmp/credit_card.pdf"))
+        result = extractor.extract(Path("/tmp/credit_card.pdf"))
 
-        assert len(rows) == 0
-        assert page_count == 1
+        assert len(result.transactions) == 0
+        assert result.page_count == 1
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_detect_credit_card_statement_with_visa(self, mock_pdfplumber):
@@ -126,10 +128,10 @@ class TestCreditCardDetection:
         """
 
         extractor = PDFTableExtractor(columns=TEST_COLUMNS)
-        rows, page_count, iban = extractor.extract(Path("/tmp/visa.pdf"))
+        result = extractor.extract(Path("/tmp/visa.pdf"))
 
-        assert len(rows) == 0
-        assert page_count == 1
+        assert len(result.transactions) == 0
+        assert result.page_count == 1
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_detect_credit_card_statement_with_mastercard(self, mock_pdfplumber):
@@ -145,10 +147,10 @@ class TestCreditCardDetection:
         """
 
         extractor = PDFTableExtractor(columns=TEST_COLUMNS)
-        rows, page_count, iban = extractor.extract(Path("/tmp/mastercard.pdf"))
+        result = extractor.extract(Path("/tmp/mastercard.pdf"))
 
-        assert len(rows) == 0
-        assert page_count == 1
+        assert len(result.transactions) == 0
+        assert result.page_count == 1
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_all_credit_card_patterns(self, mock_pdfplumber):
@@ -171,9 +173,11 @@ class TestCreditCardDetection:
             mock_page.extract_text.return_value = f"Header\n{text}\nFooter"
 
             extractor = PDFTableExtractor(columns=TEST_COLUMNS)
-            rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+            result = extractor.extract(Path("/tmp/test.pdf"))
 
-            assert len(rows) == 0, f"Failed to detect with pattern: {pattern_name}"
+            assert (
+                len(result.transactions) == 0
+            ), f"Failed to detect with pattern: {pattern_name}"
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_does_not_detect_false_positives(self, mock_pdfplumber):
@@ -206,10 +210,10 @@ class TestCreditCardDetection:
         mock_cropped.extract_words.return_value = mock_words
 
         extractor = PDFTableExtractor(columns=TEST_COLUMNS)
-        rows, page_count, iban = extractor.extract(Path("/tmp/bank.pdf"))
+        result = extractor.extract(Path("/tmp/bank.pdf"))
 
         # Should process normally
-        assert page_count == 1
+        assert result.page_count == 1
         # May or may not have rows depending on validation, but shouldn't be empty due to CC detection
         # The key is it didn't skip due to credit card detection
 
@@ -231,10 +235,10 @@ class TestCreditCardDetection:
 
         extractor = PDFTableExtractor(columns=TEST_COLUMNS)
         # Should not crash, should continue processing
-        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
         # Should complete without raising exception
-        assert page_count == 1
+        assert result.page_count == 1
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_credit_card_detection_only_checks_first_page(self, mock_pdfplumber):
@@ -260,10 +264,10 @@ class TestCreditCardDetection:
         mock_cropped2.extract_words.return_value = []
 
         extractor = PDFTableExtractor(columns=TEST_COLUMNS)
-        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
         # Should process both pages (not skipped)
-        assert page_count == 2
+        assert result.page_count == 2
 
     def test_is_credit_card_statement_method_directly(self):
         """Test the _is_credit_card_statement method directly."""
@@ -331,3 +335,28 @@ class TestCreditCardDetection:
             )
             is False
         )
+
+    @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
+    def test_credit_card_early_return_produces_extraction_result_with_warning(
+        self, mock_pdfplumber
+    ):
+        """Test that credit card detection returns ExtractionResult with warning message."""
+        mock_pdf = MagicMock()
+        mock_page = MagicMock()
+        mock_page.width = 612
+        mock_pdf.pages = [mock_page]
+        mock_pdfplumber.return_value = mock_pdf
+
+        # Mock the cropped header area to return credit card text
+        mock_header = MagicMock()
+        mock_header.extract_text.return_value = "Statement for Card Number 1234"
+        mock_page.crop.return_value = mock_header
+
+        extractor = PDFTableExtractor(columns=TEST_COLUMNS)
+        result = extractor.extract(Path("/tmp/credit_card.pdf"))
+
+        assert isinstance(result, ExtractionResult)
+        assert len(result.transactions) == 0
+        assert result.iban is None
+        assert len(result.warnings) > 0
+        assert "credit card" in result.warnings[0].lower()

@@ -153,23 +153,6 @@ class TestHeaderDetectionService:
         result = service.detect_headers(words, sample_columns, min_keywords=1)
         assert result is True
 
-    def test_group_words_by_y_coordinate(self, service):
-        """Test word grouping by Y coordinate."""
-        words = [
-            {"text": "A", "top": 100.0},
-            {"text": "B", "top": 100.5},  # Close to 100, should group
-            {"text": "C", "top": 105.0},
-            {"text": "D", "top": 105.2},  # Close to 105, should group
-        ]
-        grouped = service._group_words_by_y_coordinate(words)
-
-        # Should have 2 groups (rounded to 100 and 105)
-        assert len(grouped) == 2
-        assert 100.0 in grouped
-        assert 105.0 in grouped
-        assert len(grouped[100.0]) == 2  # A and B
-        assert len(grouped[105.0]) == 2  # C and D
-
     def test_header_keywords_coverage(self, service):
         """Test that service has comprehensive header keywords."""
         # Verify key banking terms are included

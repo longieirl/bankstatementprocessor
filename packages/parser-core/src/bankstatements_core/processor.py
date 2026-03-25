@@ -11,6 +11,8 @@ import pandas as pd
 from bankstatements_core.config.column_config import DEFAULT_COLUMNS, get_column_names
 from bankstatements_core.config.processor_config import ProcessorConfig
 from bankstatements_core.config.totals_config import parse_totals_columns  # noqa: F401
+from bankstatements_core.domain import ExtractionResult
+from bankstatements_core.domain.converters import transactions_to_dicts
 from bankstatements_core.services.column_analysis import ColumnAnalysisService
 from bankstatements_core.services.date_parser import DateParserService
 from bankstatements_core.services.duplicate_detector import DuplicateDetectionService
@@ -276,11 +278,11 @@ class BankStatementProcessor:
         """
         return self._duplicate_service.detect_and_separate(all_rows)
 
-    def _process_all_pdfs(self) -> tuple[list[dict], int, dict[str, str]]:
+    def _process_all_pdfs(self) -> list[ExtractionResult]:
         """Process all PDF files in the input directory and extract transaction data.
 
         Returns:
-            Tuple of (all_rows, total_pages_read, pdf_ibans)
+            list[ExtractionResult] — one per processed PDF
         """
         # Delegate to PDF processing orchestrator with recursive_scan setting
         return self._pdf_orchestrator.process_all_pdfs(
@@ -308,7 +310,15 @@ class BankStatementProcessor:
         start_time = datetime.now()
 
         # Step 1: Extract transactions from all PDFs (delegated to orchestrator)
-        all_rows, pages_read, pdf_ibans = self._process_all_pdfs()
+        extraction_results = self._process_all_pdfs()  # list[ExtractionResult]
+        all_rows: list[dict] = []
+        pages_read = 0
+        pdf_ibans: dict[str, str] = {}
+        for extraction in extraction_results:
+            pages_read += extraction.page_count
+            if extraction.iban:
+                pdf_ibans[extraction.source_file.name] = extraction.iban
+            all_rows.extend(transactions_to_dicts(extraction.transactions))
         pdf_count = len(sorted(self.input_dir.glob("*.pdf")))
 
         # Step 2: Group transactions by IBAN (delegated to orchestrator)

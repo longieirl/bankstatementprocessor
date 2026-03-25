@@ -10,6 +10,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from bankstatements_core.extraction.word_utils import group_words_by_y
+
 if TYPE_CHECKING:
     import pdfplumber
 
@@ -131,7 +133,7 @@ class HeaderDetectionService:
             return False
 
         # Group words by Y coordinate to find potential header rows
-        rows_by_y = self._group_words_by_y_coordinate(words)
+        rows_by_y = group_words_by_y(words)
 
         # Check top few rows for header-like content
         top_rows = sorted(rows_by_y.keys())[:max_rows_to_check]
@@ -161,30 +163,6 @@ class HeaderDetectionService:
             f"✗ No table headers detected (need {min_keywords}+ header keywords in top {max_rows_to_check} rows)"
         )
         return False
-
-    def _group_words_by_y_coordinate(
-        self, words: list[dict], tolerance: float = 1.0
-    ) -> dict[float, list[dict]]:
-        """Group words by their Y coordinate (row position).
-
-        Words with Y coordinates within `tolerance` pixels are grouped together
-        as being on the same row. Uses rounding to group words efficiently.
-
-        Args:
-            words: List of word dictionaries
-            tolerance: Y coordinate tolerance for grouping (pixels)
-
-        Returns:
-            Dictionary mapping Y coordinates to lists of words
-        """
-        rows_by_y: dict[float, list[dict]] = {}
-
-        for word in words:
-            # Round Y coordinate to nearest integer for grouping
-            y_key = round(word.get("top", 0), 0)
-            rows_by_y.setdefault(y_key, []).append(word)
-
-        return rows_by_y
 
     def check_page_for_headers(
         self,

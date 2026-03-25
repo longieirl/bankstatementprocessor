@@ -239,7 +239,7 @@ class TestTemplateIntegration:
             "input/account-statement_2025-01-01_2026-01-30_en-ie_d04719.pdf"
         )
 
-        rows, page_count, iban = extract_tables_from_pdf(
+        result = extract_tables_from_pdf(
             pdf_path,
             table_top_y=revolut_template.extraction.table_top_y,
             table_bottom_y=revolut_template.extraction.table_bottom_y,
@@ -250,9 +250,9 @@ class TestTemplateIntegration:
 
         # Should extract 67+ transactions from pages 2-4
         # (Page 1 and 5 have different structure and are skipped)
-        assert len(rows) >= 67
+        assert len(result.transactions) >= 67
         # Verify we have January 2025 transactions (not missing first 24)
-        dates = [row.get("Date", "") for row in rows if row.get("Date")]
+        dates = [tx.date for tx in result.transactions if tx.date]
         jan_transactions = [d for d in dates if "Jan 2025" in d]
         assert len(jan_transactions) >= 4  # At least 4 January transactions
 

@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from bankstatements_core.config.column_config import DEFAULT_COLUMNS
+from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.extraction.extraction_params import TABLE_BOTTOM_Y, TABLE_TOP_Y
 
 if TYPE_CHECKING:
@@ -70,7 +71,7 @@ def extract_tables_from_pdf(
     enable_page_validation: bool | None = None,
     enable_header_check: bool | None = None,
     template: "BankTemplate" | None = None,
-) -> tuple[list[dict], int, str | None]:
+) -> ExtractionResult:
     """
     Extract table data from PDF within specified bounds (facade function).
 
@@ -87,7 +88,8 @@ def extract_tables_from_pdf(
         template: Optional BankTemplate to use for extraction configuration
 
     Returns:
-        Tuple of (extracted rows, number of pages, IBAN if found)
+        ExtractionResult containing extracted transactions, page count, IBAN,
+        source file path, and any document-level warnings
     """
     from bankstatements_core.extraction.pdf_extractor import PDFTableExtractor
 

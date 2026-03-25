@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import logging
 
+from bankstatements_core.extraction.word_utils import assign_words_to_columns
+
 logger = logging.getLogger(__name__)
 
 
@@ -67,19 +69,7 @@ class ContentDensityService:
 
             for y_coord in window_y_coords:
                 # Form row from words at this Y coordinate
-                row = dict.fromkeys(columns, "")
-
-                for w in word_groups[y_coord]:
-                    x0 = w["x0"]
-                    text = w["text"]
-
-                    for col, (xmin, xmax) in columns.items():
-                        if xmin <= x0 < xmax:
-                            row[col] += text + " "
-                            break
-
-                # Normalize row data
-                row = {k: v.strip() for k, v in row.items()}
+                row = assign_words_to_columns(word_groups[y_coord], columns)
 
                 if any(row.values()):  # Only count non-empty rows
                     total_rows += 1

@@ -13,6 +13,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.extraction.pdf_extractor import PDFTableExtractor
 
 # Test columns configuration
@@ -94,13 +95,13 @@ class TestPageSkipping:
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS, enable_dynamic_boundary=True
         )
-        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
         # Assertions
-        assert page_count == 3  # All pages were examined
-        assert len(rows) == 2  # Only 2 transactions (from pages 2 and 3)
-        assert rows[0]["Filename"] == "test.pdf"
-        assert rows[1]["Filename"] == "test.pdf"
+        assert result.page_count == 3  # All pages were examined
+        assert len(result.transactions) == 2  # Only 2 transactions (from pages 2 and 3)
+        assert result.transactions[0].filename == "test.pdf"
+        assert result.transactions[1].filename == "test.pdf"
 
     @patch.dict("os.environ", {"REQUIRE_TABLE_HEADERS": "true"})
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
@@ -137,10 +138,10 @@ class TestPageSkipping:
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS, enable_dynamic_boundary=True
         )
-        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
-        assert page_count == 2  # All pages were examined
-        assert len(rows) == 0  # No transactions extracted
+        assert result.page_count == 2  # All pages were examined
+        assert len(result.transactions) == 0  # No transactions extracted
 
     @patch.dict("os.environ", {"REQUIRE_TABLE_HEADERS": "true"})
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
@@ -174,10 +175,10 @@ class TestPageSkipping:
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS, enable_dynamic_boundary=True
         )
-        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
-        assert page_count == 3
-        assert len(rows) == 3  # One transaction from each page
+        assert result.page_count == 3
+        assert len(result.transactions) == 3  # One transaction from each page
 
     @patch.dict("os.environ", {"REQUIRE_TABLE_HEADERS": "true"})
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
@@ -234,10 +235,10 @@ class TestPageSkipping:
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS, enable_dynamic_boundary=True
         )
-        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
-        assert page_count == 3  # All 3 pages examined
-        assert len(rows) == 2  # Only pages 1 and 3 had transactions
+        assert result.page_count == 3  # All 3 pages examined
+        assert len(result.transactions) == 2  # Only pages 1 and 3 had transactions
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_page_validation_disabled_processes_all_pages(self, mock_pdfplumber):
@@ -262,11 +263,11 @@ class TestPageSkipping:
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS, enable_page_validation=False
         )
-        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
-        assert page_count == 1
+        assert result.page_count == 1
         # Should process page even without headers
-        assert len(rows) >= 0  # May or may not have valid transactions
+        assert len(result.transactions) >= 0  # May or may not have valid transactions
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_validation_enabled_by_default(self, mock_pdfplumber):
@@ -298,10 +299,10 @@ class TestPageSkipping:
         assert extractor.header_check_enabled is True
 
         # Extract and verify page is skipped due to missing headers
-        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
-        assert page_count == 1  # Page was examined
-        assert len(rows) == 0  # Page was skipped (no headers)
+        assert result.page_count == 1  # Page was examined
+        assert len(result.transactions) == 0  # Page was skipped (no headers)
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_empty_pdf_returns_zero_rows(self, mock_pdfplumber):
@@ -311,10 +312,10 @@ class TestPageSkipping:
         mock_pdfplumber.return_value = mock_pdf
 
         extractor = PDFTableExtractor(columns=TEST_COLUMNS)
-        rows, page_count, iban = extractor.extract(Path("/tmp/empty.pdf"))
+        result = extractor.extract(Path("/tmp/empty.pdf"))
 
-        assert page_count == 0
-        assert len(rows) == 0
+        assert result.page_count == 0
+        assert len(result.transactions) == 0
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_page_with_insufficient_rows_skipped(self, mock_pdfplumber):
@@ -336,8 +337,8 @@ class TestPageSkipping:
         mock_cropped.extract_words.return_value = mock_words
 
         extractor = PDFTableExtractor(columns=TEST_COLUMNS, enable_page_validation=True)
-        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
-        assert page_count == 1
+        assert result.page_count == 1
         # Should be skipped due to insufficient transaction rows
-        assert len(rows) == 0
+        assert len(result.transactions) == 0
