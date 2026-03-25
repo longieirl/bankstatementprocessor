@@ -61,7 +61,8 @@ class TestApp(unittest.TestCase):
 
         # Verify summary logging
         mock_logger.info.assert_any_call("========== SUMMARY ==========")
-        mock_logger.info.assert_any_call("PDFs processed: %d", 2)
+        mock_logger.info.assert_any_call("PDFs read: %d", 2)
+        mock_logger.info.assert_any_call("PDFs extracted: %d", 2)
         mock_logger.info.assert_any_call("Pages read: %d", 4)
         mock_logger.info.assert_any_call("Unique transactions: %d", 15)
         mock_logger.info.assert_any_call("Duplicate transactions: %d", 3)

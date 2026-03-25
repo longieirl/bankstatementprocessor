@@ -52,7 +52,10 @@ __all__ = [
 def log_summary(summary: dict) -> None:
     """Log processing summary in structured format."""
     logger.info("========== SUMMARY ==========")
-    logger.info("PDFs processed: %d", summary["pdf_count"])
+    logger.info("PDFs read: %d", summary["pdf_count"])
+    logger.info(
+        "PDFs extracted: %d", summary.get("pdfs_extracted", summary["pdf_count"])
+    )
     logger.info("Pages read: %d", summary["pages_read"])
     logger.info("Unique transactions: %d", summary["transactions"])
     logger.info("Duplicate transactions: %d", summary["duplicates"])

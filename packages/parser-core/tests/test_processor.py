@@ -222,21 +222,24 @@ class TestBankStatementProcessor(unittest.TestCase):
         with patch(
             "bankstatements_core.services.pdf_processing_orchestrator.PDFProcessingOrchestrator.process_all_pdfs"
         ) as mock_process:
-            # Configure mock to return list[ExtractionResult]
-            mock_process.return_value = [
-                ExtractionResult(
-                    transactions=dicts_to_transactions(mock_data_pdf1),
-                    page_count=1,
-                    iban=None,
-                    source_file=pdf1,
-                ),
-                ExtractionResult(
-                    transactions=dicts_to_transactions(mock_data_pdf2),
-                    page_count=1,
-                    iban=None,
-                    source_file=pdf2,
-                ),
-            ]
+            # Configure mock to return (list[ExtractionResult], pdf_count)
+            mock_process.return_value = (
+                [
+                    ExtractionResult(
+                        transactions=dicts_to_transactions(mock_data_pdf1),
+                        page_count=1,
+                        iban=None,
+                        source_file=pdf1,
+                    ),
+                    ExtractionResult(
+                        transactions=dicts_to_transactions(mock_data_pdf2),
+                        page_count=1,
+                        iban=None,
+                        source_file=pdf2,
+                    ),
+                ],
+                2,
+            )
 
             processor = create_test_processor(self.input_dir, self.output_dir)
             result = processor.run()

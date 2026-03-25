@@ -38,10 +38,11 @@ services:
       - RECURSIVE_SCAN=${RECURSIVE_SCAN:-true}
       # Output configuration - expense analysis enabled by default (monthly summary requires PAID tier)
       - OUTPUT_FORMATS=${OUTPUT_FORMATS:-csv,json}
-      - GENERATE_MONTHLY_SUMMARY=${GENERATE_MONTHLY_SUMMARY:-false}
+      - GENERATE_MONTHLY_SUMMARY=${GENERATE_MONTHLY_SUMMARY:-true}
       - GENERATE_EXPENSE_ANALYSIS=${GENERATE_EXPENSE_ANALYSIS:-true}
       - TOTALS_COLUMNS=${TOTALS_COLUMNS:-debit,credit}
       - TABLE_TOP_Y=${TABLE_TOP_Y:-250}
+      - TABLE_BOTTOM_Y=${TABLE_BOTTOM_Y:-720}
       - DATA_RETENTION_DAYS=${DATA_RETENTION_DAYS:-0}
       - AUTO_CLEANUP_ON_EXIT=${AUTO_CLEANUP_ON_EXIT:-false}
       - LOGS_DIR=${LOGS_DIR:-logs}
