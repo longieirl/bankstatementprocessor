@@ -373,9 +373,7 @@ class ClassifierRegistry:
         seen_priorities: dict[int, str] = {}
         for priority, cls in classifiers:
             if not (isinstance(cls, type) and issubclass(cls, RowClassifier)):
-                raise TypeError(
-                    f"{cls!r} is not a RowClassifier subclass"
-                )
+                raise TypeError(f"{cls!r} is not a RowClassifier subclass")
             if priority in seen_priorities:
                 raise ValueError(
                     f"priority {priority} already assigned to "
