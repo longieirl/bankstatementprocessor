@@ -314,11 +314,11 @@ class BankStatementProcessor:
         all_rows: list[dict] = []
         pages_read = 0
         pdf_ibans: dict[str, str] = {}
-        for result in extraction_results:
-            pages_read += result.page_count
-            if result.iban:
-                pdf_ibans[result.source_file.name] = result.iban
-            all_rows.extend(transactions_to_dicts(result.transactions))
+        for extraction in extraction_results:
+            pages_read += extraction.page_count
+            if extraction.iban:
+                pdf_ibans[extraction.source_file.name] = extraction.iban
+            all_rows.extend(transactions_to_dicts(extraction.transactions))
         pdf_count = len(sorted(self.input_dir.glob("*.pdf")))
 
         # Step 2: Group transactions by IBAN (delegated to orchestrator)
