@@ -28,6 +28,7 @@ from bankstatements_core.services.sorting_service import (
     TransactionSortingService,
 )
 from bankstatements_core.services.transaction_filter import TransactionFilterService
+from bankstatements_core.services.service_registry import ServiceRegistry
 from bankstatements_core.services.transaction_processing_orchestrator import (
     TransactionProcessingOrchestrator,
 )
@@ -122,6 +123,7 @@ class BankStatementProcessor:
         activity_log: Any | None = None,
         entitlements: Any | None = None,
         template_registry: Any | None = None,
+        registry: ServiceRegistry | None = None,
     ):
         """
         Initialize the bank statement processor.
@@ -250,6 +252,17 @@ class BankStatementProcessor:
             sorting_service=self._sorting_service,
         )
 
+        # ServiceRegistry: single wiring point for transaction processing
+        if registry is not None:
+            self._registry = registry
+        else:
+            self._registry = ServiceRegistry.from_config(
+                config,
+                entitlements=entitlements,
+                duplicate_detector=self._duplicate_service,
+                sorting_service=self._sorting_service,
+            )
+
         self._output_orchestrator = OutputOrchestrator(
             output_dir=self.output_dir,
             output_strategies=self.output_strategies,
@@ -322,8 +335,8 @@ class BankStatementProcessor:
                 pdf_ibans[extraction.source_file.name] = extraction.iban
             all_rows.extend(transactions_to_dicts(extraction.transactions))
 
-        # Step 2: Group transactions by IBAN (delegated to orchestrator)
-        rows_by_iban = self._transaction_orchestrator.group_by_iban(all_rows, pdf_ibans)
+        # Step 2: Group transactions by IBAN (delegated to registry)
+        rows_by_iban = self._registry.group_by_iban(all_rows, pdf_ibans)
         logger.debug(
             f"Grouped {len(all_rows)} transactions into {len(rows_by_iban)} IBAN groups"
         )
@@ -402,11 +415,9 @@ class BankStatementProcessor:
                     f"Using template '{template_id}' for transaction type classification"
                 )
 
-        # Detect duplicates and sort (delegated to orchestrator)
-        unique_rows, duplicate_rows = (
-            self._transaction_orchestrator.process_transaction_group(
-                iban_rows, template=template
-            )
+        # Detect duplicates and sort (delegated to registry)
+        unique_rows, duplicate_rows = self._registry.process_transaction_group(
+            iban_rows, template=template
         )
 
         # Filter duplicates to remove any empty rows and header rows
