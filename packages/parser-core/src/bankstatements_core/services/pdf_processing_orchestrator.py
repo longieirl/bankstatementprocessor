@@ -105,7 +105,7 @@ class PDFProcessingOrchestrator:
 
     def process_all_pdfs(
         self, input_dir: Path, recursive: bool = False
-    ) -> tuple[list[ExtractionResult], int]:
+    ) -> tuple[list[ExtractionResult], int, int]:
         """Process all PDF files in the input directory.
 
         Args:
@@ -113,9 +113,10 @@ class PDFProcessingOrchestrator:
             recursive: Whether to search subdirectories recursively
 
         Returns:
-            Tuple of (results, pdf_count) where pdf_count is total PDFs discovered
-            (including those that failed), and results contains one ExtractionResult
-            per successfully processed PDF.
+            Tuple of (results, pdf_count, pages_read) where pdf_count is total PDFs
+            discovered (including excluded/failed), results contains one ExtractionResult
+            per successfully processed PDF, and pages_read is the total page count across
+            all PDFs attempted (including excluded ones).
         """
         # Discover PDF files
         pdf_files = self.pdf_discovery.discover_pdfs(input_dir, recursive=recursive)
@@ -156,7 +157,6 @@ class PDFProcessingOrchestrator:
                         idx,
                         pdf.name,
                     )
-                    results.append(result)
                     continue
 
                 # Store IBAN if found
@@ -193,7 +193,7 @@ class PDFProcessingOrchestrator:
         if excluded_files:
             self._save_excluded_files(excluded_files)
 
-        return results, len(pdf_files)
+        return results, len(pdf_files), pages_read
 
     def _save_ibans(self, pdf_ibans: dict[str, str]) -> None:
         """Save extracted IBANs to JSON file.

@@ -222,7 +222,7 @@ class TestBankStatementProcessor(unittest.TestCase):
         with patch(
             "bankstatements_core.services.pdf_processing_orchestrator.PDFProcessingOrchestrator.process_all_pdfs"
         ) as mock_process:
-            # Configure mock to return (list[ExtractionResult], pdf_count)
+            # Configure mock to return (list[ExtractionResult], pdf_count, pages_read)
             mock_process.return_value = (
                 [
                     ExtractionResult(
@@ -238,6 +238,7 @@ class TestBankStatementProcessor(unittest.TestCase):
                         source_file=pdf2,
                     ),
                 ],
+                2,
                 2,
             )
 

@@ -95,11 +95,12 @@ class TestProcessorRefactoredMethods(unittest.TestCase):
                     ),
                 ]
 
-                results, pdf_count = processor._process_all_pdfs()
+                results, pdf_count, pages_read = processor._process_all_pdfs()
 
                 # Verify results
                 self.assertEqual(pdf_count, 2)
                 self.assertEqual(len(results), 2)
+                self.assertEqual(pages_read, 8)
                 self.assertEqual(results[0].page_count, 5)
                 self.assertEqual(results[1].page_count, 3)
                 self.assertEqual(
@@ -129,11 +130,12 @@ class TestProcessorRefactoredMethods(unittest.TestCase):
             with patch.object(Path, "glob") as mock_glob:
                 mock_glob.return_value = []
 
-                results, pdf_count = processor._process_all_pdfs()
+                results, pdf_count, pages_read = processor._process_all_pdfs()
 
                 # Should return empty results
                 self.assertEqual(pdf_count, 0)
                 self.assertEqual(len(results), 0)
+                self.assertEqual(pages_read, 0)
                 mock_extract.assert_not_called()
 
     def test_sort_transactions_by_date_mixed_dates(self):
