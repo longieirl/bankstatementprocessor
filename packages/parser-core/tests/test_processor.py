@@ -242,7 +242,7 @@ class TestBankStatementProcessor(unittest.TestCase):
             result = processor.run()
 
             # Verify the mock was called with correct arguments
-            mock_process.assert_called_once_with(self.input_dir, recursive=False)
+            mock_process.assert_called_once_with(self.input_dir, recursive=True)
 
             # Verify results summary
             self.assertIn("pdf_count", result)
