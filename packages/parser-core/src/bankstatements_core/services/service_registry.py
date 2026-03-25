@@ -1,8 +1,7 @@
 """ServiceRegistry — single wiring point for transaction processing services.
 
 Centralises construction of duplicate detection, sorting, IBAN grouping, and
-the enrichment/classification pipeline that was previously spread across
-TransactionProcessingOrchestrator and BankStatementProcessor.
+the enrichment/classification pipeline.
 
 Usage (primary path)::
 
@@ -149,9 +148,6 @@ class ServiceRegistry:
     ) -> tuple[list[dict], list[dict]]:
         """Enrich → classify → deduplicate → sort a group of transactions.
 
-        This replaces the explicit five-call chain that was previously spread
-        across BankStatementProcessor and TransactionProcessingOrchestrator.
-
         Args:
             transactions: List of transaction dicts for a single IBAN group.
             template: Optional bank template used for transaction type keywords.
@@ -205,7 +201,7 @@ class ServiceRegistry:
         return self._grouping_service
 
     # ------------------------------------------------------------------
-    # Internal enrichment helpers (inlined from TransactionProcessingOrchestrator)
+    # Internal enrichment helpers
     # ------------------------------------------------------------------
 
     @staticmethod
