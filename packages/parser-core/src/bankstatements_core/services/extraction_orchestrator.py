@@ -73,27 +73,22 @@ class ExtractionOrchestrator:
             # (FREE tier requires IBAN patterns)
             if self._entitlements and self._entitlements.require_iban:
                 all_templates = template_registry.list_all()
-                templates_without_iban = [
-                    t for t in all_templates if not t.detection.iban_patterns
-                ]
+                iban_only_ids = {
+                    t.id for t in all_templates if t.detection.iban_patterns
+                }
+                skipped = len(all_templates) - len(iban_only_ids)
 
-                if templates_without_iban:
-                    template_names = ", ".join(t.name for t in templates_without_iban)
+                if skipped:
+                    skipped_names = ", ".join(
+                        t.name for t in all_templates if not t.detection.iban_patterns
+                    )
                     logger.warning(
                         f"{self._entitlements.tier} tier requires IBAN "
                         f"patterns for PDF processing. "
-                        f"Ignoring {len(templates_without_iban)} template(s) "
-                        f"without IBAN patterns: {template_names}"
+                        f"Ignoring {skipped} template(s) "
+                        f"without IBAN patterns: {skipped_names}"
                     )
-
-                    # Disable templates without IBAN patterns
-                    for template in templates_without_iban:
-                        template.enabled = False
-                        logger.info(
-                            f"  - Template '{template.name}' "
-                            f"(id: {template.id}) disabled: "
-                            f"no IBAN patterns configured"
-                        )
+                    template_registry = template_registry.filtered_by_ids(iban_only_ids)
 
             self._template_detector = TemplateDetector(template_registry)
 

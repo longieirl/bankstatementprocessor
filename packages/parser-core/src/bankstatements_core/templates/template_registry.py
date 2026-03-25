@@ -534,3 +534,31 @@ class TemplateRegistry:
             List of template IDs
         """
         return list(self._templates.keys())
+
+    def filtered_by_ids(self, ids: set[str]) -> "TemplateRegistry":
+        """Return a new registry containing only the templates with the given IDs.
+
+        The shared registry is never mutated. The default template is preserved if
+        it is in the filtered set; otherwise the first matching template is used.
+
+        Args:
+            ids: Set of template IDs to include
+
+        Returns:
+            New TemplateRegistry containing only the specified templates
+
+        Raises:
+            ValueError: If none of the given IDs exist in this registry
+        """
+        filtered = {tid: t for tid, t in self._templates.items() if tid in ids}
+        if not filtered:
+            raise ValueError(
+                f"No templates matched the given IDs: {ids}"
+            )
+
+        default_id = (
+            self._default_template_id
+            if self._default_template_id in filtered
+            else next(iter(filtered))
+        )
+        return TemplateRegistry(filtered, default_id)

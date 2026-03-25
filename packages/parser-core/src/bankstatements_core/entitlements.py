@@ -2,6 +2,16 @@
 
 This module defines the entitlement tiers (FREE/PAID) and controls which features
 are available in each tier.
+
+Enforcement map — where each field is enforced in the call stack:
+
+  require_iban          -> ExtractionOrchestrator._initialize_template_system()
+  check_recursive_scan  -> BankStatementProcessingFacade._run()  (primary)
+                           PDFDiscoveryService                    (defense in depth, intentional)
+  check_monthly_summary -> BankStatementProcessingFacade._run()  (primary)
+                           MonthlySummaryService.generate()       (defense in depth, intentional)
+  check_output_format   -> BankStatementProcessingFacade._run()
+  check_expense_analysis -> ExpenseAnalysisService
 """
 
 from __future__ import annotations

@@ -99,19 +99,15 @@ class TestFreeTierTemplateFiltering:
             assert "Ignoring 1 template(s) without IBAN patterns" in caplog.text
             assert "Generic Bank" in caplog.text
 
-            # Verify template without IBAN was disabled
-            assert "Template 'Generic Bank' (id: without_iban) disabled" in caplog.text
-
-            # Verify only template with IBAN is enabled
-            enabled = registry.list_enabled()
-            assert len(enabled) == 1
-            assert enabled[0].id == "with_iban"
+            # Original registry must NOT be mutated — both templates still present
+            assert len(registry.list_all()) == 2
+            assert registry.list_enabled() == [template_with_iban, template_without_iban]
 
     def test_free_tier_logs_disabled_templates(
         self, template_with_iban, template_without_iban, caplog
     ):
-        """Test that disabled templates are logged with clear message."""
-        caplog.set_level(logging.INFO)
+        """Test that skipped templates are logged with a clear warning message."""
+        caplog.set_level(logging.WARNING)
 
         registry = TemplateRegistry(
             templates={
@@ -126,9 +122,9 @@ class TestFreeTierTemplateFiltering:
         ):
             ExtractionOrchestrator(entitlements=Entitlements.free_tier())
 
-            # Check for specific log messages
-            assert "no IBAN patterns configured" in caplog.text
-            assert "Template 'Generic Bank' (id: without_iban) disabled" in caplog.text
+            # Warning lists the skipped template name
+            assert "Generic Bank" in caplog.text
+            assert "Ignoring 1 template(s)" in caplog.text
 
     def test_paid_tier_allows_templates_without_iban(
         self, template_with_iban, template_without_iban, caplog
@@ -153,7 +149,7 @@ class TestFreeTierTemplateFiltering:
             # No warning should be logged about IBAN patterns
             assert "requires IBAN patterns" not in caplog.text
 
-            # Both templates should be enabled
+            # Original registry is unchanged — both templates still enabled
             enabled = registry.list_enabled()
             assert len(enabled) == 2
             assert any(t.id == "with_iban" for t in enabled)
@@ -233,10 +229,8 @@ class TestFreeTierTemplateFiltering:
             assert "Generic Bank" in caplog.text
             assert "Another Generic Bank" in caplog.text
 
-            # Only one template should be enabled
-            enabled = registry.list_enabled()
-            assert len(enabled) == 1
-            assert enabled[0].id == "with_iban"
+            # Original registry is unchanged — all 3 templates still present
+            assert len(registry.list_all()) == 3
 
     def test_free_tier_require_iban_flag(self):
         """Test that FREE tier has require_iban=True."""

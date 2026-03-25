@@ -204,6 +204,49 @@ class TestExtractionOrchestrator(unittest.TestCase):
             # Verify template detection is not forced
             assert orchestrator._forced_template is None
 
+    @patch("bankstatements_core.services.extraction_orchestrator.TemplateRegistry")
+    def test_extraction_orchestrator_does_not_mutate_registry_templates(
+        self, mock_registry_class
+    ):
+        """Two orchestrators sharing the same registry — second still sees all templates."""
+        from bankstatements_core.entitlements import Entitlements
+
+        # Build two fake templates: one with IBAN patterns, one without
+        t_with_iban = MagicMock()
+        t_with_iban.id = "with_iban"
+        t_with_iban.name = "With IBAN"
+        t_with_iban.detection.iban_patterns = ["IE.*"]
+        t_with_iban.enabled = True
+
+        t_no_iban = MagicMock()
+        t_no_iban.id = "no_iban"
+        t_no_iban.name = "No IBAN"
+        t_no_iban.detection.iban_patterns = []
+        t_no_iban.enabled = True
+
+        # Registry always returns both templates from list_all()
+        mock_registry = MagicMock()
+        mock_registry.list_all.return_value = [t_with_iban, t_no_iban]
+        mock_registry.filtered_by_ids.return_value = mock_registry
+        mock_registry_class.from_default_config.return_value = mock_registry
+
+        free = Entitlements.free_tier()
+
+        with patch(
+            "bankstatements_core.services.extraction_orchestrator.TemplateDetector"
+        ):
+            ExtractionOrchestrator(
+                extraction_config=self.extraction_config, entitlements=free
+            )
+            ExtractionOrchestrator(
+                extraction_config=self.extraction_config, entitlements=free
+            )
+
+        # filtered_by_ids() called, NOT template.enabled = False
+        mock_registry.filtered_by_ids.assert_called()
+        assert t_with_iban.enabled is True
+        assert t_no_iban.enabled is True
+
 
 if __name__ == "__main__":
     unittest.main()
