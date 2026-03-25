@@ -368,7 +368,9 @@ class BankStatementProcessorBuilder:
         )
 
         from bankstatements_core.services.service_registry import ServiceRegistry
-        from bankstatements_core.services.duplicate_detector import DuplicateDetectionService
+        from bankstatements_core.services.duplicate_detector import (
+            DuplicateDetectionService,
+        )
         from bankstatements_core.services.sorting_service import (
             ChronologicalSortingStrategy,
             NoSortingStrategy,
