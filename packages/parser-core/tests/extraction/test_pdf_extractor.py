@@ -7,6 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from bankstatements_core.domain import ExtractionResult
+from bankstatements_core.domain.converters import dicts_to_transactions
 from bankstatements_core.extraction.pdf_extractor import PDFTableExtractor
 from bankstatements_core.extraction.row_post_processor import (
     RowPostProcessor,
@@ -189,11 +191,12 @@ class TestPDFTableExtractor:
             enable_page_validation=False,
             enable_header_check=False,
         )
-        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
-        assert page_count == 1
-        assert len(rows) == 1
-        assert rows[0]["Filename"] == "test.pdf"
+        assert isinstance(result, ExtractionResult)
+        assert result.page_count == 1
+        assert len(result.transactions) == 1
+        assert result.transactions[0].filename == "test.pdf"
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_extract_with_dynamic_boundary(self, mock_pdfplumber):
@@ -224,9 +227,9 @@ class TestPDFTableExtractor:
             enable_page_validation=False,
             enable_header_check=False,
         )
-        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
-        assert page_count == 1
+        assert result.page_count == 1
         # Crop is called for: credit card check (header), table extraction (initial + final)
         assert mock_page.crop.call_count >= 2  # At least initial + final for table
 
@@ -249,11 +252,11 @@ class TestPDFTableExtractor:
         mock_cropped.extract_words.return_value = mock_words
 
         extractor = PDFTableExtractor(columns=TEST_COLUMNS, enable_page_validation=True)
-        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
-        assert page_count == 1
+        assert result.page_count == 1
         # No valid transactions, so rows should be empty
-        assert len(rows) == 0
+        assert len(result.transactions) == 0
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_extract_multiple_pages(self, mock_pdfplumber):
@@ -289,10 +292,10 @@ class TestPDFTableExtractor:
             enable_page_validation=False,
             enable_header_check=False,
         )
-        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
-        assert page_count == 2
-        assert len(rows) == 2
+        assert result.page_count == 2
+        assert len(result.transactions) == 2
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_extract_date_propagation_across_rows(self, mock_pdfplumber):
@@ -329,12 +332,12 @@ class TestPDFTableExtractor:
             enable_page_validation=False,
             enable_header_check=False,
         )
-        rows, _, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
-        assert len(rows) == 2
+        assert len(result.transactions) == 2
         # Both rows should have the same date (2023 is captured if x1 is provided for all words)
-        assert "01 Jan 2023" in rows[0]["Date"]
-        assert "01 Jan 2023" in rows[1]["Date"]
+        assert "01 Jan 2023" in result.transactions[0].date
+        assert "01 Jan 2023" in result.transactions[1].date
 
     def test_page_validation_constructor_parameter(self):
         """Test page validation setting via constructor parameter."""
@@ -431,10 +434,10 @@ class TestPDFTableExtractor:
             enable_header_check=False,
         )
 
-        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
-        assert page_count == 2
-        assert len(rows) == 2
+        assert result.page_count == 2
+        assert len(result.transactions) == 2
 
         # Verify crop was called with correct boundaries
         # Page 1 should use override (490)
@@ -480,10 +483,10 @@ class TestPDFTableExtractor:
             enable_header_check=False,
         )
 
-        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
-        assert page_count == 1
-        assert len(rows) == 1
+        assert result.page_count == 1
+        assert len(result.transactions) == 1
 
         # Verify crop was called with instance defaults (300)
         crop_calls = [
@@ -535,7 +538,7 @@ class TestPDFTableExtractor:
             enable_header_check=True,  # Enable header check
         )
 
-        rows, page_count, iban = extractor.extract(Path("/tmp/test.pdf"))
+        result = extractor.extract(Path("/tmp/test.pdf"))
 
         # Verify header area crop was called with override value (450)
         header_crop_calls = [

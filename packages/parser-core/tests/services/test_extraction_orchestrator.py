@@ -8,6 +8,8 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from bankstatements_core.config.processor_config import ExtractionConfig
+from bankstatements_core.domain import ExtractionResult
+from bankstatements_core.domain.converters import dicts_to_transactions
 from bankstatements_core.services.extraction_orchestrator import ExtractionOrchestrator
 
 
@@ -34,10 +36,11 @@ class TestExtractionOrchestrator(unittest.TestCase):
         pdf_path.write_text("fake pdf")
 
         # Mock successful extraction
-        mock_extract.return_value = (
-            [{"Date": "01/01/23", "Details": "Test"}],
-            5,
-            "IE12BOFI90000112345",
+        mock_extract.return_value = ExtractionResult(
+            transactions=dicts_to_transactions([{"Date": "01/01/23", "Details": "Test"}]),
+            page_count=5,
+            iban="IE12BOFI90000112345",
+            source_file=pdf_path,
         )
 
         rows, pages, iban = self.orchestrator.extract_from_pdf(pdf_path)
@@ -59,7 +62,12 @@ class TestExtractionOrchestrator(unittest.TestCase):
         mock_template = MagicMock()
         mock_template.name = "TestTemplate"
 
-        mock_extract.return_value = ([{"Date": "01/01/23"}], 3, None)
+        mock_extract.return_value = ExtractionResult(
+            transactions=dicts_to_transactions([{"Date": "01/01/23"}]),
+            page_count=3,
+            iban=None,
+            source_file=pdf_path,
+        )
 
         rows, pages, iban = self.orchestrator.extract_from_pdf(
             pdf_path, forced_template=mock_template
@@ -79,7 +87,9 @@ class TestExtractionOrchestrator(unittest.TestCase):
         pdf_path = Path(self.temp_dir) / "test.pdf"
         pdf_path.write_text("fake pdf")
 
-        mock_extract.return_value = ([], 2, None)
+        mock_extract.return_value = ExtractionResult(
+            transactions=[], page_count=2, iban=None, source_file=pdf_path
+        )
 
         rows, pages, iban = self.orchestrator.extract_from_pdf(pdf_path)
 
@@ -95,13 +105,14 @@ class TestExtractionOrchestrator(unittest.TestCase):
         pdf_path = Path(self.temp_dir) / "test.pdf"
         pdf_path.write_text("fake pdf")
 
-        mock_extract.return_value = (
-            [
+        mock_extract.return_value = ExtractionResult(
+            transactions=dicts_to_transactions([
                 {"Date": "01/01/23", "Details": "Test1"},
                 {"Date": "02/01/23", "Details": "Test2"},
-            ],
-            3,
-            None,
+            ]),
+            page_count=3,
+            iban=None,
+            source_file=pdf_path,
         )
 
         rows, _, _ = self.orchestrator.extract_from_pdf(pdf_path)

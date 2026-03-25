@@ -16,6 +16,8 @@ from bankstatements_core.config.processor_config import (
     ExtractionConfig,
     ProcessorConfig,
 )
+from bankstatements_core.domain import ExtractionResult
+from bankstatements_core.domain.converters import dicts_to_transactions
 from bankstatements_core.processor import BankStatementProcessor
 
 # Module-level defaults to avoid B008 (function call in defaults)
@@ -75,8 +77,14 @@ class TestProcessorRefactoredMethods(unittest.TestCase):
 
                 # Mock extract_tables_from_pdf to return different data
                 mock_extract.side_effect = [
-                    ([{"Date": "01/01/23", "Details": "Test1"}], 5, None),
-                    ([{"Date": "02/01/23", "Details": "Test2"}], 3, None),
+                    ExtractionResult(
+                        transactions=dicts_to_transactions([{"Date": "01/01/23", "Details": "Test1"}]),
+                        page_count=5, iban=None, source_file=Path("file1.pdf"),
+                    ),
+                    ExtractionResult(
+                        transactions=dicts_to_transactions([{"Date": "02/01/23", "Details": "Test2"}]),
+                        page_count=3, iban=None, source_file=Path("file2.pdf"),
+                    ),
                 ]
 
                 all_rows, pages_read, pdf_ibans = processor._process_all_pdfs()
@@ -323,13 +331,14 @@ class TestProcessorRefactoredIntegration(unittest.TestCase):
             )
 
             # Mock extract_tables_from_pdf
-            mock_extract.return_value = (
-                [
+            mock_extract.return_value = ExtractionResult(
+                transactions=dicts_to_transactions([
                     {"Date": "15/06/23", "Details": "Second", "Debit €": "200"},
                     {"Date": "01/01/23", "Details": "First", "Debit €": "100"},
-                ],
-                2,
-                None,
+                ]),
+                page_count=2,
+                iban=None,
+                source_file=Path("test.pdf"),
             )
 
             result = processor.run()

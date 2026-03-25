@@ -22,6 +22,8 @@ from bankstatements_core.extraction.row_post_processor import (
     StatefulPageRowProcessor,
     extract_filename_date,
 )
+from bankstatements_core.domain import ExtractionResult
+from bankstatements_core.domain.converters import dicts_to_transactions
 
 logger = logging.getLogger(__name__)
 
@@ -72,14 +74,15 @@ class PDFTableExtractor:
         else:
             self._pdf_reader = pdf_reader
 
-    def extract(self, pdf_path: Path) -> tuple[list[dict], int, str | None]:
+    def extract(self, pdf_path: Path) -> ExtractionResult:
         """Extract table data from PDF file.
 
         Args:
             pdf_path: Path to the PDF file
 
         Returns:
-            Tuple of (extracted rows, total page count, IBAN if found)
+            ExtractionResult containing extracted transactions, page count,
+            IBAN if found, source file path, and any document-level warnings
         """
         rows: list[dict] = []
         iban = None
@@ -104,7 +107,13 @@ class PDFTableExtractor:
                         f"Credit card statement detected in {pdf_path.name}. "
                         f"Credit card statements are not currently supported. Skipping file."
                     )
-                    return [], len(pdf.pages), None
+                    return ExtractionResult(
+                        transactions=[],
+                        page_count=len(pdf.pages),
+                        iban=None,
+                        source_file=pdf_path,
+                        warnings=["credit card statement detected, skipped"],
+                    )
 
                 if iban is None and page_num == 1:
                     iban = self._header_analyser.extract_iban(page)
@@ -124,7 +133,12 @@ class PDFTableExtractor:
 
                 rows.extend(page_processor.process_page(page_rows))
 
-            return rows, len(pdf.pages), iban
+            return ExtractionResult(
+                transactions=dicts_to_transactions(rows),
+                page_count=len(pdf.pages),
+                iban=iban,
+                source_file=pdf_path,
+            )
 
     def _extract_page(self, page: Any, page_num: int) -> list[dict] | None:
         """Extract rows from a single page.

@@ -158,7 +158,7 @@ class ExtractionOrchestrator:
             logger.info(f"Using template: {template.name} for {pdf_path.name}")
 
         # Extract transactions using template
-        rows, page_count, iban = extract_tables_from_pdf(
+        extraction_result = extract_tables_from_pdf(
             pdf_path,
             self._config.table_top_y,
             self._config.table_bottom_y,
@@ -166,6 +166,9 @@ class ExtractionOrchestrator:
             self._config.enable_dynamic_boundary,
             template=template,
         )
+        rows = [tx.to_dict() for tx in extraction_result.transactions]
+        page_count = extraction_result.page_count
+        iban = extraction_result.iban
 
         # Log IBAN if found
         if iban:
