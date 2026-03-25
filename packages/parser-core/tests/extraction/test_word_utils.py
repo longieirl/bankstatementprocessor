@@ -55,10 +55,15 @@ class TestGroupWordsByY:
         assert result[370.0][0]["text"] == "B"
 
     def test_fractional_tops_round_to_integer_key(self):
-        """Words with top=100.3 and top=100.7 both round to 100.0 (one group)."""
+        """Words with top values that round to the same integer produce one group.
+
+        round(100.3, 0) == 100.0 and round(100.4, 0) == 100.0 → one group.
+        Note: round(100.7, 0) == 101.0 (banker's rounding), producing a separate
+        group.  The implementation uses Python's built-in round(top, 0).
+        """
         words = [
             _word("A", 10, 100.3),
-            _word("B", 60, 100.7),
+            _word("B", 60, 100.4),
         ]
         result = group_words_by_y(words)
         assert len(result) == 1
@@ -76,7 +81,7 @@ class TestGroupWordsByY:
         """Grouping is by round(top, 0) regardless of tolerance value."""
         words = [
             _word("A", 10, 100.3),
-            _word("B", 60, 100.7),
+            _word("B", 60, 100.4),
         ]
         result_default = group_words_by_y(words)
         result_large_tolerance = group_words_by_y(words, tolerance=50.0)
