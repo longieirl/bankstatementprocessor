@@ -367,16 +367,16 @@ class BankStatementProcessorBuilder:
             config.extraction.enable_dynamic_boundary,
         )
 
-        from bankstatements_core.services.service_registry import ServiceRegistry
+        from bankstatements_core.patterns.strategies import AllFieldsDuplicateStrategy
         from bankstatements_core.services.duplicate_detector import (
             DuplicateDetectionService,
         )
+        from bankstatements_core.services.service_registry import ServiceRegistry
         from bankstatements_core.services.sorting_service import (
             ChronologicalSortingStrategy,
             NoSortingStrategy,
             TransactionSortingService,
         )
-        from bankstatements_core.patterns.strategies import AllFieldsDuplicateStrategy
 
         duplicate_strategy = self._duplicate_strategy or AllFieldsDuplicateStrategy()
         duplicate_detector = DuplicateDetectionService(duplicate_strategy)
