@@ -538,7 +538,7 @@ class TestPDFTableExtractor:
             enable_header_check=True,  # Enable header check
         )
 
-        result = extractor.extract(Path("/tmp/test.pdf"))
+        extractor.extract(Path("/tmp/test.pdf"))
 
         # Verify header area crop was called with override value (450)
         header_crop_calls = [
