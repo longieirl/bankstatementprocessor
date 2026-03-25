@@ -552,9 +552,7 @@ class TemplateRegistry:
         """
         filtered = {tid: t for tid, t in self._templates.items() if tid in ids}
         if not filtered:
-            raise ValueError(
-                f"No templates matched the given IDs: {ids}"
-            )
+            raise ValueError(f"No templates matched the given IDs: {ids}")
 
         default_id = (
             self._default_template_id

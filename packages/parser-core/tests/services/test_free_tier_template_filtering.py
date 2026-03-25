@@ -101,7 +101,10 @@ class TestFreeTierTemplateFiltering:
 
             # Original registry must NOT be mutated — both templates still present
             assert len(registry.list_all()) == 2
-            assert registry.list_enabled() == [template_with_iban, template_without_iban]
+            assert registry.list_enabled() == [
+                template_with_iban,
+                template_without_iban,
+            ]
 
     def test_free_tier_logs_disabled_templates(
         self, template_with_iban, template_without_iban, caplog
