@@ -101,6 +101,7 @@ def test_output_snapshot(request: pytest.FixtureRequest) -> None:
     current = _build_snapshot(OUTPUT_DIR)
     current["processing_summary"] = {
         "pdf_count": summary.get("pdf_count"),
+        "pdfs_extracted": summary.get("pdfs_extracted"),
         "pages_read": summary.get("pages_read"),
         "transactions": summary.get("transactions"),
         "duplicates": summary.get("duplicates"),
@@ -127,7 +128,7 @@ def test_output_snapshot(request: pytest.FixtureRequest) -> None:
     diffs = []
 
     # Compare processing summary counts
-    for key in ("pdf_count", "pages_read", "transactions", "duplicates"):
+    for key in ("pdf_count", "pdfs_extracted", "pages_read", "transactions", "duplicates"):
         base_val = baseline.get("processing_summary", {}).get(key)
         curr_val = current.get("processing_summary", {}).get(key)
         if base_val != curr_val:
