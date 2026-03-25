@@ -15,11 +15,14 @@ from typing import TYPE_CHECKING, Any, cast
 
 from bankstatements_core.domain import Transaction, dicts_to_transactions
 from bankstatements_core.entitlements import EntitlementError
+from bankstatements_core.services.date_parser import DateParserService
 
 if TYPE_CHECKING:
     from bankstatements_core.entitlements import Entitlements
 
 logger = logging.getLogger(__name__)
+
+_date_parser_service = DateParserService()
 
 
 class ExpenseAnalysisService:
@@ -143,8 +146,6 @@ class ExpenseAnalysisService:
         Returns:
             List of recurring charge dicts with metadata
         """
-        from bankstatements_core.processor import parse_transaction_date
-
         # Group transactions by EXACT description (no normalization)
         groups: dict[str, list[Transaction]] = defaultdict(list)
         for tx in tx_objects:
@@ -158,7 +159,10 @@ class ExpenseAnalysisService:
 
             # Sort by date for interval calculation
             try:
-                txs_sorted = sorted(txs, key=lambda t: parse_transaction_date(t.date))
+                txs_sorted = sorted(
+                    txs,
+                    key=lambda t: _date_parser_service.parse_transaction_date(t.date),
+                )
             except Exception as e:
                 logger.warning(f"Failed to sort transactions for {description}: {e}")
                 continue
@@ -185,8 +189,12 @@ class ExpenseAnalysisService:
             intervals = []
             for i in range(1, len(txs_sorted)):
                 try:
-                    date1 = parse_transaction_date(txs_sorted[i - 1].date)
-                    date2 = parse_transaction_date(txs_sorted[i].date)
+                    date1 = _date_parser_service.parse_transaction_date(
+                        txs_sorted[i - 1].date
+                    )
+                    date2 = _date_parser_service.parse_transaction_date(
+                        txs_sorted[i].date
+                    )
                     delta = (date2 - date1).days
                     if delta > 0:  # Only positive intervals
                         intervals.append(delta)
@@ -289,8 +297,6 @@ class ExpenseAnalysisService:
         Returns:
             List of vendor dicts with transaction details, sorted by total spent
         """
-        from bankstatements_core.processor import parse_transaction_date
-
         # Group transactions by EXACT description
         groups: dict[str, list[Transaction]] = defaultdict(list)
         for tx in tx_objects:
@@ -304,7 +310,10 @@ class ExpenseAnalysisService:
 
             # Sort by date for chronological ordering
             try:
-                txs_sorted = sorted(txs, key=lambda t: parse_transaction_date(t.date))
+                txs_sorted = sorted(
+                    txs,
+                    key=lambda t: _date_parser_service.parse_transaction_date(t.date),
+                )
             except Exception as e:
                 logger.warning(f"Failed to sort transactions for {description}: {e}")
                 txs_sorted = txs  # Use unsorted if date parsing fails

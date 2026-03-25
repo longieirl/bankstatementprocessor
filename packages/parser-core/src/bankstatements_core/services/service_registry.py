@@ -95,7 +95,7 @@ class ServiceRegistry:
         """
         from bankstatements_core.config.column_config import get_column_names
         from bankstatements_core.patterns.strategies import AllFieldsDuplicateStrategy
-        from bankstatements_core.processor import find_matching_columns
+        from bankstatements_core.services.column_analysis import ColumnAnalysisService
         from bankstatements_core.services.duplicate_detector import (
             DuplicateDetectionService,
         )
@@ -106,13 +106,14 @@ class ServiceRegistry:
             TransactionSortingService,
         )
 
+        column_analysis = ColumnAnalysisService()
         column_names = (
             get_column_names(config.extraction.columns)
             if config.extraction.columns
             else []
         )
-        debit_columns = find_matching_columns(column_names, ["debit"])
-        credit_columns = find_matching_columns(column_names, ["credit"])
+        debit_columns = column_analysis.find_matching_columns(column_names, ["debit"])
+        credit_columns = column_analysis.find_matching_columns(column_names, ["credit"])
 
         context = _ServiceContext(
             column_names=column_names,

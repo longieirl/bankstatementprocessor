@@ -270,6 +270,31 @@ class BankStatementProcessorBuilder:
         self._entitlements = entitlements
         return self
 
+    def with_processor_config(
+        self, config: ProcessorConfig
+    ) -> "BankStatementProcessorBuilder":
+        """
+        Set all config fields at once from a ProcessorConfig.
+
+        Args:
+            config: Complete processor configuration
+
+        Returns:
+            Self for method chaining
+        """
+        self._input_dir = config.input_dir
+        self._output_dir = config.output_dir
+        self._table_top_y = config.extraction.table_top_y
+        self._table_bottom_y = config.extraction.table_bottom_y
+        self._columns = config.extraction.columns
+        self._enable_dynamic_boundary = config.extraction.enable_dynamic_boundary
+        self._sort_by_date = config.processing.sort_by_date
+        self._recursive_scan = config.processing.recursive_scan
+        self._totals_columns = config.processing.totals_columns
+        self._generate_monthly_summary = config.processing.generate_monthly_summary
+        self._generate_expense_analysis = config.processing.generate_expense_analysis
+        return self
+
     def _get_output_formats(self) -> list[str]:
         """
         Determine output formats from configured strategies.

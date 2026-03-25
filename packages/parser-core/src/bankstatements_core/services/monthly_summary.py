@@ -13,8 +13,11 @@ from decimal import Decimal
 from typing import Any
 
 from bankstatements_core.domain import Transaction, dicts_to_transactions
+from bankstatements_core.services.date_parser import DateParserService
 
 logger = logging.getLogger(__name__)
+
+_date_parser_service = DateParserService()
 
 
 class MonthlySummaryService:
@@ -116,8 +119,6 @@ class MonthlySummaryService:
         Returns:
             Dictionary mapping month keys (YYYY-MM) to month data
         """
-        from bankstatements_core.processor import parse_transaction_date
-
         monthly_data: dict[str, dict[str, Any]] = defaultdict(
             lambda: {
                 "debit_total": Decimal("0"),  # Use Decimal for precision
@@ -130,7 +131,7 @@ class MonthlySummaryService:
 
         for tx, tx_dict in zip(transactions, original_dicts):
             # Use domain object's date field (type-safe)
-            date_obj = parse_transaction_date(tx.date)
+            date_obj = _date_parser_service.parse_transaction_date(tx.date)
 
             # Format as YYYY-MM for grouping
             month_key = (
