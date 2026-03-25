@@ -183,6 +183,7 @@ class OutputOrchestrator:
     def build_summary_result(
         self,
         pdf_count: int,
+        pdfs_extracted: int,
         pages_read: int,
         unique_count: int,
         duplicate_count: int,
@@ -191,22 +192,16 @@ class OutputOrchestrator:
         """Build the final summary result dictionary.
 
         Args:
-            pdf_count: Number of PDFs processed
+            pdf_count: Total PDFs discovered (including failed)
+            pdfs_extracted: PDFs successfully extracted (tables parsed)
             pages_read: Total pages read
             unique_count: Number of unique transactions
             duplicate_count: Number of duplicate transactions
             output_paths: Dictionary of output file paths
-
-        Returns:
-            Summary dictionary with processing results
-
-        Examples:
-            >>> orchestrator = OutputOrchestrator(...)
-            >>> summary = orchestrator.build_summary_result(5, 25, 100, 5, paths)
-            >>> print(f"Processed {summary['transactions']} transactions")
         """
         summary_result: dict[str, Any] = {
             "pdf_count": pdf_count,
+            "pdfs_extracted": pdfs_extracted,
             "pages_read": pages_read,
             "transactions": unique_count,
             "duplicates": duplicate_count,

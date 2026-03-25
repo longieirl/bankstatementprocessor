@@ -95,9 +95,10 @@ class TestProcessorRefactoredMethods(unittest.TestCase):
                     ),
                 ]
 
-                results = processor._process_all_pdfs()
+                results, pdf_count = processor._process_all_pdfs()
 
                 # Verify results
+                self.assertEqual(pdf_count, 2)
                 self.assertEqual(len(results), 2)
                 self.assertEqual(results[0].page_count, 5)
                 self.assertEqual(results[1].page_count, 3)
@@ -128,9 +129,10 @@ class TestProcessorRefactoredMethods(unittest.TestCase):
             with patch.object(Path, "glob") as mock_glob:
                 mock_glob.return_value = []
 
-                results = processor._process_all_pdfs()
+                results, pdf_count = processor._process_all_pdfs()
 
                 # Should return empty results
+                self.assertEqual(pdf_count, 0)
                 self.assertEqual(len(results), 0)
                 mock_extract.assert_not_called()
 
@@ -279,6 +281,7 @@ class TestProcessorRefactoredMethods(unittest.TestCase):
 
         result = self.processor._output_orchestrator.build_summary_result(
             pdf_count=3,
+            pdfs_extracted=3,
             pages_read=10,
             unique_count=50,
             duplicate_count=5,
@@ -305,6 +308,7 @@ class TestProcessorRefactoredMethods(unittest.TestCase):
 
         result = self.processor._output_orchestrator.build_summary_result(
             pdf_count=2,
+            pdfs_extracted=2,
             pages_read=5,
             unique_count=25,
             duplicate_count=2,

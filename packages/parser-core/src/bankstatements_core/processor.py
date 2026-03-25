@@ -278,11 +278,11 @@ class BankStatementProcessor:
         """
         return self._duplicate_service.detect_and_separate(all_rows)
 
-    def _process_all_pdfs(self) -> list[ExtractionResult]:
+    def _process_all_pdfs(self) -> tuple[list[ExtractionResult], int]:
         """Process all PDF files in the input directory and extract transaction data.
 
         Returns:
-            list[ExtractionResult] — one per processed PDF
+            Tuple of (results, pdf_count) where pdf_count is total PDFs discovered.
         """
         # Delegate to PDF processing orchestrator with recursive_scan setting
         return self._pdf_orchestrator.process_all_pdfs(
@@ -310,7 +310,7 @@ class BankStatementProcessor:
         start_time = datetime.now()
 
         # Step 1: Extract transactions from all PDFs (delegated to orchestrator)
-        extraction_results = self._process_all_pdfs()  # list[ExtractionResult]
+        extraction_results, pdf_count = self._process_all_pdfs()  # list[ExtractionResult]
         all_rows: list[dict] = []
         pages_read = 0
         pdf_ibans: dict[str, str] = {}
@@ -319,7 +319,6 @@ class BankStatementProcessor:
             if extraction.iban:
                 pdf_ibans[extraction.source_file.name] = extraction.iban
             all_rows.extend(transactions_to_dicts(extraction.transactions))
-        pdf_count = len(sorted(self.input_dir.glob("*.pdf")))
 
         # Step 2: Group transactions by IBAN (delegated to orchestrator)
         rows_by_iban = self._transaction_orchestrator.group_by_iban(all_rows, pdf_ibans)
@@ -367,7 +366,7 @@ class BankStatementProcessor:
             f"{total_unique} unique, {total_duplicates} duplicates"
         )
         return self._output_orchestrator.build_summary_result(
-            pdf_count, pages_read, total_unique, total_duplicates, all_output_paths
+            pdf_count, len(extraction_results), pages_read, total_unique, total_duplicates, all_output_paths
         )
 
     def _process_transaction_group(
