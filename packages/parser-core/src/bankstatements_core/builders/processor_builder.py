@@ -368,8 +368,30 @@ class BankStatementProcessorBuilder:
         )
 
         from bankstatements_core.services.service_registry import ServiceRegistry
+        from bankstatements_core.services.duplicate_detector import DuplicateDetectionService
+        from bankstatements_core.services.sorting_service import (
+            ChronologicalSortingStrategy,
+            NoSortingStrategy,
+            TransactionSortingService,
+        )
+        from bankstatements_core.patterns.strategies import AllFieldsDuplicateStrategy
 
-        registry = ServiceRegistry.from_config(config, entitlements=self._entitlements)
+        duplicate_strategy = self._duplicate_strategy or AllFieldsDuplicateStrategy()
+        duplicate_detector = DuplicateDetectionService(duplicate_strategy)
+
+        sort_strategy = (
+            ChronologicalSortingStrategy()
+            if self._sort_by_date
+            else NoSortingStrategy()
+        )
+        sorting_service = TransactionSortingService(sort_strategy)
+
+        registry = ServiceRegistry.from_config(
+            config,
+            entitlements=self._entitlements,
+            duplicate_detector=duplicate_detector,
+            sorting_service=sorting_service,
+        )
 
         return BankStatementProcessor(
             config=config,
