@@ -121,8 +121,8 @@ output/
 **/output/
 
 # Logs
-logs/*.log
-logs/processing_activity.jsonl
+logs/
+**/logs/
 *.log
 
 # Development Artifacts

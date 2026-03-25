@@ -342,6 +342,10 @@ class BankStatementProcessorBuilder:
             config.extraction.enable_dynamic_boundary,
         )
 
+        from bankstatements_core.services.service_registry import ServiceRegistry
+
+        registry = ServiceRegistry.from_config(config, entitlements=self._entitlements)
+
         return BankStatementProcessor(
             config=config,
             output_strategies=self._output_strategies,
@@ -349,4 +353,5 @@ class BankStatementProcessorBuilder:
             repository=self._repository,
             activity_log=self._activity_log,
             entitlements=self._entitlements,
+            registry=registry,
         )
