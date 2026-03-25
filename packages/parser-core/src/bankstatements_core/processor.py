@@ -29,9 +29,6 @@ from bankstatements_core.services.sorting_service import (
     TransactionSortingService,
 )
 from bankstatements_core.services.transaction_filter import TransactionFilterService
-from bankstatements_core.services.transaction_processing_orchestrator import (
-    TransactionProcessingOrchestrator,
-)
 from bankstatements_core.utils import is_date_column, to_float  # noqa: F401
 
 logger = logging.getLogger(__name__)
@@ -245,11 +242,6 @@ class BankStatementProcessor:
             output_dir=self.output_dir,
             repository=self.repository,
             entitlements=self.entitlements,
-        )
-
-        self._transaction_orchestrator = TransactionProcessingOrchestrator(
-            duplicate_detector=self._duplicate_service,
-            sorting_service=self._sorting_service,
         )
 
         # ServiceRegistry: single wiring point for transaction processing
