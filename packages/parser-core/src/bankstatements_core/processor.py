@@ -22,13 +22,13 @@ from bankstatements_core.services.output_orchestrator import OutputOrchestrator
 from bankstatements_core.services.pdf_processing_orchestrator import (
     PDFProcessingOrchestrator,
 )
+from bankstatements_core.services.service_registry import ServiceRegistry
 from bankstatements_core.services.sorting_service import (
     ChronologicalSortingStrategy,
     NoSortingStrategy,
     TransactionSortingService,
 )
 from bankstatements_core.services.transaction_filter import TransactionFilterService
-from bankstatements_core.services.service_registry import ServiceRegistry
 from bankstatements_core.services.transaction_processing_orchestrator import (
     TransactionProcessingOrchestrator,
 )
