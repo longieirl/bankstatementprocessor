@@ -210,11 +210,16 @@ class ProcessorFactory:
             ),
         )
 
+        from bankstatements_core.services.service_registry import ServiceRegistry
+
+        registry = ServiceRegistry.from_config(config, entitlements=entitlements)
+
         processor = BankStatementProcessor(
             config=config,
             output_strategies=output_strategies,
             duplicate_strategy=duplicate_strategy,
             entitlements=entitlements,
+            registry=registry,
         )
 
         return processor

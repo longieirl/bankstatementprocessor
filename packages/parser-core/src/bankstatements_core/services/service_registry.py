@@ -97,8 +97,6 @@ class ServiceRegistry:
         from bankstatements_core.config.column_config import get_column_names
         from bankstatements_core.patterns.strategies import (
             AllFieldsDuplicateStrategy,
-            ChronologicalSortingStrategy,
-            NoSortingStrategy,
         )
         from bankstatements_core.processor import find_matching_columns
         from bankstatements_core.services.duplicate_detector import (
@@ -106,12 +104,16 @@ class ServiceRegistry:
         )
         from bankstatements_core.services.iban_grouping import IBANGroupingService
         from bankstatements_core.services.sorting_service import (
+            ChronologicalSortingStrategy,
+            NoSortingStrategy,
             TransactionSortingService,
         )
 
-        column_names = get_column_names(
-            config.extraction.columns
-        ) if config.extraction.columns else []
+        column_names = (
+            get_column_names(config.extraction.columns)
+            if config.extraction.columns
+            else []
+        )
         debit_columns = find_matching_columns(column_names, ["debit"])
         credit_columns = find_matching_columns(column_names, ["credit"])
 
