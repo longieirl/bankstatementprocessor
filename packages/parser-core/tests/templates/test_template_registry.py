@@ -642,3 +642,62 @@ class TestTemplateRegistry:
         # Page 2 should use defaults
         assert test_template.extraction.get_table_top_y(2) == 140
         assert test_template.extraction.get_table_bottom_y(2) == 735
+
+
+class TestTemplateRegistryFilteredByIds:
+    """Tests for TemplateRegistry.filtered_by_ids()."""
+
+    def _make_registry(self, tmp_path):
+        """Create a registry with two templates: one with IBAN patterns, one without."""
+        iban_template = {
+            "id": "with_iban",
+            "name": "With IBAN",
+            "enabled": True,
+            "detection": {"iban_patterns": ["IE[0-9]{2}AIBK.*"]},
+            "extraction": {
+                "table_top_y": 300,
+                "table_bottom_y": 720,
+                "columns": {"Date": [26, 78]},
+            },
+        }
+        no_iban_template = {
+            "id": "no_iban",
+            "name": "No IBAN",
+            "enabled": True,
+            "detection": {},
+            "extraction": {
+                "table_top_y": 300,
+                "table_bottom_y": 720,
+                "columns": {"Date": [26, 78]},
+            },
+        }
+        (tmp_path / "with_iban.json").write_text(json.dumps(iban_template))
+        (tmp_path / "no_iban.json").write_text(json.dumps(no_iban_template))
+        return TemplateRegistry.from_directory(tmp_path)
+
+    def test_filtered_registry_excludes_non_iban_templates(self, tmp_path):
+        """filtered_by_ids() returns a new registry with only the given IDs."""
+        registry = self._make_registry(tmp_path)
+        iban_ids = {t.id for t in registry.list_all() if t.detection.iban_patterns}
+
+        filtered = registry.filtered_by_ids(iban_ids)
+
+        assert {t.id for t in filtered.list_all()} == {"with_iban"}
+        assert filtered.get_template("no_iban") is None
+
+    def test_filtered_registry_does_not_mutate_original(self, tmp_path):
+        """filtered_by_ids() does not mutate the original registry."""
+        registry = self._make_registry(tmp_path)
+        all_before = {t.id for t in registry.list_all()}
+
+        iban_ids = {t.id for t in registry.list_all() if t.detection.iban_patterns}
+        registry.filtered_by_ids(iban_ids)
+
+        assert {t.id for t in registry.list_all()} == all_before
+
+    def test_filtered_by_ids_raises_when_no_match(self, tmp_path):
+        """filtered_by_ids() raises ValueError when none of the IDs exist."""
+        registry = self._make_registry(tmp_path)
+
+        with pytest.raises(ValueError):
+            registry.filtered_by_ids({"nonexistent_id"})
