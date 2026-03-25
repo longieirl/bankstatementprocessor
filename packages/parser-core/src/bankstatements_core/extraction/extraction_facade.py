@@ -11,8 +11,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from bankstatements_core.config.column_config import DEFAULT_COLUMNS
-from bankstatements_core.extraction.extraction_params import TABLE_BOTTOM_Y, TABLE_TOP_Y
 from bankstatements_core.domain import ExtractionResult
+from bankstatements_core.extraction.extraction_params import TABLE_BOTTOM_Y, TABLE_TOP_Y
 
 if TYPE_CHECKING:
     from bankstatements_core.extraction.row_classifiers import RowClassifier

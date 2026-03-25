@@ -13,6 +13,8 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from bankstatements_core.domain.protocols.pdf_reader import IPDFReader
 
+from bankstatements_core.domain import ExtractionResult
+from bankstatements_core.domain.converters import dicts_to_transactions
 from bankstatements_core.extraction.iban_extractor import IBANExtractor
 from bankstatements_core.extraction.page_header_analyser import PageHeaderAnalyser
 from bankstatements_core.extraction.row_builder import RowBuilder
@@ -22,8 +24,6 @@ from bankstatements_core.extraction.row_post_processor import (
     StatefulPageRowProcessor,
     extract_filename_date,
 )
-from bankstatements_core.domain import ExtractionResult
-from bankstatements_core.domain.converters import dicts_to_transactions
 
 logger = logging.getLogger(__name__)
 

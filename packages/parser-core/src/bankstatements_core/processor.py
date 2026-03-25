@@ -11,6 +11,8 @@ import pandas as pd
 from bankstatements_core.config.column_config import DEFAULT_COLUMNS, get_column_names
 from bankstatements_core.config.processor_config import ProcessorConfig
 from bankstatements_core.config.totals_config import parse_totals_columns  # noqa: F401
+from bankstatements_core.domain import ExtractionResult
+from bankstatements_core.domain.converters import transactions_to_dicts
 from bankstatements_core.services.column_analysis import ColumnAnalysisService
 from bankstatements_core.services.date_parser import DateParserService
 from bankstatements_core.services.duplicate_detector import DuplicateDetectionService
@@ -30,8 +32,6 @@ from bankstatements_core.services.transaction_processing_orchestrator import (
     TransactionProcessingOrchestrator,
 )
 from bankstatements_core.utils import is_date_column, to_float  # noqa: F401
-from bankstatements_core.domain import ExtractionResult
-from bankstatements_core.domain.converters import transactions_to_dicts
 
 logger = logging.getLogger(__name__)
 

@@ -6,9 +6,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
-from bankstatements_core.extraction.column_identifier import ColumnTypeIdentifier
 from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.domain.converters import dicts_to_transactions
+from bankstatements_core.extraction.column_identifier import ColumnTypeIdentifier
 from bankstatements_core.pdf_table_extractor import (
     DEFAULT_COLUMNS,
     analyze_content_density,
