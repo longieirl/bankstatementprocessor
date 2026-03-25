@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 from abc import ABC, abstractmethod
+from typing import Sequence
 
 from bankstatements_core.extraction.column_identifier import ColumnTypeIdentifier
 
@@ -349,37 +350,78 @@ class DefaultMetadataClassifier(RowClassifier):
         return "metadata"
 
 
+class ClassifierRegistry:
+    """Wires a RowClassifier chain from an explicit priority list.
+
+    Priorities are integers; lower = checked first.
+    No two classifiers may share a priority (raises ValueError at construction).
+    build_chain() returns the standard RowClassifier head — callers are unchanged.
+    """
+
+    def __init__(
+        self,
+        classifiers: Sequence[tuple[int, type[RowClassifier]]],
+    ) -> None:
+        """
+        Args:
+            classifiers: Sequence of (priority, classifier_class) pairs.
+
+        Raises:
+            ValueError: If any two classifiers share the same priority.
+            TypeError: If a class is not a RowClassifier subclass.
+        """
+        seen_priorities: dict[int, str] = {}
+        for priority, cls in classifiers:
+            if not (isinstance(cls, type) and issubclass(cls, RowClassifier)):
+                raise TypeError(f"{cls!r} is not a RowClassifier subclass")
+            if priority in seen_priorities:
+                raise ValueError(
+                    f"priority {priority} already assigned to "
+                    f"{seen_priorities[priority]}, cannot also assign to "
+                    f"{cls.__name__}"
+                )
+            seen_priorities[priority] = cls.__name__
+
+        self._classifiers: list[tuple[int, type[RowClassifier]]] = sorted(
+            classifiers, key=lambda x: x[0]
+        )
+
+    def build_chain(self) -> RowClassifier:
+        """Instantiate classifiers in priority order, wire set_next(), return head."""
+        instances = [cls() for _, cls in self._classifiers]
+        for i in range(len(instances) - 1):
+            instances[i].set_next(instances[i + 1])
+        return instances[0]
+
+    def get_priority_order(self) -> list[tuple[int, str]]:
+        """Return [(priority, class_name), ...] in execution order."""
+        return [(priority, cls.__name__) for priority, cls in self._classifiers]
+
+
 def create_row_classifier_chain() -> RowClassifier:
     """
     Create and configure the chain of row classifiers.
 
-    The order matters - classifiers are applied in sequence:
-    1. HeaderMetadataClassifier - Detect column headers first
-    2. AdministrativeClassifier - Detect administrative entries
-    3. ReferenceCodeClassifier - Detect reference codes
-    4. FXContinuationClassifier - Detect FX continuation lines
-    5. TimestampMetadataClassifier - Detect timestamps
-    6. TransactionClassifier - Detect transactions
-    7. DefaultMetadataClassifier - Catch-all for anything else
+    Priority order (0 = checked first):
+      0  HeaderMetadataClassifier    — column headers and field labels
+      1  AdministrativeClassifier    — BALANCE FORWARD, Lending @
+      2  ReferenceCodeClassifier     — IE123456 patterns
+      3  FXContinuationClassifier    — FX rates, fees, exchange lines
+      4  TimestampMetadataClassifier — 01JAN2023 TIME 14:30
+      5  TransactionClassifier       — debit/credit/date combinations
+      6  DefaultMetadataClassifier   — catch-all fallback
 
     Returns:
         The head of the classifier chain
     """
-    # Create classifiers
-    header_classifier = HeaderMetadataClassifier()
-    admin_classifier = AdministrativeClassifier()
-    reference_classifier = ReferenceCodeClassifier()
-    fx_classifier = FXContinuationClassifier()
-    timestamp_classifier = TimestampMetadataClassifier()
-    transaction_classifier = TransactionClassifier()
-    default_classifier = DefaultMetadataClassifier()
-
-    # Build the chain
-    header_classifier.set_next(admin_classifier)
-    admin_classifier.set_next(reference_classifier)
-    reference_classifier.set_next(fx_classifier)
-    fx_classifier.set_next(timestamp_classifier)
-    timestamp_classifier.set_next(transaction_classifier)
-    transaction_classifier.set_next(default_classifier)
-
-    return header_classifier
+    return ClassifierRegistry(
+        [
+            (0, HeaderMetadataClassifier),
+            (1, AdministrativeClassifier),
+            (2, ReferenceCodeClassifier),
+            (3, FXContinuationClassifier),
+            (4, TimestampMetadataClassifier),
+            (5, TransactionClassifier),
+            (6, DefaultMetadataClassifier),
+        ]
+    ).build_chain()
