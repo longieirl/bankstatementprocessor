@@ -53,7 +53,7 @@ class ProcessingConfig:
     totals_columns: list[str] | None = None
     generate_monthly_summary: bool = True
     generate_expense_analysis: bool = True
-    recursive_scan: bool = False
+    recursive_scan: bool = True
 
 
 @dataclass

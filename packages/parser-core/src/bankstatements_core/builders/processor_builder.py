@@ -43,7 +43,7 @@ class BankStatementProcessorBuilder:
         self._columns: dict[str, tuple[int | float, int | float]] | None = None
         self._enable_dynamic_boundary: bool = False
         self._sort_by_date: bool = True
-        self._recursive_scan: bool = False
+        self._recursive_scan: bool = True
         self._totals_columns: list[str] | None = None
         self._generate_monthly_summary: bool = True
         self._generate_expense_analysis: bool = True

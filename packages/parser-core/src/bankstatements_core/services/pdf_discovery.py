@@ -29,7 +29,7 @@ class PDFDiscoveryService:
     def discover_pdfs(
         self,
         input_dir: Path,
-        recursive: bool = False,
+        recursive: bool = True,
     ) -> list[Path]:
         """Discover PDF files in input directory.
 

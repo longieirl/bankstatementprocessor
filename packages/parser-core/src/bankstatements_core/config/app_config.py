@@ -38,7 +38,7 @@ class AppConfig:
     table_bottom_y: int = 720
     enable_dynamic_boundary: bool = False
     sort_by_date: bool = True
-    recursive_scan: bool = False
+    recursive_scan: bool = True
     totals_columns: list[str] = field(default_factory=list)
     generate_monthly_summary: bool = True
     generate_expense_analysis: bool = True
@@ -128,7 +128,7 @@ class AppConfig:
                 "ENABLE_DYNAMIC_BOUNDARY", False
             )
             sort_by_date = EnvironmentParser.parse_bool("SORT_BY_DATE", True)
-            recursive_scan = EnvironmentParser.parse_bool("RECURSIVE_SCAN", False)
+            recursive_scan = EnvironmentParser.parse_bool("RECURSIVE_SCAN", True)
             generate_monthly_summary = EnvironmentParser.parse_bool(
                 "GENERATE_MONTHLY_SUMMARY", True
             )
