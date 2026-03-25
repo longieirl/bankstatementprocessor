@@ -43,11 +43,12 @@ class TestExtractionOrchestrator(unittest.TestCase):
             source_file=pdf_path,
         )
 
-        rows, pages, iban = self.orchestrator.extract_from_pdf(pdf_path)
+        result = self.orchestrator.extract_from_pdf(pdf_path)
 
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(pages, 5)
-        self.assertEqual(iban, "IE12BOFI90000112345")
+        self.assertIsInstance(result, ExtractionResult)
+        self.assertEqual(len(result.transactions), 1)
+        self.assertEqual(result.page_count, 5)
+        self.assertEqual(result.iban, "IE12BOFI90000112345")
         mock_extract.assert_called_once()
 
     @patch(
@@ -69,12 +70,13 @@ class TestExtractionOrchestrator(unittest.TestCase):
             source_file=pdf_path,
         )
 
-        rows, pages, iban = self.orchestrator.extract_from_pdf(
+        result = self.orchestrator.extract_from_pdf(
             pdf_path, forced_template=mock_template
         )
 
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(pages, 3)
+        self.assertIsInstance(result, ExtractionResult)
+        self.assertEqual(len(result.transactions), 1)
+        self.assertEqual(result.page_count, 3)
         # Verify extraction was called with the forced template
         call_args = mock_extract.call_args
         self.assertEqual(call_args[0][0], pdf_path)  # First positional arg
@@ -91,11 +93,12 @@ class TestExtractionOrchestrator(unittest.TestCase):
             transactions=[], page_count=2, iban=None, source_file=pdf_path
         )
 
-        rows, pages, iban = self.orchestrator.extract_from_pdf(pdf_path)
+        result = self.orchestrator.extract_from_pdf(pdf_path)
 
-        self.assertEqual(len(rows), 0)
-        self.assertEqual(pages, 2)
-        self.assertIsNone(iban)
+        self.assertIsInstance(result, ExtractionResult)
+        self.assertEqual(len(result.transactions), 0)
+        self.assertEqual(result.page_count, 2)
+        self.assertIsNone(result.iban)
 
     @patch(
         "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
@@ -115,12 +118,13 @@ class TestExtractionOrchestrator(unittest.TestCase):
             source_file=pdf_path,
         )
 
-        rows, _, _ = self.orchestrator.extract_from_pdf(pdf_path)
+        result = self.orchestrator.extract_from_pdf(pdf_path)
 
-        # Rows should be returned as-is (Filename is added by caller, not orchestrator)
-        self.assertEqual(len(rows), 2)
-        self.assertEqual(rows[0]["Details"], "Test1")
-        self.assertEqual(rows[1]["Details"], "Test2")
+        self.assertIsInstance(result, ExtractionResult)
+        # transactions are Transaction objects; check via to_dict() for field values
+        self.assertEqual(len(result.transactions), 2)
+        self.assertEqual(result.transactions[0].to_dict()["Details"], "Test1")
+        self.assertEqual(result.transactions[1].to_dict()["Details"], "Test2")
 
     def test_initialization_without_errors(self):
         """Test orchestrator initializes without errors."""
