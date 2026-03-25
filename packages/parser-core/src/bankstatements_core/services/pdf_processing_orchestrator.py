@@ -164,9 +164,12 @@ class PDFProcessingOrchestrator:
                     pdf_ibans[pdf.name] = result.iban
 
                 # Apply filters to extracted rows
+                from bankstatements_core.domain.converters import dicts_to_transactions
+
                 filtered_rows = self.filter_service.apply_all_filters(
                     transactions_to_dicts(result.transactions)
                 )
+                result.transactions = dicts_to_transactions(filtered_rows)
 
                 logger.info(
                     "Successfully processed PDF %d: %d transactions extracted",
