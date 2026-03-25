@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from bankstatements_core.domain.protocols.services import ITemplateDetector
 
 from bankstatements_core.config.processor_config import ExtractionConfig
+from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.entitlements import Entitlements
 from bankstatements_core.extraction.extraction_facade import extract_tables_from_pdf
 from bankstatements_core.templates import TemplateDetector, TemplateRegistry
@@ -132,7 +133,7 @@ class ExtractionOrchestrator:
         self,
         pdf_path: Path,
         forced_template: BankTemplate | None = None,
-    ) -> tuple[list, int, str | None]:
+    ) -> ExtractionResult:
         """Extract transactions from a single PDF file.
 
         Args:
@@ -141,10 +142,8 @@ class ExtractionOrchestrator:
                            (overrides instance forced_template)
 
         Returns:
-            Tuple of (rows, page_count, iban):
-                - rows: List of transaction dictionaries
-                - page_count: Number of pages processed
-                - iban: Extracted IBAN or None
+            ExtractionResult containing extracted transactions, page count, IBAN,
+            and document-level warnings
         """
         # Determine which template to use
         template = forced_template or self._forced_template
@@ -158,7 +157,7 @@ class ExtractionOrchestrator:
             logger.info(f"Using template: {template.name} for {pdf_path.name}")
 
         # Extract transactions using template
-        extraction_result = extract_tables_from_pdf(
+        result = extract_tables_from_pdf(
             pdf_path,
             self._config.table_top_y,
             self._config.table_bottom_y,
@@ -166,17 +165,14 @@ class ExtractionOrchestrator:
             self._config.enable_dynamic_boundary,
             template=template,
         )
-        rows = [tx.to_dict() for tx in extraction_result.transactions]
-        page_count = extraction_result.page_count
-        iban = extraction_result.iban
 
         # Log IBAN if found
-        if iban:
+        if result.iban:
             logger.info(
-                f"IBAN extracted from {pdf_path.name}: {iban[:4]}****{iban[-4:]}"
+                f"IBAN extracted from {pdf_path.name}: {result.iban[:4]}****{result.iban[-4:]}"
             )
 
-        return rows, page_count, iban
+        return result
 
     def _detect_template(self, pdf_path: Path) -> BankTemplate | None:
         """Detect template for a PDF file.
