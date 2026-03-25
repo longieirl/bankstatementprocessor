@@ -282,10 +282,27 @@ class BankStatementProcessor:
         Returns:
             Tuple of (all_rows, total_pages_read, pdf_ibans)
         """
+        from bankstatements_core.domain.converters import transactions_to_dicts
+
         # Delegate to PDF processing orchestrator with recursive_scan setting
-        return self._pdf_orchestrator.process_all_pdfs(
+        results = self._pdf_orchestrator.process_all_pdfs(
             self.input_dir, recursive=self.recursive_scan
         )
+
+        # Adapt list[ExtractionResult] → (all_rows, pages_read, pdf_ibans) for caller
+        all_rows: list[dict] = []
+        pages_read = 0
+        pdf_ibans: dict[str, str] = {}
+        for result in results:
+            pages_read += result.page_count
+            # Skip excluded results (no IBAN, no transactions, but had pages)
+            if result.iban is None and len(result.transactions) == 0 and result.page_count > 0:
+                continue
+            if result.iban:
+                pdf_ibans[result.source_file.name] = result.iban
+            all_rows.extend(transactions_to_dicts(result.transactions))
+
+        return all_rows, pages_read, pdf_ibans
 
     def _sort_transactions_by_date(self, rows: list[dict]) -> list[dict]:
         """

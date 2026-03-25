@@ -16,6 +16,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from bankstatements_core.config.processor_config import ExtractionConfig
+from bankstatements_core.domain import ExtractionResult
+from bankstatements_core.domain.converters import transactions_to_dicts
 from bankstatements_core.entitlements import Entitlements
 
 if TYPE_CHECKING:
@@ -103,7 +105,7 @@ class PDFProcessingOrchestrator:
 
     def process_all_pdfs(
         self, input_dir: Path, recursive: bool = False
-    ) -> tuple[list[dict], int, dict[str, str]]:
+    ) -> list[ExtractionResult]:
         """Process all PDF files in the input directory.
 
         Args:
@@ -111,18 +113,16 @@ class PDFProcessingOrchestrator:
             recursive: Whether to search subdirectories recursively
 
         Returns:
-            Tuple of (all_transactions, total_pages_read, pdf_ibans)
+            list[ExtractionResult] — one ExtractionResult per successfully processed PDF
 
         Examples:
             # orchestrator = PDFProcessingOrchestrator(config, columns, output_dir)
-            # result = orchestrator.process_all_pdfs(Path("input"))
-            # transactions, pages, ibans = result
-            # Processed {len(transactions)} transactions
+            # results = orchestrator.process_all_pdfs(Path("input"))
         """
         # Discover PDF files
         pdf_files = self.pdf_discovery.discover_pdfs(input_dir, recursive=recursive)
 
-        all_rows: list[dict] = []
+        results: list[ExtractionResult] = []
         pages_read = 0
         pdf_ibans: dict[str, str] = {}
         excluded_files: list[dict[str, Any]] = []
@@ -132,13 +132,11 @@ class PDFProcessingOrchestrator:
             logger.info("Processing PDF %d of %d", idx, len(pdf_files))
 
             try:
-                rows, page_count, iban = self.extraction_orchestrator.extract_from_pdf(
-                    pdf
-                )
-                pages_read += page_count
+                result = self.extraction_orchestrator.extract_from_pdf(pdf)
+                pages_read += result.page_count
 
                 # Check if should be excluded (no IBAN and no data)
-                if iban is None and len(rows) == 0 and page_count > 0:
+                if result.iban is None and len(result.transactions) == 0 and result.page_count > 0:
                     excluded_files.append(
                         {
                             "filename": pdf.name,
@@ -148,7 +146,7 @@ class PDFProcessingOrchestrator:
                                 "(likely credit card statement)"
                             ),
                             "timestamp": datetime.now().isoformat(),
-                            "pages": page_count,
+                            "pages": result.page_count,
                         }
                     )
                     logger.warning(
@@ -156,21 +154,24 @@ class PDFProcessingOrchestrator:
                         idx,
                         pdf.name,
                     )
+                    results.append(result)
                     continue
 
                 # Store IBAN if found
-                if iban:
-                    pdf_ibans[pdf.name] = iban
+                if result.iban:
+                    pdf_ibans[pdf.name] = result.iban
 
                 # Apply filters to extracted rows
-                filtered_rows = self.filter_service.apply_all_filters(rows)
+                filtered_rows = self.filter_service.apply_all_filters(
+                    transactions_to_dicts(result.transactions)
+                )
 
-                all_rows.extend(filtered_rows)
                 logger.info(
                     "Successfully processed PDF %d: %d transactions extracted",
                     idx,
                     len(filtered_rows),
                 )
+                results.append(result)
 
             except (OSError, ValueError, AttributeError, KeyError) as e:
                 # Expected errors: file I/O, invalid PDF structure, missing attributes, missing keys
@@ -190,7 +191,7 @@ class PDFProcessingOrchestrator:
         if excluded_files:
             self._save_excluded_files(excluded_files)
 
-        return all_rows, pages_read, pdf_ibans
+        return results
 
     def _save_ibans(self, pdf_ibans: dict[str, str]) -> None:
         """Save extracted IBANs to JSON file.
