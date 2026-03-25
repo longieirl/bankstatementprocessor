@@ -310,7 +310,9 @@ class BankStatementProcessor:
         start_time = datetime.now()
 
         # Step 1: Extract transactions from all PDFs (delegated to orchestrator)
-        extraction_results, pdf_count = self._process_all_pdfs()  # list[ExtractionResult]
+        extraction_results, pdf_count = (
+            self._process_all_pdfs()
+        )  # list[ExtractionResult]
         all_rows: list[dict] = []
         pages_read = 0
         pdf_ibans: dict[str, str] = {}
@@ -366,7 +368,12 @@ class BankStatementProcessor:
             f"{total_unique} unique, {total_duplicates} duplicates"
         )
         return self._output_orchestrator.build_summary_result(
-            pdf_count, len(extraction_results), pages_read, total_unique, total_duplicates, all_output_paths
+            pdf_count,
+            len(extraction_results),
+            pages_read,
+            total_unique,
+            total_duplicates,
+            all_output_paths,
         )
 
     def _process_transaction_group(

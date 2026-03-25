@@ -57,7 +57,9 @@ def _build_snapshot(output_dir: Path) -> dict:
         snapshot["files"][path.name] = entry
 
     # Top-level summary metrics
-    csv_files = [k for k in snapshot["files"] if k.endswith(".csv") and "duplicate" not in k]
+    csv_files = [
+        k for k in snapshot["files"] if k.endswith(".csv") and "duplicate" not in k
+    ]
     snapshot["summary"] = {
         "total_files": len(snapshot["files"]),
         "csv_outputs": len(csv_files),
@@ -79,7 +81,9 @@ def test_output_snapshot(request: pytest.FixtureRequest) -> None:
     # Import here so the test is skippable without importing the full app
     from bankstatements_core.config.app_config import AppConfig
     from bankstatements_core.entitlements import Entitlements
-    from bankstatements_core.facades.processing_facade import BankStatementProcessingFacade
+    from bankstatements_core.facades.processing_facade import (
+        BankStatementProcessingFacade,
+    )
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
