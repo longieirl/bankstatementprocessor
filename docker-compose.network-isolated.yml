@@ -79,11 +79,15 @@ services:
       - EXIT_AFTER_PROCESSING=${EXIT_AFTER_PROCESSING:-true}
       - ENABLE_DYNAMIC_BOUNDARY=${ENABLE_DYNAMIC_BOUNDARY:-false}
       - SORT_BY_DATE=${SORT_BY_DATE:-true}
+      - RECURSIVE_SCAN=${RECURSIVE_SCAN:-true}
+      # Minimal output format for GDPR-compliant environments (override to add json/excel)
       - OUTPUT_FORMATS=${OUTPUT_FORMATS:-csv}
+      # Disabled by default in isolated mode; enable explicitly if required
       - GENERATE_MONTHLY_SUMMARY=${GENERATE_MONTHLY_SUMMARY:-false}
       - GENERATE_EXPENSE_ANALYSIS=${GENERATE_EXPENSE_ANALYSIS:-false}
       - TOTALS_COLUMNS=${TOTALS_COLUMNS:-debit,credit}
       - TABLE_TOP_Y=${TABLE_TOP_Y:-250}
+      - TABLE_BOTTOM_Y=${TABLE_BOTTOM_Y:-720}
       - DATA_RETENTION_DAYS=${DATA_RETENTION_DAYS:-0}
       - AUTO_CLEANUP_ON_EXIT=${AUTO_CLEANUP_ON_EXIT:-false}
       - LOGS_DIR=${LOGS_DIR:-logs}
