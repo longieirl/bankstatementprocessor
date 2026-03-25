@@ -136,7 +136,11 @@ class PDFProcessingOrchestrator:
                 pages_read += result.page_count
 
                 # Check if should be excluded (no IBAN and no data)
-                if result.iban is None and len(result.transactions) == 0 and result.page_count > 0:
+                if (
+                    result.iban is None
+                    and len(result.transactions) == 0
+                    and result.page_count > 0
+                ):
                     excluded_files.append(
                         {
                             "filename": pdf.name,

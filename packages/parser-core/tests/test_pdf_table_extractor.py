@@ -84,7 +84,9 @@ class TestPdfTableExtractor(unittest.TestCase):
         self.assertEqual(result.transactions[0].filename, "test.pdf")
 
         # Check second transaction (should inherit date from first)
-        self.assertEqual(result.transactions[1].date.strip(), "01 Jan 2024")  # Inherited!
+        self.assertEqual(
+            result.transactions[1].date.strip(), "01 Jan 2024"
+        )  # Inherited!
         self.assertEqual(result.transactions[1].details.strip(), "Coffee Shop")
         self.assertEqual(result.transactions[1].debit.strip(), "5.50")
 
@@ -416,7 +418,9 @@ class TestPdfTableExtractor(unittest.TestCase):
 
             # Should have fewer rows (administrative content filtered)
             self.assertEqual(len(dynamic_result.transactions), 1)
-            self.assertEqual(dynamic_result.transactions[0].details.strip(), "VDC-STORE")
+            self.assertEqual(
+                dynamic_result.transactions[0].details.strip(), "VDC-STORE"
+            )
 
         run_test()
 
@@ -638,9 +642,7 @@ class TestPdfTableExtractor(unittest.TestCase):
         test_pdf_path = Path("/tmp/test.pdf")
 
         # Test with page validation enabled
-        result = extract_tables_from_pdf(
-            test_pdf_path, enable_page_validation=True
-        )
+        result = extract_tables_from_pdf(test_pdf_path, enable_page_validation=True)
 
         # Should have processed only the valid page
         self.assertEqual(result.page_count, 2)  # Total pages processed
@@ -657,7 +659,9 @@ class TestPdfTableExtractor(unittest.TestCase):
         )
 
         # Should process both pages (more rows due to invalid page content)
-        self.assertGreaterEqual(len(result_no_val.transactions), len(result.transactions))
+        self.assertGreaterEqual(
+            len(result_no_val.transactions), len(result.transactions)
+        )
 
     def test_analyze_content_density_empty_word_groups(self):
         """Test analyze_content_density with empty word groups."""

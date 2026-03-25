@@ -201,13 +201,15 @@ class TestTransactionDataNoBlocking:
             ) as mock_extract:
                 # Returns: ExtractionResult with VISA in transactions, IBAN from header
                 mock_extract.return_value = ExtractionResult(
-                    transactions=dicts_to_transactions([
-                        {
-                            "Date": "11 Aug",
-                            "Details": "MOBI CLICK VISA",
-                            "Debit €": "100.00",
-                        }
-                    ]),
+                    transactions=dicts_to_transactions(
+                        [
+                            {
+                                "Date": "11 Aug",
+                                "Details": "MOBI CLICK VISA",
+                                "Debit €": "100.00",
+                            }
+                        ]
+                    ),
                     page_count=1,
                     iban="IE48AIBK93408921459015",
                     source_file=Path("test.pdf"),
@@ -246,10 +248,12 @@ class TestTransactionDataNoBlocking:
                 "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
             ) as mock_extract:
                 mock_extract.return_value = ExtractionResult(
-                    transactions=dicts_to_transactions([
-                        {"Date": "11 Aug", "Details": detail}
-                        for detail in transaction_details
-                    ]),
+                    transactions=dicts_to_transactions(
+                        [
+                            {"Date": "11 Aug", "Details": detail}
+                            for detail in transaction_details
+                        ]
+                    ),
                     page_count=1,
                     iban="IE48AIBK93408921459015",
                     source_file=Path("test.pdf"),

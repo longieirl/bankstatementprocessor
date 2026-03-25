@@ -229,15 +229,32 @@ class TestCalculateColumnCoverage:
     def test_all_columns_have_data_returns_one(self):
         """When every column has data in at least one row, coverage is 1.0."""
         rows = [
-            {"Date": "01/01", "Details": "Tesco", "Debit": "12.50", "Credit": "", "Balance": "100.00"},
-            {"Date": "", "Details": "AIB", "Debit": "", "Credit": "50.00", "Balance": ""},
+            {
+                "Date": "01/01",
+                "Details": "Tesco",
+                "Debit": "12.50",
+                "Credit": "",
+                "Balance": "100.00",
+            },
+            {
+                "Date": "",
+                "Details": "AIB",
+                "Debit": "",
+                "Credit": "50.00",
+                "Balance": "",
+            },
         ]
         result = calculate_column_coverage(rows, COLUMNS)
         assert result == 1.0
 
     def test_partial_coverage(self):
         """2 of 4 columns having data returns 0.5."""
-        two_col_columns = {"Date": (0, 50), "Details": (50, 200), "Debit": (200, 250), "Credit": (250, 300)}
+        two_col_columns = {
+            "Date": (0, 50),
+            "Details": (50, 200),
+            "Debit": (200, 250),
+            "Credit": (250, 300),
+        }
         rows = [
             {"Date": "01/01", "Details": "Tesco", "Debit": "", "Credit": ""},
         ]
@@ -265,7 +282,9 @@ class TestCalculateColumnCoverage:
 
     def test_single_row_single_column_has_data(self):
         """1 of 5 columns having data in one row returns 0.2."""
-        rows = [{"Date": "", "Details": "Tesco", "Debit": "", "Credit": "", "Balance": ""}]
+        rows = [
+            {"Date": "", "Details": "Tesco", "Debit": "", "Credit": "", "Balance": ""}
+        ]
         result = calculate_column_coverage(rows, COLUMNS)
         assert result == pytest.approx(0.2)
 

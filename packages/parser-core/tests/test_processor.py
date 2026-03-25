@@ -289,13 +289,21 @@ class TestBankStatementProcessor(unittest.TestCase):
         # Mock: first PDF succeeds, second fails, third succeeds
         mock_extract.side_effect = [
             ExtractionResult(
-                transactions=dicts_to_transactions([{"Date": "01 Jan 2024", "Details": "Transaction 1"}]),
-                page_count=1, iban=None, source_file=Path("good.pdf"),
+                transactions=dicts_to_transactions(
+                    [{"Date": "01 Jan 2024", "Details": "Transaction 1"}]
+                ),
+                page_count=1,
+                iban=None,
+                source_file=Path("good.pdf"),
             ),
             OSError("Failed to open PDF"),
             ExtractionResult(
-                transactions=dicts_to_transactions([{"Date": "02 Jan 2024", "Details": "Transaction 2"}]),
-                page_count=1, iban=None, source_file=Path("good2.pdf"),
+                transactions=dicts_to_transactions(
+                    [{"Date": "02 Jan 2024", "Details": "Transaction 2"}]
+                ),
+                page_count=1,
+                iban=None,
+                source_file=Path("good2.pdf"),
             ),
         ]
 
@@ -319,12 +327,19 @@ class TestBankStatementProcessor(unittest.TestCase):
         # Mock: first PDF returns no rows, second has data
         mock_extract.side_effect = [
             ExtractionResult(
-                transactions=[], page_count=1, iban=None, source_file=Path("empty.pdf"),
+                transactions=[],
+                page_count=1,
+                iban=None,
+                source_file=Path("empty.pdf"),
                 warnings=["credit card statement detected, skipped"],
             ),
             ExtractionResult(
-                transactions=dicts_to_transactions([{"Date": "01 Jan 2024", "Details": "Transaction 1"}]),
-                page_count=1, iban=None, source_file=Path("with_data.pdf"),
+                transactions=dicts_to_transactions(
+                    [{"Date": "01 Jan 2024", "Details": "Transaction 1"}]
+                ),
+                page_count=1,
+                iban=None,
+                source_file=Path("with_data.pdf"),
             ),
         ]
 

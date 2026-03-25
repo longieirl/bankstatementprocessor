@@ -43,7 +43,9 @@ class TestExcludedFilesLogging:
                 "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
             ) as mock_extract:
                 mock_extract.return_value = ExtractionResult(
-                    transactions=[], page_count=1, iban=None,
+                    transactions=[],
+                    page_count=1,
+                    iban=None,
                     source_file=Path("credit_card.pdf"),
                     warnings=["credit card statement detected, skipped"],
                 )
@@ -84,9 +86,9 @@ class TestExcludedFilesLogging:
                 "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
             ) as mock_extract:
                 mock_extract.return_value = ExtractionResult(
-                    transactions=dicts_to_transactions([
-                        {"Date": "01/12/23", "Details": "Test", "Debit €": "100"}
-                    ]),
+                    transactions=dicts_to_transactions(
+                        [{"Date": "01/12/23", "Details": "Test", "Debit €": "100"}]
+                    ),
                     page_count=1,
                     iban="IE29AIBK93115212345678",
                     source_file=Path("bank_statement.pdf"),
@@ -117,7 +119,9 @@ class TestExcludedFilesLogging:
                 "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
             ) as mock_extract:
                 mock_extract.return_value = ExtractionResult(
-                    transactions=[], page_count=2, iban=None,
+                    transactions=[],
+                    page_count=2,
+                    iban=None,
                     source_file=Path("credit_card.pdf"),
                     warnings=["credit card statement detected, skipped"],
                 )
@@ -160,15 +164,17 @@ class TestExcludedFilesLogging:
             def mock_extract_side_effect(pdf_path, *args, **kwargs):
                 if "credit_card" in str(pdf_path):
                     return ExtractionResult(
-                        transactions=[], page_count=1, iban=None,
+                        transactions=[],
+                        page_count=1,
+                        iban=None,
                         source_file=pdf_path,
                         warnings=["credit card statement detected, skipped"],
                     )
                 else:
                     return ExtractionResult(
-                        transactions=dicts_to_transactions([
-                            {"Date": "01/12/23", "Details": "Test", "Debit €": "100"}
-                        ]),
+                        transactions=dicts_to_transactions(
+                            [{"Date": "01/12/23", "Details": "Test", "Debit €": "100"}]
+                        ),
                         page_count=1,
                         iban="IE29AIBK93115212345678",
                         source_file=pdf_path,
@@ -208,7 +214,9 @@ class TestExcludedFilesLogging:
                 "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
             ) as mock_extract:
                 mock_extract.return_value = ExtractionResult(
-                    transactions=[], page_count=3, iban=None,
+                    transactions=[],
+                    page_count=3,
+                    iban=None,
                     source_file=Path("test.pdf"),
                     warnings=["credit card statement detected, skipped"],
                 )
@@ -327,7 +335,9 @@ class TestExcludedFilesLogging:
                 "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
             ) as mock_extract:
                 mock_extract.return_value = ExtractionResult(
-                    transactions=[], page_count=2, iban="IE29AIBK93115212345678",
+                    transactions=[],
+                    page_count=2,
+                    iban="IE29AIBK93115212345678",
                     source_file=Path("bank_statement.pdf"),
                 )
 
@@ -361,13 +371,17 @@ class TestExcludedFilesLogging:
                 if "bank_with_iban" in str(pdf_path):
                     # Has IBAN, empty rows (should NOT be excluded)
                     return ExtractionResult(
-                        transactions=[], page_count=2, iban="IE29AIBK93115212345678",
+                        transactions=[],
+                        page_count=2,
+                        iban="IE29AIBK93115212345678",
                         source_file=pdf_path,
                     )
                 else:
                     # No IBAN, empty rows (SHOULD be excluded)
                     return ExtractionResult(
-                        transactions=[], page_count=1, iban=None,
+                        transactions=[],
+                        page_count=1,
+                        iban=None,
                         source_file=pdf_path,
                         warnings=["credit card statement detected, skipped"],
                     )

@@ -9,7 +9,10 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from bankstatements_core.extraction.word_utils import assign_words_to_columns, group_words_by_y
+from bankstatements_core.extraction.word_utils import (
+    assign_words_to_columns,
+    group_words_by_y,
+)
 
 if TYPE_CHECKING:
     from bankstatements_core.extraction.row_classifiers import RowClassifier
@@ -46,7 +49,9 @@ class RowBuilder:
         lines = group_words_by_y(words)
         page_rows = []
         for _, line_words in sorted(lines.items()):
-            row = assign_words_to_columns(line_words, self._columns, strict_rightmost=True)
+            row = assign_words_to_columns(
+                line_words, self._columns, strict_rightmost=True
+            )
             if any(row.values()):
                 row_type = self._row_classifier.classify(row, self._columns)
                 if row_type in ["transaction", "continuation"]:

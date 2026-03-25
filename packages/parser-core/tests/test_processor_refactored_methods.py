@@ -78,12 +78,20 @@ class TestProcessorRefactoredMethods(unittest.TestCase):
                 # Mock extract_tables_from_pdf to return different data
                 mock_extract.side_effect = [
                     ExtractionResult(
-                        transactions=dicts_to_transactions([{"Date": "01/01/23", "Details": "Test1"}]),
-                        page_count=5, iban=None, source_file=Path("file1.pdf"),
+                        transactions=dicts_to_transactions(
+                            [{"Date": "01/01/23", "Details": "Test1"}]
+                        ),
+                        page_count=5,
+                        iban=None,
+                        source_file=Path("file1.pdf"),
                     ),
                     ExtractionResult(
-                        transactions=dicts_to_transactions([{"Date": "02/01/23", "Details": "Test2"}]),
-                        page_count=3, iban=None, source_file=Path("file2.pdf"),
+                        transactions=dicts_to_transactions(
+                            [{"Date": "02/01/23", "Details": "Test2"}]
+                        ),
+                        page_count=3,
+                        iban=None,
+                        source_file=Path("file2.pdf"),
                     ),
                 ]
 
@@ -93,8 +101,12 @@ class TestProcessorRefactoredMethods(unittest.TestCase):
                 self.assertEqual(len(results), 2)
                 self.assertEqual(results[0].page_count, 5)
                 self.assertEqual(results[1].page_count, 3)
-                self.assertEqual(results[0].transactions[0].to_dict()["Details"], "Test1")
-                self.assertEqual(results[1].transactions[0].to_dict()["Details"], "Test2")
+                self.assertEqual(
+                    results[0].transactions[0].to_dict()["Details"], "Test1"
+                )
+                self.assertEqual(
+                    results[1].transactions[0].to_dict()["Details"], "Test2"
+                )
                 self.assertIsNone(results[0].iban)
                 self.assertIsNone(results[1].iban)
 
@@ -332,10 +344,12 @@ class TestProcessorRefactoredIntegration(unittest.TestCase):
 
             # Mock extract_tables_from_pdf
             mock_extract.return_value = ExtractionResult(
-                transactions=dicts_to_transactions([
-                    {"Date": "15/06/23", "Details": "Second", "Debit €": "200"},
-                    {"Date": "01/01/23", "Details": "First", "Debit €": "100"},
-                ]),
+                transactions=dicts_to_transactions(
+                    [
+                        {"Date": "15/06/23", "Details": "Second", "Debit €": "200"},
+                        {"Date": "01/01/23", "Details": "First", "Debit €": "100"},
+                    ]
+                ),
                 page_count=2,
                 iban=None,
                 source_file=Path("test.pdf"),

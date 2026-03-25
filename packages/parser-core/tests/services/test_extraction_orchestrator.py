@@ -37,7 +37,9 @@ class TestExtractionOrchestrator(unittest.TestCase):
 
         # Mock successful extraction
         mock_extract.return_value = ExtractionResult(
-            transactions=dicts_to_transactions([{"Date": "01/01/23", "Details": "Test"}]),
+            transactions=dicts_to_transactions(
+                [{"Date": "01/01/23", "Details": "Test"}]
+            ),
             page_count=5,
             iban="IE12BOFI90000112345",
             source_file=pdf_path,
@@ -109,10 +111,12 @@ class TestExtractionOrchestrator(unittest.TestCase):
         pdf_path.write_text("fake pdf")
 
         mock_extract.return_value = ExtractionResult(
-            transactions=dicts_to_transactions([
-                {"Date": "01/01/23", "Details": "Test1"},
-                {"Date": "02/01/23", "Details": "Test2"},
-            ]),
+            transactions=dicts_to_transactions(
+                [
+                    {"Date": "01/01/23", "Details": "Test1"},
+                    {"Date": "02/01/23", "Details": "Test2"},
+                ]
+            ),
             page_count=3,
             iban=None,
             source_file=pdf_path,

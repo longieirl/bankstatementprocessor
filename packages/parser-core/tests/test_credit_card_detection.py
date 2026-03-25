@@ -175,7 +175,9 @@ class TestCreditCardDetection:
             extractor = PDFTableExtractor(columns=TEST_COLUMNS)
             result = extractor.extract(Path("/tmp/test.pdf"))
 
-            assert len(result.transactions) == 0, f"Failed to detect with pattern: {pattern_name}"
+            assert (
+                len(result.transactions) == 0
+            ), f"Failed to detect with pattern: {pattern_name}"
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_does_not_detect_false_positives(self, mock_pdfplumber):

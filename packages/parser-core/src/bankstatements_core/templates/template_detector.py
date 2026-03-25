@@ -117,7 +117,9 @@ class DetectionExplanation:
 class TemplateDetector:
     """Orchestrates multi-signal template detection using confidence-based scoring."""
 
-    def __init__(self, registry: TemplateRegistry, scoring: ScoringConfig | None = None):
+    def __init__(
+        self, registry: TemplateRegistry, scoring: ScoringConfig | None = None
+    ):
         """Initialize detector with template registry.
 
         Args:
@@ -542,7 +544,9 @@ class TemplateDetector:
         if tie_broken:
             # Determine reason without re-running full tie-break
             has_iban = {
-                tid: any(d.detector_name == "IBAN" for d in template_details.get(tid, []))
+                tid: any(
+                    d.detector_name == "IBAN" for d in template_details.get(tid, [])
+                )
                 for tid in tied_templates
             }
             if any(has_iban.values()):
@@ -550,7 +554,8 @@ class TemplateDetector:
             else:
                 max_confs = {
                     tid: max(
-                        (d.confidence for d in template_details.get(tid, [])), default=0.0
+                        (d.confidence for d in template_details.get(tid, [])),
+                        default=0.0,
                     )
                     for tid in tied_templates
                 }
