@@ -6,6 +6,7 @@ import pytest
 
 from bankstatements_core.extraction.row_classifiers import (
     AdministrativeClassifier,
+    ClassifierRegistry,
     DefaultMetadataClassifier,
     FXContinuationClassifier,
     HeaderMetadataClassifier,
@@ -390,3 +391,118 @@ class TestRowClassifierHelpers:
         assert classifier._looks_like_date("15 December") is True  # Full month name
         assert classifier._looks_like_date("01JAN2023") is True
         assert classifier._looks_like_date("Not a date") is False
+
+
+class TestClassifierRegistry:
+    """Tests for ClassifierRegistry."""
+
+    def test_classifier_priority_order(self):
+        """get_priority_order() reflects the declared priority sequence."""
+        registry = ClassifierRegistry(
+            [
+                (0, HeaderMetadataClassifier),
+                (1, AdministrativeClassifier),
+                (2, ReferenceCodeClassifier),
+                (3, FXContinuationClassifier),
+                (4, TimestampMetadataClassifier),
+                (5, TransactionClassifier),
+                (6, DefaultMetadataClassifier),
+            ]
+        )
+        order = registry.get_priority_order()
+        assert order[0] == (0, "HeaderMetadataClassifier")
+        assert order[5] == (5, "TransactionClassifier")
+        assert order[6] == (6, "DefaultMetadataClassifier")
+
+    def test_duplicate_priority_raises(self):
+        """Duplicate priorities raise ValueError at construction time."""
+        with pytest.raises(ValueError, match="priority 0 already assigned"):
+            ClassifierRegistry(
+                [
+                    (0, HeaderMetadataClassifier),
+                    (0, TransactionClassifier),
+                ]
+            )
+
+    def test_non_classifier_subclass_raises(self):
+        """Passing a non-RowClassifier class raises TypeError."""
+        with pytest.raises(TypeError):
+            ClassifierRegistry([(0, object)])  # type: ignore[list-item]
+
+    def test_build_chain_returns_head(self):
+        """build_chain() returns a RowClassifier instance."""
+        registry = ClassifierRegistry(
+            [
+                (0, HeaderMetadataClassifier),
+                (1, DefaultMetadataClassifier),
+            ]
+        )
+        head = registry.build_chain()
+        assert isinstance(head, RowClassifier)
+        assert isinstance(head, HeaderMetadataClassifier)
+
+    def test_priorities_sorted_regardless_of_input_order(self):
+        """Registry sorts by priority even if input is unordered."""
+        registry = ClassifierRegistry(
+            [
+                (5, TransactionClassifier),
+                (0, HeaderMetadataClassifier),
+                (6, DefaultMetadataClassifier),
+            ]
+        )
+        order = registry.get_priority_order()
+        assert order[0] == (0, "HeaderMetadataClassifier")
+        assert order[1] == (5, "TransactionClassifier")
+        assert order[2] == (6, "DefaultMetadataClassifier")
+
+    @pytest.mark.parametrize(
+        "row,expected,reason",
+        [
+            (
+                {"Date": "date", "Details": "Purchase", "Debit €": "50.00"},
+                "metadata",
+                "HeaderMetadata (0) beats Transaction (5) for header-like date value",
+            ),
+            (
+                {
+                    "Date": "",
+                    "Details": "BALANCE FORWARD",
+                    "Debit €": "",
+                    "Credit €": "",
+                    "Balance €": "",
+                },
+                "administrative",
+                "Administrative (1) beats Transaction (5) for BALANCE FORWARD with no balance",
+            ),
+            (
+                {"Date": "", "Details": "0.828571", "Debit €": "", "Credit €": ""},
+                "continuation",
+                "FXContinuation (3) beats Transaction (5) for exchange-rate-only rows",
+            ),
+        ],
+    )
+    def test_ambiguous_row_priority(self, row, expected, reason):
+        """Ambiguous rows resolve to the highest-priority (lowest number) classifier."""
+        chain = create_row_classifier_chain()
+        assert chain.classify(row, TEST_COLUMNS) == expected, reason
+
+    def test_wrong_order_produces_wrong_result(self):
+        """Documents that priority order is not arbitrary — regression guard."""
+        wrong_order_chain = ClassifierRegistry(
+            [
+                (0, TransactionClassifier),
+                (1, HeaderMetadataClassifier),
+                (2, AdministrativeClassifier),
+                (3, ReferenceCodeClassifier),
+                (4, FXContinuationClassifier),
+                (5, TimestampMetadataClassifier),
+                (6, DefaultMetadataClassifier),
+            ]
+        ).build_chain()
+
+        ambiguous = {"Date": "date", "Details": "Purchase", "Debit €": "50.00"}
+        # With Transaction first, it wins over Header
+        assert wrong_order_chain.classify(ambiguous, TEST_COLUMNS) == "transaction"
+        # Confirms the correct chain must put HeaderMetadata first
+        correct_chain = create_row_classifier_chain()
+        assert correct_chain.classify(ambiguous, TEST_COLUMNS) == "metadata"
