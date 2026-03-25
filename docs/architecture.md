@@ -9,8 +9,8 @@ This document describes the structure of the `bankstatementprocessor` monorepo a
 ```
 bankstatementprocessor/
 ├── packages/
-│   ├── parser-core/          PyPI: bankstatements-core
-│   └── parser-free/          PyPI: bankstatements-free
+│   ├── parser-core/          PyPI: bankstatements-core (v0.1.2)
+│   └── parser-free/          PyPI: bankstatements-free (v0.1.0)
 ├── templates/                shared IBAN-based bank templates
 └── .github/workflows/
     ├── ci.yml                lint + test both packages
@@ -22,15 +22,16 @@ bankstatementprocessor/
 
 The shared parsing library. Contains:
 
-- **`extraction/`** — PDF → rows pipeline (`pdf_extractor`, `boundary_detector`, `row_classifiers`)
-- **`services/`** — 21 single-responsibility services (duplicate detection, sorting, monthly summary, GDPR audit log, etc.)
+- **`extraction/`** — PDF → rows pipeline (`pdf_extractor`, `boundary_detector`, `row_classifiers`, `word_utils`)
+- **`services/`** — single-responsibility services (duplicate detection, sorting, filtering, monthly summary, GDPR audit log, etc.)
+- **`builders/`** — `BankStatementProcessorBuilder` fluent builder
 - **`templates/`** — template model, registry, detectors, and bundled IBAN-based bank templates
-- **`domain/`** — domain models, protocols, currency, dataframe utilities
-- **`config/`** — `AppConfig` dataclass validated from environment variables
+- **`domain/`** — domain models (`Transaction`, `ExtractionResult`), protocols, currency, converters, dataframe utilities
+- **`config/`** — `AppConfig` dataclass validated from environment variables; `ProcessorConfig` for programmatic use
 - **`patterns/`** — Strategy, Factory, Repository implementations
-- **`facades/`** — `BankStatementProcessingFacade` (main orchestrator)
+- **`facades/`** — `BankStatementProcessingFacade` (main orchestrator entry point)
 - **`entitlements.py`** — `Entitlements` frozen dataclass (`free_tier()` and `paid_tier()`)
-- **`processor.py`** — `BankStatementProcessor` (PDF extraction → dedup → sort → output)
+- **`processor.py`** — `BankStatementProcessor` (PDF extraction → filter → dedup → sort → output)
 
 This package has no dependency on any licensing code. The `paid_tier()` entitlement is defined here because it describes a feature set (`require_iban=False`), not access control — activating it requires a valid signed license issued externally.
 
@@ -47,21 +48,36 @@ The free tier processes bank statements that include an IBAN pattern. Credit car
 
 ## Processing Pipeline
 
-The core flow is the same across all distributions:
-
 ```
-app.py
+app.py / ProcessorFactory
   └── BankStatementProcessingFacade.process_with_error_handling()
-        └── BankStatementProcessor
-              ├── PDFExtractor          (page iteration)
-              │     └── BoundaryDetector
-              │     └── RowClassifiers  (Chain of Responsibility)
-              ├── DuplicateDetectionService
-              ├── SortingService
-              └── OutputService         (CSV / JSON / Excel)
+        └── BankStatementProcessor.run()
+              ├── PDFProcessingOrchestrator.process_all_pdfs()
+              │     └── ExtractionOrchestrator.extract_from_pdf()
+              │           └── BankStatementProcessingFacade.extract_tables_from_pdf()
+              │                 └── PDFTableExtractor.extract()    → ExtractionResult
+              │                       ├── BoundaryDetector         (word_utils)
+              │                       ├── RowClassifiers           (chain of responsibility)
+              │                       └── RowBuilder               (word_utils)
+              │     └── TransactionFilterService.apply_all_filters()
+              │           ├── filter_empty_rows
+              │           ├── filter_header_rows
+              │           └── filter_invalid_dates
+              └── ServiceRegistry.process_transaction_group()
+                    ├── EnrichmentService        (Filename, document_type, transaction_type)
+                    ├── DuplicateDetectionService
+                    ├── TransactionSortingService
+                    └── OutputService            (CSV / JSON / Excel)
 ```
 
-`AppConfig` (from environment variables) is the single source of truth for runtime configuration. Use `get_config_singleton()` to access it.
+`ExtractionResult` is the typed boundary between the extraction layer and the service layer:
+- Produced by `PDFTableExtractor.extract()` and propagated unchanged through `ExtractionOrchestrator` and `PDFProcessingOrchestrator`
+- Fields: `transactions: list[Transaction]`, `page_count: int`, `iban: str | None`, `source_file: Path`, `warnings: list[str]`
+- `processor.run()` converts `result.transactions` to `list[dict]` via `transactions_to_dicts()` before handing off to `ServiceRegistry`
+
+`ServiceRegistry` is the wiring point for all post-extraction services. It is constructed by `BankStatementProcessorBuilder.build()` via `ServiceRegistry.from_config()`, which accepts optional injected services to override defaults — enabling custom duplicate strategies and sort orders.
+
+`AppConfig` (from environment variables) is the single source of truth for runtime configuration via Docker/CLI. Use `get_config_singleton()` to access it. For programmatic use, `ProcessorConfig` is constructed directly by the builder.
 
 ---
 
@@ -109,6 +125,27 @@ class Entitlements:
 ```
 
 The free-tier CLI always calls `free_tier()`. The premium distribution validates a signed license file and calls `paid_tier()` when the license is valid.
+
+---
+
+## ServiceRegistry
+
+`ServiceRegistry` centralises all transaction-processing service wiring. It is the single construction point for `DuplicateDetectionService`, `TransactionSortingService`, and `IBANGroupingService`.
+
+```python
+# Default construction (services built from config)
+registry = ServiceRegistry.from_config(config, entitlements=entitlements)
+
+# Custom strategy injection (builder passes these in)
+registry = ServiceRegistry.from_config(
+    config,
+    entitlements=entitlements,
+    duplicate_detector=DuplicateDetectionService(my_strategy),
+    sorting_service=TransactionSortingService(my_sort_strategy),
+)
+```
+
+`BankStatementProcessorBuilder` constructs services from its configured strategies before calling `from_config()`, so `.with_duplicate_strategy()` and `.with_date_sorting()` are guaranteed to be honoured.
 
 ---
 
