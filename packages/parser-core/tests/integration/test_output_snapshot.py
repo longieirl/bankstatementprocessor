@@ -52,7 +52,7 @@ def _build_snapshot(output_dir: Path) -> dict:
         if path.suffix == ".csv":
             lines = path.read_text(encoding="utf-8").splitlines()
             # header + data rows (exclude empty trailing lines)
-            entry["row_count"] = len([l for l in lines if l.strip()]) - 1
+            entry["row_count"] = len([line for line in lines if line.strip()]) - 1
 
         snapshot["files"][path.name] = entry
 
