@@ -360,7 +360,28 @@ show-retention-status:	## Show data retention status
 	@python3 -c "from src.services.data_retention import DataRetentionService; from src.app import AppConfig; config = AppConfig.from_env(); service = DataRetentionService(config.data_retention_days, config.output_dir); files = service.find_expired_files(); print(f'Retention period: {config.data_retention_days} days'); print(f'Expired files: {len(files)}')"
 
 # Docker build modes
-.PHONY: docker-local docker-remote docker-build docker-pull
+.PHONY: docker-local docker-remote docker-build docker-pull docker-integration
+
+docker-integration: ## Run Docker integration test: process ./input and assert non-zero transaction output
+	@docker images bankstatementsprocessor:latest -q > /dev/null 2>&1 || \
+	  { echo "❌ Image not found. Run 'make docker-build' first."; exit 1; }
+	@ls input/*.pdf > /dev/null 2>&1 || \
+	  { echo "❌ No PDFs found in ./input — add PDFs before running."; exit 1; }
+	@mkdir -p output
+	docker run --rm \
+	  -v "$(PWD)/input:/app/input:ro" \
+	  -v "$(PWD)/output:/app/output" \
+	  -e LOG_LEVEL=WARNING \
+	  -e EXIT_AFTER_PROCESSING=true \
+	  -e GENERATE_MONTHLY_SUMMARY=false \
+	  -e GENERATE_EXPENSE_ANALYSIS=false \
+	  bankstatementsprocessor:latest
+	@python3 -c "\
+import glob, csv, sys; \
+files = [f for f in glob.glob('output/*.csv') if 'duplicate' not in f]; \
+total = sum(sum(1 for _ in csv.DictReader(open(f))) for f in files); \
+print(f'✅ Docker integration: {total} transactions extracted'); \
+sys.exit(0 if total > 0 else 1)"
 
 docker-local: ## Build and run from local code
 	@echo "🔨 Building from local code..."

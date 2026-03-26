@@ -136,6 +136,55 @@ flake8 src tests
 
 ---
 
+## Integration Testing
+
+The integration test runs the full pipeline against real PDFs in `./input/` and compares key output metrics against a committed snapshot baseline. It is excluded from the default test run and must be triggered explicitly.
+
+**Prerequisites:** place PDF bank statements in `./input/` before running.
+
+### Run the integration test
+
+```bash
+cd packages/parser-core
+pytest -m integration -v
+```
+
+The test asserts:
+- Transaction counts, page counts, and PDF counts match the baseline
+- Output filenames are unchanged
+- `excluded_files.json` is consistent with the processing summary
+- Each masked IBAN is correctly formatted and maps to the right output filename
+- CSV row counts match JSON record counts per IBAN
+- CSV column headers contain required fields (`Date`, `Details`, `Debit`/`Credit`)
+- Duplicate JSON files are valid arrays
+
+### Update the snapshot baseline
+
+Run this after any intentional change that affects output counts or filenames (e.g. adding a new template, changing filter behaviour, adding a new output file):
+
+```bash
+cd packages/parser-core
+pytest -m integration --snapshot-update --no-cov
+```
+
+The updated `snapshots/output_snapshot.json` should be committed — changes are visible in code review and serve as a record of intentional output changes.
+
+### Docker integration test
+
+Validate that the built Docker image correctly processes PDFs end-to-end:
+
+```bash
+# Build the image first
+make docker-build
+
+# Run against ./input — asserts non-zero CSV output
+make docker-integration
+```
+
+This mounts `./input` read-only and `./output` writable, runs the container, then asserts that at least one CSV was produced with a non-zero transaction count.
+
+---
+
 ## Contributing
 
 Contributions are welcome!
