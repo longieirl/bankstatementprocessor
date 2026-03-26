@@ -44,7 +44,7 @@ def transactions_to_dicts(transactions: list[Transaction]) -> list[dict]:
         >>> dicts[0]["Date"]
         '01/01/23'
     """
-    return [tx.to_dict() for tx in transactions]
+    return [tx.to_dict(currency_symbol="") for tx in transactions]
 
 
 def dict_to_transaction(row: dict) -> Transaction:
@@ -79,7 +79,7 @@ def transaction_to_dict(transaction: Transaction) -> dict:
         >>> tx = Transaction(date="01/01/23", details="Test", debit="50.00",
         ...                  credit=None, balance="100.00", filename="test.pdf")
         >>> row = transaction_to_dict(tx)
-        >>> row["Debit €"]
+        >>> row["Debit"]
         '50.00'
     """
-    return transaction.to_dict()
+    return transaction.to_dict(currency_symbol="")

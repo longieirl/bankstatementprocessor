@@ -2,11 +2,11 @@
   "files": {
     "bank_statements_3656.csv": {
       "row_count": 68,
-      "size_bytes": 6815
+      "size_bytes": 7898
     },
     "bank_statements_9015.csv": {
       "row_count": 401,
-      "size_bytes": 24161
+      "size_bytes": 26690
     },
     "duplicates_3656.json": {
       "record_count": 0,
@@ -52,7 +52,7 @@
         "summary",
         "total_months"
       ],
-      "size_bytes": 1988
+      "size_bytes": 2032
     },
     "monthly_summary_9015.json": {
       "keys": [
@@ -61,7 +61,7 @@
         "summary",
         "total_months"
       ],
-      "size_bytes": 1063
+      "size_bytes": 1112
     }
   },
   "summary": {
