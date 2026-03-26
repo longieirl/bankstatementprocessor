@@ -14,6 +14,7 @@ from decimal import Decimal, InvalidOperation
 from typing import TYPE_CHECKING, Any, cast
 
 from bankstatements_core.domain import Transaction, dicts_to_transactions
+from bankstatements_core.domain.currency import strip_currency_symbols
 from bankstatements_core.entitlements import EntitlementError
 from bankstatements_core.services.date_parser import DateParserService
 
@@ -473,11 +474,7 @@ class ExpenseAnalysisService:
         if not amount:
             return "0"
 
-        # Remove common currency symbols and spaces
-        cleaned = amount.replace("€", "").replace("$", "").replace("£", "")
-        cleaned = cleaned.replace(" ", "").replace(",", "")
-        cleaned = cleaned.strip()
-
+        cleaned = strip_currency_symbols(amount).strip()
         return cleaned if cleaned else "0"
 
     def _empty_insights(self, error: str | None = None) -> dict[str, Any]:

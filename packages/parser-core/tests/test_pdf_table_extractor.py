@@ -293,9 +293,9 @@ class TestPdfTableExtractor(unittest.TestCase):
         complete_row = {
             "Date": "01 Jan 2024",
             "Details": "GROCERY STORE PURCHASE",
-            "Debit €": "25.50",
-            "Credit €": "",
-            "Balance €": "475.50",
+            "Debit": "25.50",
+            "Credit": "",
+            "Balance": "475.50",
         }
         score = calculate_row_completeness_score(complete_row, default_columns)
         self.assertGreater(score, 0.8)  # Should be high score
@@ -502,9 +502,9 @@ class TestPdfTableExtractor(unittest.TestCase):
             {
                 "Date": "01 Jan 2024",
                 "Details": "Transaction",
-                "Debit €": "100.00",
-                "Credit €": "",
-                "Balance €": "500.00",
+                "Debit": "100.00",
+                "Credit": "",
+                "Balance": "500.00",
             }
         ]
 
@@ -1163,8 +1163,8 @@ class TestPdfTableExtractor(unittest.TestCase):
         row_quality = {
             "Date": "01 Jan 2024",
             "Details": "VDC-GROCERY STORE PAYMENT",
-            "Debit €": "123.45",  # Proper money format
-            "Balance €": "876.54",
+            "Debit": "123.45",  # Proper money format
+            "Balance": "876.54",
         }
         score = calculate_row_completeness_score(row_quality, columns)
         self.assertGreater(score, 0.8)  # Should get bonus for quality

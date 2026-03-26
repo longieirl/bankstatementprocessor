@@ -110,3 +110,33 @@ class TestCurrencyParseError:
         """Test CurrencyParseError can be raised."""
         with pytest.raises(CurrencyParseError):
             raise CurrencyParseError("Test error")
+
+
+def test_strip_currency_symbols():
+    """strip_currency_symbols removes all supported symbols and whitespace."""
+    from bankstatements_core.domain.currency import strip_currency_symbols
+
+    assert strip_currency_symbols("€1,234.56") == "1234.56"
+    assert strip_currency_symbols("$100.00") == "100.00"
+    assert strip_currency_symbols("£50.00") == "50.00"
+    assert strip_currency_symbols("¥1000") == "1000"
+    assert strip_currency_symbols("  € 99.99  ") == "99.99"
+    assert strip_currency_symbols("123.45") == "123.45"
+
+
+def test_yen_through_transaction_get_amount():
+    """¥ symbol is stripped correctly by Transaction._clean_amount_string()."""
+    from bankstatements_core.domain.models.transaction import Transaction
+
+    tx = Transaction(
+        date="01/01/2024",
+        details="Tokyo Store",
+        debit="¥1000",
+        credit=None,
+        balance="¥5000",
+        filename="test.pdf",
+    )
+    from decimal import Decimal
+
+    assert tx.get_amount() == Decimal("-1000")
+    assert tx.get_balance() == Decimal("5000")

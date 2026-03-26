@@ -20,6 +20,22 @@ class CurrencyParseError(ValueError):
     pass
 
 
+def strip_currency_symbols(value: str) -> str:
+    """Remove currency symbols and surrounding whitespace from an amount string.
+
+    Strips €, $, £, ¥ and any whitespace characters. Also removes thousands
+    separators (commas) to produce a plain numeric string.
+
+    Args:
+        value: Raw amount string (e.g. "€1,234.56", "$ 100.00")
+
+    Returns:
+        Cleaned string with symbols and commas removed (e.g. "1234.56")
+    """
+    cleaned = re.sub(r"[€$£¥\s]", "", value)
+    return cleaned.replace(",", "")
+
+
 def to_float(
     value: str | None,
     allow_negative: bool = True,
@@ -73,11 +89,7 @@ def to_float(
 
         # Remove currency symbols and spaces
         # Supports €, $, £, ¥, and common variations
-        value = re.sub(r"[€$£¥\s]", "", value)
-
-        # Remove thousands separators (commas)
-        # Note: This assumes comma is thousands separator, not decimal
-        value = value.replace(",", "")
+        value = strip_currency_symbols(value)
 
         # Handle minus sign
         if value.startswith("-"):

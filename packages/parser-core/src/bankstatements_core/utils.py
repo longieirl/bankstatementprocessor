@@ -19,6 +19,7 @@ from bankstatements_core.config.environment_parser import EnvironmentParser
 from bankstatements_core.domain.currency import (
     CurrencyParseError,
     format_currency,
+    strip_currency_symbols,
     to_float,
 )
 
@@ -40,6 +41,7 @@ __all__ = [
     "CurrencyParseError",
     "to_float",
     "format_currency",
+    "strip_currency_symbols",
     "calculate_column_sum",
     "is_date_column",
     "parse_int_env",

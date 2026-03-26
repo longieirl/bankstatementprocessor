@@ -401,7 +401,7 @@ class TemplateRegistry:
         processing = TemplateProcessingConfig(
             supports_multiline=processing_data.get("supports_multiline", False),
             date_format=processing_data.get("date_format", "%d/%m/%Y"),
-            currency_symbol=processing_data.get("currency_symbol", "€"),
+            currency_symbol=processing_data.get("currency_symbol", ""),
             decimal_separator=processing_data.get("decimal_separator", "."),
         )
 

@@ -262,8 +262,8 @@ class AmountBasedClassifier(TransactionTypeClassifier):
         self, transaction: dict, template: "BankTemplate | None"
     ) -> str | None:
         """Classify based on amount patterns."""
-        debit = transaction.get("Debit_EUR")
-        credit = transaction.get("Credit_EUR")
+        debit = transaction.get("Debit_AMT")
+        credit = transaction.get("Credit_AMT")
 
         debit_amount = to_float(str(debit)) if debit else None
         credit_amount = to_float(str(credit)) if credit else None

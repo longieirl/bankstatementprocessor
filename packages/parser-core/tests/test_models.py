@@ -12,9 +12,9 @@ class TestModels(unittest.TestCase):
         transaction: TransactionRow = {
             "Date": "01 Jan 2024",
             "Details": "Test Transaction",
-            "Debit_EUR": "100.00",
-            "Credit_EUR": None,
-            "Balance_EUR": "500.00",
+            "Debit_AMT": "100.00",
+            "Credit_AMT": None,
+            "Balance_AMT": "500.00",
             "Filename": "test.pdf",
         }
 
@@ -22,9 +22,9 @@ class TestModels(unittest.TestCase):
         expected_keys = {
             "Date",
             "Details",
-            "Debit_EUR",
-            "Credit_EUR",
-            "Balance_EUR",
+            "Debit_AMT",
+            "Credit_AMT",
+            "Balance_AMT",
             "Filename",
         }
         self.assertEqual(set(transaction.keys()), expected_keys)
@@ -35,20 +35,20 @@ class TestModels(unittest.TestCase):
         self.assertIsInstance(transaction["Filename"], str)
 
         # Verify optional fields can be None
-        self.assertIsNone(transaction["Credit_EUR"])
+        self.assertIsNone(transaction["Credit_AMT"])
 
         # Verify optional fields can be strings
         transaction_with_credit: TransactionRow = {
             "Date": "01 Jan 2024",
             "Details": "Salary Payment",
-            "Debit_EUR": None,
-            "Credit_EUR": "3000.00",
-            "Balance_EUR": "3500.00",
+            "Debit_AMT": None,
+            "Credit_AMT": "3000.00",
+            "Balance_AMT": "3500.00",
             "Filename": "salary.pdf",
         }
 
-        self.assertIsNone(transaction_with_credit["Debit_EUR"])
-        self.assertEqual(transaction_with_credit["Credit_EUR"], "3000.00")
+        self.assertIsNone(transaction_with_credit["Debit_AMT"])
+        self.assertEqual(transaction_with_credit["Credit_AMT"], "3000.00")
 
     def test_transaction_row_optional_fields(self):
         """Test that monetary fields can be None or string values"""
@@ -56,29 +56,29 @@ class TestModels(unittest.TestCase):
         transaction: TransactionRow = {
             "Date": "01 Jan 2024",
             "Details": "Test",
-            "Debit_EUR": None,
-            "Credit_EUR": None,
-            "Balance_EUR": None,
+            "Debit_AMT": None,
+            "Credit_AMT": None,
+            "Balance_AMT": None,
             "Filename": "test.pdf",
         }
 
-        self.assertIsNone(transaction["Debit_EUR"])
-        self.assertIsNone(transaction["Credit_EUR"])
-        self.assertIsNone(transaction["Balance_EUR"])
+        self.assertIsNone(transaction["Debit_AMT"])
+        self.assertIsNone(transaction["Credit_AMT"])
+        self.assertIsNone(transaction["Balance_AMT"])
 
         # Test all monetary fields as strings
         transaction2: TransactionRow = {
             "Date": "01 Jan 2024",
             "Details": "Test",
-            "Debit_EUR": "50.00",
-            "Credit_EUR": "100.00",
-            "Balance_EUR": "150.00",
+            "Debit_AMT": "50.00",
+            "Credit_AMT": "100.00",
+            "Balance_AMT": "150.00",
             "Filename": "test.pdf",
         }
 
-        self.assertEqual(transaction2["Debit_EUR"], "50.00")
-        self.assertEqual(transaction2["Credit_EUR"], "100.00")
-        self.assertEqual(transaction2["Balance_EUR"], "150.00")
+        self.assertEqual(transaction2["Debit_AMT"], "50.00")
+        self.assertEqual(transaction2["Credit_AMT"], "100.00")
+        self.assertEqual(transaction2["Balance_AMT"], "150.00")
 
 
 if __name__ == "__main__":

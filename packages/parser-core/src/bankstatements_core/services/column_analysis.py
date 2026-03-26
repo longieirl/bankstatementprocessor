@@ -75,11 +75,11 @@ class ColumnAnalysisService:
 
         Examples:
             >>> service = ColumnAnalysisService()
-            >>> columns = ["Date", "Details", "Debit €", "Credit €", "Balance €"]
+            >>> columns = ["Date", "Details", "Debit", "Credit", "Balance", "Filename"]
             >>> service.find_matching_columns(columns, ["debit", "credit"])
-            ['Debit €', 'Credit €']
+            ['Debit', 'Credit']
             >>> service.find_matching_columns(columns, ["balance"])
-            ['Balance €']
+            ['Balance']
             >>> service.find_matching_columns(columns, ["amount"])
             []
         """

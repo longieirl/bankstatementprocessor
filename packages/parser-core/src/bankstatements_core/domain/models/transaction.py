@@ -9,6 +9,8 @@ import json
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 
+from bankstatements_core.domain.currency import strip_currency_symbols
+
 
 @dataclass
 class Transaction:
@@ -122,11 +124,7 @@ class Transaction:
         if not amount:
             return "0"
 
-        # Remove common currency symbols and spaces
-        cleaned = amount.replace("€", "").replace("$", "").replace("£", "")
-        cleaned = cleaned.replace(" ", "").replace(",", "")
-        cleaned = cleaned.strip()
-
+        cleaned = strip_currency_symbols(amount).strip()
         return cleaned if cleaned else "0"
 
     def has_valid_date(self) -> bool:
@@ -175,12 +173,31 @@ class Transaction:
         details = cls._get_value(
             data, ["Details", "details", "Description", "Narrative"]
         )
-        debit = cls._get_value(data, ["Debit €", "Debit_EUR", "Debit", "Debit Amount"])
+        debit = cls._get_value(
+            data,
+            ["Debit €", "Debit £", "Debit $", "Debit_AMT", "Debit", "Debit Amount"],
+        )
         credit = cls._get_value(
-            data, ["Credit €", "Credit_EUR", "Credit", "Credit Amount"]
+            data,
+            [
+                "Credit €",
+                "Credit £",
+                "Credit $",
+                "Credit_AMT",
+                "Credit",
+                "Credit Amount",
+            ],
         )
         balance = cls._get_value(
-            data, ["Balance €", "Balance_EUR", "Balance", "Running Balance"]
+            data,
+            [
+                "Balance €",
+                "Balance £",
+                "Balance $",
+                "Balance_AMT",
+                "Balance",
+                "Running Balance",
+            ],
         )
         filename = cls._get_value(data, ["Filename", "filename", "source_pdf"]) or ""
 
@@ -194,15 +211,21 @@ class Transaction:
             "Description",
             "Narrative",
             "Debit €",
-            "Debit_EUR",
+            "Debit £",
+            "Debit $",
+            "Debit_AMT",
             "Debit",
             "Debit Amount",
             "Credit €",
-            "Credit_EUR",
+            "Credit £",
+            "Credit $",
+            "Credit_AMT",
             "Credit",
             "Credit Amount",
             "Balance €",
-            "Balance_EUR",
+            "Balance £",
+            "Balance $",
+            "Balance_AMT",
             "Balance",
             "Running Balance",
             "Filename",
@@ -256,10 +279,14 @@ class Transaction:
                 return data[key]
         return None
 
-    def to_dict(self) -> dict[str, str | None]:
+    def to_dict(self, currency_symbol: str = "€") -> dict[str, str | None]:
         """Convert Transaction to dictionary.
 
         Uses standard column names for consistency.
+
+        Args:
+            currency_symbol: Currency symbol to include in column names (default: "€").
+                Pass "" for neutral names ("Debit", "Credit", "Balance").
 
         Returns:
             Dictionary representation
@@ -271,12 +298,13 @@ class Transaction:
             >>> d["Date"]
             '01/01/23'
         """
+        suffix = f" {currency_symbol}" if currency_symbol else ""
         result: dict[str, str | None] = {
             "Date": self.date,
             "Details": self.details,
-            "Debit €": self.debit,
-            "Credit €": self.credit,
-            "Balance €": self.balance,
+            f"Debit{suffix}": self.debit,
+            f"Credit{suffix}": self.credit,
+            f"Balance{suffix}": self.balance,
             "Filename": self.filename,
         }
 

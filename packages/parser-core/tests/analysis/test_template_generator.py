@@ -556,7 +556,7 @@ class TestTemplateGenerator:
             assert "processing" in template
             assert template["processing"]["supports_multiline"] is True
             assert template["processing"]["date_format"] == "%d/%m/%Y"
-            assert template["processing"]["currency_symbol"] == "€"
+            assert template["processing"]["currency_symbol"] == ""
 
         finally:
             base_path.unlink()

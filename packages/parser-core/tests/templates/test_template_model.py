@@ -239,7 +239,7 @@ class TestTemplateProcessingConfig:
 
         assert config.supports_multiline is False
         assert config.date_format == "%d/%m/%Y"
-        assert config.currency_symbol == "€"
+        assert config.currency_symbol == ""
         assert config.decimal_separator == "."
 
     def test_custom_config(self):

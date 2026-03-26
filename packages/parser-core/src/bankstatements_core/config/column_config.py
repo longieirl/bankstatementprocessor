@@ -21,9 +21,9 @@ logger = logging.getLogger(__name__)
 DEFAULT_COLUMNS: dict[str, tuple[int | float, int | float]] = {
     "Date": (26, 78),
     "Details": (78, 255),
-    "Debit €": (255, 313),
-    "Credit €": (313, 369),
-    "Balance €": (369, 434),  # Reduced from 450 to prevent side panel text
+    "Debit": (255, 313),
+    "Credit": (313, 369),
+    "Balance": (369, 434),  # Reduced from 450 to prevent side panel text
 }
 
 
@@ -42,10 +42,10 @@ def get_column_names(
 
     Examples:
         >>> get_column_names()
-        ['Date', 'Details', 'Debit €', 'Credit €', 'Balance €', 'Filename']
+        ['Date', 'Details', 'Debit', 'Credit', 'Balance', 'Filename']
 
         >>> get_column_names(include_filename=False)
-        ['Date', 'Details', 'Debit €', 'Credit €', 'Balance €']
+        ['Date', 'Details', 'Debit', 'Credit', 'Balance']
 
         >>> custom_cols = {"Date": (0, 100), "Amount": (100, 200)}
         >>> get_column_names(custom_cols)
