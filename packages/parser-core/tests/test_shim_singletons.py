@@ -16,7 +16,7 @@ def test_validate_page_structure_reuses_singleton():
 
 
 def test_all_singletons_are_module_level():
-    """All five module-level singletons exist and are stable references."""
+    """All four module-level singletons exist and are stable references."""
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
         import bankstatements_core.pdf_table_extractor as shim
@@ -25,4 +25,3 @@ def test_all_singletons_are_module_level():
     assert shim._ROW_CLASSIFIER_CHAIN is shim._ROW_CLASSIFIER_CHAIN
     assert shim._HEADER_SERVICE is shim._HEADER_SERVICE
     assert shim._ROW_MERGER_SERVICE is shim._ROW_MERGER_SERVICE
-    assert shim._CONTENT_DENSITY_SERVICE is shim._CONTENT_DENSITY_SERVICE
