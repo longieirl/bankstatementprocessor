@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from bankstatements_core.exceptions import InputValidationError
+
+if TYPE_CHECKING:
+    from bankstatements_core.domain.models.transaction import Transaction
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +46,9 @@ class IBANGroupingService:
 
     def group_by_iban(
         self,
-        rows: list[dict],
+        rows: list["Transaction"],
         pdf_ibans: dict[str, str],
-    ) -> dict[str, list[dict]]:
+    ) -> dict[str, list["Transaction"]]:
         """Group transactions by their source IBAN.
 
         Transactions are grouped by the last N characters of their IBAN,
@@ -52,33 +56,30 @@ class IBANGroupingService:
         grouped under "unknown".
 
         Args:
-            rows: List of transaction dictionaries with 'Filename' field
+            rows: List of Transaction objects with filename field
             pdf_ibans: Dictionary mapping PDF filename to full IBAN string
 
         Returns:
             Dictionary mapping IBAN suffix (or "unknown") to list of transactions
         """
-        grouped: dict[str, list[dict]] = {}
+        grouped: dict[str, list["Transaction"]] = {}
 
-        for row in rows:
-            filename = row.get("Filename")
+        for tx in rows:
+            filename = tx.filename
             if not filename:
-                logger.warning("Row missing Filename field, grouping under 'unknown'")
+                logger.warning("Transaction missing filename, grouping under 'unknown'")
                 iban_suffix = "unknown"
             else:
-                # Get IBAN for this file
                 full_iban = pdf_ibans.get(filename)
                 if full_iban:
                     iban_suffix = self._extract_suffix(full_iban)
                 else:
                     iban_suffix = "unknown"
 
-            # Add row to appropriate group
             if iban_suffix not in grouped:
                 grouped[iban_suffix] = []
-            grouped[iban_suffix].append(row)
+            grouped[iban_suffix].append(tx)
 
-        # Log grouping results
         self._log_grouping_summary(grouped)
 
         return grouped
@@ -95,17 +96,14 @@ class IBANGroupingService:
         if not iban:
             return ""
 
-        # Remove whitespace and convert to uppercase
         iban_clean = iban.replace(" ", "").upper()
 
-        # Extract suffix
         if len(iban_clean) >= self._suffix_length:
             return iban_clean[-self._suffix_length :]
         else:
-            # If IBAN is shorter than suffix length, use whole IBAN
             return iban_clean
 
-    def _log_grouping_summary(self, grouped: dict[str, list[dict]]) -> None:
+    def _log_grouping_summary(self, grouped: dict[str, list["Transaction"]]) -> None:
         """Log summary of grouping results.
 
         Args:

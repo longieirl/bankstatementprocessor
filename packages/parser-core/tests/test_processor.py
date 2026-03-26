@@ -91,61 +91,65 @@ class TestBankStatementProcessor(unittest.TestCase):
     def test_detect_duplicates_different_files(self):
         """Test duplicate detection when same transaction appears in different files"""
         # Same transaction details but different filenames
-        transaction_data = [
-            {
-                "Date": "01 Jan 2024",
-                "Details": "Salary Payment",
-                "Debit €": "",
-                "Credit €": "3000.00",
-                "Balance €": "3500.00",
-                "Filename": "statement1.pdf",
-            },
-            {
-                "Date": "01 Jan 2024",
-                "Details": "Salary Payment",
-                "Debit €": "",
-                "Credit €": "3000.00",
-                "Balance €": "3500.00",
-                "Filename": "statement2.pdf",  # Different file
-            },
-            {
-                "Date": "02 Jan 2024",
-                "Details": "Coffee Shop",
-                "Debit €": "5.50",
-                "Credit €": "",
-                "Balance €": "3494.50",
-                "Filename": "statement1.pdf",
-            },
-        ]
+        transaction_data = dicts_to_transactions(
+            [
+                {
+                    "Date": "01 Jan 2024",
+                    "Details": "Salary Payment",
+                    "Debit €": "",
+                    "Credit €": "3000.00",
+                    "Balance €": "3500.00",
+                    "Filename": "statement1.pdf",
+                },
+                {
+                    "Date": "01 Jan 2024",
+                    "Details": "Salary Payment",
+                    "Debit €": "",
+                    "Credit €": "3000.00",
+                    "Balance €": "3500.00",
+                    "Filename": "statement2.pdf",
+                },
+                {
+                    "Date": "02 Jan 2024",
+                    "Details": "Coffee Shop",
+                    "Debit €": "5.50",
+                    "Credit €": "",
+                    "Balance €": "3494.50",
+                    "Filename": "statement1.pdf",
+                },
+            ]
+        )
 
         unique, duplicates = self.processor._detect_duplicates(transaction_data)
 
         # Should have 2 unique and 1 duplicate
         self.assertEqual(len(unique), 2)
         self.assertEqual(len(duplicates), 1)
-        self.assertEqual(duplicates[0]["Filename"], "statement2.pdf")
-        self.assertEqual(duplicates[0]["Details"], "Salary Payment")
+        self.assertEqual(duplicates[0].filename, "statement2.pdf")
+        self.assertEqual(duplicates[0].details, "Salary Payment")
 
     def test_detect_duplicates_same_file(self):
         """Test that identical transactions from same file are kept (edge case)"""
-        transaction_data = [
-            {
-                "Date": "01 Jan 2024",
-                "Details": "ATM Withdrawal",
-                "Debit €": "100.00",
-                "Credit €": "",
-                "Balance €": "400.00",
-                "Filename": "statement1.pdf",
-            },
-            {
-                "Date": "01 Jan 2024",
-                "Details": "ATM Withdrawal",
-                "Debit €": "100.00",
-                "Credit €": "",
-                "Balance €": "300.00",  # Different balance
-                "Filename": "statement1.pdf",
-            },
-        ]
+        transaction_data = dicts_to_transactions(
+            [
+                {
+                    "Date": "01 Jan 2024",
+                    "Details": "ATM Withdrawal",
+                    "Debit €": "100.00",
+                    "Credit €": "",
+                    "Balance €": "400.00",
+                    "Filename": "statement1.pdf",
+                },
+                {
+                    "Date": "01 Jan 2024",
+                    "Details": "ATM Withdrawal",
+                    "Debit €": "100.00",
+                    "Credit €": "",
+                    "Balance €": "300.00",
+                    "Filename": "statement1.pdf",
+                },
+            ]
+        )
 
         unique, duplicates = self.processor._detect_duplicates(transaction_data)
 
@@ -155,24 +159,26 @@ class TestBankStatementProcessor(unittest.TestCase):
 
     def test_detect_duplicates_no_duplicates(self):
         """Test when no duplicates exist"""
-        transaction_data = [
-            {
-                "Date": "01 Jan 2024",
-                "Details": "Grocery Store",
-                "Debit €": "25.50",
-                "Credit €": "",
-                "Balance €": "475.50",
-                "Filename": "statement1.pdf",
-            },
-            {
-                "Date": "02 Jan 2024",
-                "Details": "Gas Station",
-                "Debit €": "40.00",
-                "Credit €": "",
-                "Balance €": "435.50",
-                "Filename": "statement2.pdf",
-            },
-        ]
+        transaction_data = dicts_to_transactions(
+            [
+                {
+                    "Date": "01 Jan 2024",
+                    "Details": "Grocery Store",
+                    "Debit €": "25.50",
+                    "Credit €": "",
+                    "Balance €": "475.50",
+                    "Filename": "statement1.pdf",
+                },
+                {
+                    "Date": "02 Jan 2024",
+                    "Details": "Gas Station",
+                    "Debit €": "40.00",
+                    "Credit €": "",
+                    "Balance €": "435.50",
+                    "Filename": "statement2.pdf",
+                },
+            ]
+        )
 
         unique, duplicates = self.processor._detect_duplicates(transaction_data)
 
@@ -400,54 +406,48 @@ class TestBankStatementProcessor(unittest.TestCase):
         """Test duplicate detection with complex real-world scenarios"""
         processor = create_test_processor(self.input_dir, self.output_dir)
 
-        transaction_data = [
-            # Same transaction, same file (should be unique)
-            {
-                "Date": "01 Jan 2024",
-                "Details": "VDC-GROCERY STORE",
-                "Debit €": "25.50",
-                "Credit €": "",
-                "Balance €": "475.50",
-                "Filename": "statement1.pdf",
-            },
-            # Same transaction, different file (should be duplicate)
-            {
-                "Date": "01 Jan 2024",
-                "Details": "VDC-GROCERY STORE",
-                "Debit €": "25.50",
-                "Credit €": "",
-                "Balance €": "475.50",
-                "Filename": "statement2.pdf",
-            },
-            # Similar transaction, different amount (should be unique)
-            {
-                "Date": "01 Jan 2024",
-                "Details": "VDC-GROCERY STORE",
-                "Debit €": "26.50",  # Different amount
-                "Credit €": "",
-                "Balance €": "474.50",
-                "Filename": "statement3.pdf",
-            },
-            # Same transaction details, different date (should be unique)
-            {
-                "Date": "02 Jan 2024",  # Different date
-                "Details": "VDC-GROCERY STORE",
-                "Debit €": "25.50",
-                "Credit €": "",
-                "Balance €": "475.50",
-                "Filename": "statement4.pdf",
-            },
-        ]
+        transaction_data = dicts_to_transactions(
+            [
+                {
+                    "Date": "01 Jan 2024",
+                    "Details": "VDC-GROCERY STORE",
+                    "Debit €": "25.50",
+                    "Credit €": "",
+                    "Balance €": "475.50",
+                    "Filename": "statement1.pdf",
+                },
+                {
+                    "Date": "01 Jan 2024",
+                    "Details": "VDC-GROCERY STORE",
+                    "Debit €": "25.50",
+                    "Credit €": "",
+                    "Balance €": "475.50",
+                    "Filename": "statement2.pdf",
+                },
+                {
+                    "Date": "01 Jan 2024",
+                    "Details": "VDC-GROCERY STORE",
+                    "Debit €": "26.50",
+                    "Credit €": "",
+                    "Balance €": "474.50",
+                    "Filename": "statement3.pdf",
+                },
+                {
+                    "Date": "02 Jan 2024",
+                    "Details": "VDC-GROCERY STORE",
+                    "Debit €": "25.50",
+                    "Credit €": "",
+                    "Balance €": "475.50",
+                    "Filename": "statement4.pdf",
+                },
+            ]
+        )
 
         unique, duplicates = processor._detect_duplicates(transaction_data)
 
-        # Should have 3 unique (original + different amount + different date)
-        # and 1 duplicate (same transaction from different file)
         self.assertEqual(len(unique), 3)
         self.assertEqual(len(duplicates), 1)
-
-        # Verify the duplicate is correctly identified
-        self.assertEqual(duplicates[0]["Filename"], "statement2.pdf")
+        self.assertEqual(duplicates[0].filename, "statement2.pdf")
 
 
 class TestTransactionDateParsing(unittest.TestCase):

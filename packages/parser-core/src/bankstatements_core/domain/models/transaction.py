@@ -54,6 +54,8 @@ class Transaction:
     source_page: int | None = None
     confidence_score: float = 1.0
     extraction_warnings: list[ExtractionWarning] = field(default_factory=list)
+    document_type: str = ""
+    transaction_type: str = ""
 
     def is_debit(self) -> bool:
         """Check if transaction is a debit (money out).
@@ -235,6 +237,8 @@ class Transaction:
             "source_page",
             "confidence_score",
             "extraction_warnings",
+            "document_type",
+            "transaction_type",
         }
         additional_fields = {
             k: str(v)
@@ -263,6 +267,8 @@ class Transaction:
             ]
         else:
             extraction_warnings = []
+        document_type = str(data.get("document_type") or "")
+        transaction_type = str(data.get("transaction_type") or "")
 
         return cls(
             date=date or "",
@@ -275,6 +281,8 @@ class Transaction:
             source_page=source_page,
             confidence_score=confidence_score,
             extraction_warnings=extraction_warnings,
+            document_type=document_type,
+            transaction_type=transaction_type,
         )
 
     @staticmethod
@@ -330,6 +338,8 @@ class Transaction:
         result["extraction_warnings"] = json.dumps(
             [w.to_dict() for w in self.extraction_warnings]
         )
+        result["document_type"] = self.document_type
+        result["transaction_type"] = self.transaction_type
 
         # Add any additional fields
         result.update(self.additional_fields)

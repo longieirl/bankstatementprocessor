@@ -19,6 +19,7 @@ import pandas as pd
 from bankstatements_core.utils import to_float
 
 if TYPE_CHECKING:
+    from bankstatements_core.domain.models.transaction import Transaction
     from bankstatements_core.entitlements import Entitlements  # noqa: F401
 
 logger = logging.getLogger(__name__)
@@ -28,14 +29,14 @@ class DuplicateDetectionStrategy(ABC):
     """Abstract strategy for detecting duplicate transactions."""
 
     @abstractmethod
-    def create_key(self, transaction: dict) -> str:
+    def create_key(self, transaction: "Transaction") -> str:
         """
         Create a unique key for a transaction.
 
         Duplicate transactions should produce the same key.
 
         Args:
-            transaction: Transaction dictionary
+            transaction: Transaction object
 
         Returns:
             String key that uniquely identifies the transaction
@@ -43,36 +44,36 @@ class DuplicateDetectionStrategy(ABC):
         pass
 
     def detect_duplicates(
-        self, transactions: list[dict]
-    ) -> tuple[list[dict], list[dict]]:
+        self, transactions: list["Transaction"]
+    ) -> tuple[list["Transaction"], list["Transaction"]]:
         """
         Detect duplicates in a list of transactions.
 
         Args:
-            transactions: List of transaction dictionaries
+            transactions: List of Transaction objects
 
         Returns:
             Tuple of (unique_transactions, duplicate_transactions)
         """
-        unique_rows = []
-        duplicate_rows = []
+        unique_rows: list["Transaction"] = []
+        duplicate_rows: list["Transaction"] = []
         transaction_files: dict[str, str] = {}
 
-        for row in transactions:
-            transaction_key = self.create_key(row)
-            current_filename = row.get("Filename", "")
+        for tx in transactions:
+            transaction_key = self.create_key(tx)
+            current_filename = tx.filename
 
             if transaction_key in transaction_files:
                 # Same transaction details but different file = duplicate
                 if transaction_files[transaction_key] != current_filename:
-                    duplicate_rows.append(row)
+                    duplicate_rows.append(tx)
                 else:
                     # Same file, same transaction - keep it
-                    unique_rows.append(row)
+                    unique_rows.append(tx)
             else:
                 # First time seeing this transaction
                 transaction_files[transaction_key] = current_filename
-                unique_rows.append(row)
+                unique_rows.append(tx)
 
         return unique_rows, duplicate_rows
 
@@ -85,24 +86,24 @@ class AllFieldsDuplicateStrategy(DuplicateDetectionStrategy):
     details, and all monetary fields to be considered duplicates.
     """
 
-    def create_key(self, transaction: dict) -> str:
+    def create_key(self, transaction: "Transaction") -> str:
         """Create key from date, details, and all monetary columns."""
-        # Extract date and details
-        date = transaction.get("Date", "")
-        details = transaction.get("Details", "")
-
-        # Extract monetary values (any column with €, £, $, etc.)
         amounts = []
-        for key, value in transaction.items():
-            if key not in ["Date", "Details", "Filename"] and value:
-                # Try to parse as currency
+        for field_name in ("debit", "credit", "balance"):
+            value = getattr(transaction, field_name, None)
+            if value:
+                amount = to_float(str(value))
+                if amount is not None:
+                    amounts.append(f"{field_name}:{amount}")
+        # Also include any numeric additional_fields
+        for key, value in transaction.additional_fields.items():
+            if value:
                 amount = to_float(str(value))
                 if amount is not None:
                     amounts.append(f"{key}:{amount}")
 
-        # Combine into key
         amounts_str = "|".join(sorted(amounts))
-        return f"{date}:{details}:{amounts_str}"
+        return f"{transaction.date}:{transaction.details}:{amounts_str}"
 
 
 class DateAmountDuplicateStrategy(DuplicateDetectionStrategy):
@@ -113,19 +114,22 @@ class DateAmountDuplicateStrategy(DuplicateDetectionStrategy):
     between statements, but the date and amount should match.
     """
 
-    def create_key(self, transaction: dict) -> str:
+    def create_key(self, transaction: "Transaction") -> str:
         """Create key from date and sum of all amounts."""
-        date = transaction.get("Date", "")
-
-        # Sum all monetary values
         total = 0.0
-        for key, value in transaction.items():
-            if key not in ["Date", "Details", "Filename"] and value:
+        for field_name in ("debit", "credit", "balance"):
+            value = getattr(transaction, field_name, None)
+            if value:
                 amount = to_float(str(value))
                 if amount is not None:
-                    total += abs(amount)  # Use absolute value
+                    total += abs(amount)
+        for value in transaction.additional_fields.values():
+            if value:
+                amount = to_float(str(value))
+                if amount is not None:
+                    total += abs(amount)
 
-        return f"{date}:{total:.2f}"
+        return f"{transaction.date}:{total:.2f}"
 
 
 class CreditCardDuplicateStrategy(DuplicateDetectionStrategy):
@@ -142,31 +146,25 @@ class CreditCardDuplicateStrategy(DuplicateDetectionStrategy):
     - Transaction type provides critical disambiguation
     """
 
-    def create_key(self, transaction: dict) -> str:
+    def create_key(self, transaction: "Transaction") -> str:
         """Create composite key: date:transaction_type:amount.
 
         Args:
-            transaction: Transaction dictionary
+            transaction: Transaction object
 
         Returns:
             Unique key combining date, transaction type, and amount
         """
-        date = transaction.get("Date", "")
-        transaction_type = transaction.get("transaction_type", "other")
-
-        # Get primary amount (prefer Debit, then Credit)
+        # Get primary amount (prefer debit, then credit)
         amount = None
-        if transaction.get("Debit_AMT"):
-            amount = to_float(str(transaction.get("Debit_AMT")))
-        elif transaction.get("Credit_AMT"):
-            amount = to_float(str(transaction.get("Credit_AMT")))
+        if transaction.debit:
+            amount = to_float(str(transaction.debit))
+        elif transaction.credit:
+            amount = to_float(str(transaction.credit))
 
         amount_str = f"{amount:.2f}" if amount is not None else "0.00"
 
-        # Key: date + type + amount (ignoring description variations)
-        # This allows a $50 purchase and $50 payment on the same day
-        # to be treated as different transactions
-        return f"{date}:{transaction_type}:{amount_str}"
+        return f"{transaction.date}:{transaction.transaction_type}:{amount_str}"
 
 
 class OutputFormatStrategy(ABC):

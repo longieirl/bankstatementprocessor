@@ -8,8 +8,12 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
 from bankstatements_core.services.date_parser import DateParserService
+
+if TYPE_CHECKING:
+    from bankstatements_core.domain.models.transaction import Transaction
 
 logger = logging.getLogger(__name__)
 
@@ -20,12 +24,12 @@ class SortingStrategy(ABC):
     """Abstract base class for transaction sorting strategies."""
 
     @abstractmethod
-    def sort(self, transactions: list[dict]) -> list[dict]:
+    def sort(self, transactions: list["Transaction"]) -> list["Transaction"]:
         """
         Sort transactions according to the strategy.
 
         Args:
-            transactions: List of transaction dictionaries
+            transactions: List of Transaction objects
 
         Returns:
             Sorted list of transactions
@@ -36,15 +40,15 @@ class SortingStrategy(ABC):
 class ChronologicalSortingStrategy(SortingStrategy):
     """Strategy that sorts transactions chronologically by date."""
 
-    def sort(self, transactions: list[dict]) -> list[dict]:
+    def sort(self, transactions: list["Transaction"]) -> list["Transaction"]:
         """
         Sort transactions chronologically by date.
 
         Args:
-            transactions: List of transaction dictionaries
+            transactions: List of Transaction objects
 
         Returns:
-            Sorted list of transaction dicts
+            Sorted list of transactions
         """
         if not transactions:
             return transactions
@@ -53,21 +57,19 @@ class ChronologicalSortingStrategy(SortingStrategy):
 
         return sorted(
             transactions,
-            key=lambda tx: _date_parser_service.parse_transaction_date(
-                tx.get("Date") or tx.get("date") or ""
-            ),
+            key=lambda tx: _date_parser_service.parse_transaction_date(tx.date),
         )
 
 
 class NoSortingStrategy(SortingStrategy):
     """Strategy that keeps original order (no sorting)."""
 
-    def sort(self, transactions: list[dict]) -> list[dict]:
+    def sort(self, transactions: list["Transaction"]) -> list["Transaction"]:
         """
         Keep transactions in original order.
 
         Args:
-            transactions: List of transaction dictionaries
+            transactions: List of Transaction objects
 
         Returns:
             Transactions in original order
@@ -93,12 +95,12 @@ class TransactionSortingService:
         """
         self.strategy = strategy
 
-    def sort(self, transactions: list[dict]) -> list[dict]:
+    def sort(self, transactions: list["Transaction"]) -> list["Transaction"]:
         """
         Sort transactions using the configured strategy.
 
         Args:
-            transactions: List of transaction dictionaries
+            transactions: List of Transaction objects
 
         Returns:
             Sorted list of transactions

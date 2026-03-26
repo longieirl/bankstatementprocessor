@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 from bankstatements_core.exceptions import InputValidationError
 
 if TYPE_CHECKING:
+    from bankstatements_core.domain.models.transaction import Transaction
     from bankstatements_core.patterns.strategies import DuplicateDetectionStrategy
 
 logger = logging.getLogger(__name__)
@@ -45,13 +46,13 @@ class DuplicateDetectionService:
         self.strategy = strategy
 
     def detect_and_separate(
-        self, transactions: list[dict]
-    ) -> tuple[list[dict], list[dict]]:
+        self, transactions: list["Transaction"]
+    ) -> tuple[list["Transaction"], list["Transaction"]]:
         """
         Detect duplicates and separate into unique and duplicate lists.
 
         Args:
-            transactions: List of transaction dictionaries to process
+            transactions: List of Transaction objects to process
 
         Returns:
             Tuple of (unique_transactions, duplicate_transactions)
@@ -68,7 +69,9 @@ class DuplicateDetectionService:
         return unique, duplicates
 
     def get_statistics(
-        self, unique_transactions: list[dict], duplicate_transactions: list[dict]
+        self,
+        unique_transactions: list["Transaction"],
+        duplicate_transactions: list["Transaction"],
     ) -> dict[str, int | float]:
         """
         Get statistics about duplicate detection results.
