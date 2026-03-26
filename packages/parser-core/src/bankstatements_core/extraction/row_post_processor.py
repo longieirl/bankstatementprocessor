@@ -12,8 +12,12 @@ import re
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from bankstatements_core.domain.models.extraction_scoring_config import (
+    ExtractionScoringConfig,
+)
 from bankstatements_core.domain.models.extraction_warning import (
     CODE_DATE_PROPAGATED,
+    CODE_MISSING_BALANCE,
     ExtractionWarning,
 )
 from bankstatements_core.extraction.column_identifier import ColumnTypeIdentifier
@@ -53,13 +57,22 @@ class RowPostProcessor:
         template: "BankTemplate | None",
         filename_date: str,
         filename: str,
+        scoring_config: ExtractionScoringConfig | None = None,
     ) -> None:
         self._columns = columns
         self._row_classifier = row_classifier
         self._template = template
         self._filename_date = filename_date
         self._filename = filename
+        self._scoring_config = (
+            scoring_config
+            if scoring_config is not None
+            else ExtractionScoringConfig.default()
+        )
         self._date_col = ColumnTypeIdentifier.find_first_column_of_type(columns, "date")
+        self._balance_col = ColumnTypeIdentifier.find_first_column_of_type(
+            columns, "balance"
+        )
         self._last_source: str = ""
 
     def process(self, row: dict, current_date: str) -> str:
@@ -82,6 +95,9 @@ class RowPostProcessor:
         if self._row_classifier.classify(row, self._columns) != "transaction":
             return current_date
 
+        score = 1.0
+        warnings: list[dict] = []
+
         # Date propagation
         if self._date_col and row.get(self._date_col):
             current_date = row[self._date_col]
@@ -92,11 +108,27 @@ class RowPostProcessor:
             if not current_date:
                 current_date = fallback_date
             self._last_source = "propagated"
-            warning = ExtractionWarning(
-                code=CODE_DATE_PROPAGATED,
-                message=f"date propagated from previous row ('{fallback_date}')",
+            score -= self._scoring_config.penalty_date_propagated
+            warnings.append(
+                ExtractionWarning(
+                    code=CODE_DATE_PROPAGATED,
+                    message=f"date propagated from previous row ('{fallback_date}')",
+                ).to_dict()
             )
-            row["extraction_warnings"] = json.dumps([warning.to_dict()])
+
+        # Missing balance
+        if self._balance_col and not row.get(self._balance_col, "").strip():
+            score -= self._scoring_config.penalty_missing_balance
+            warnings.append(
+                ExtractionWarning(
+                    code=CODE_MISSING_BALANCE,
+                    message="balance field is missing or empty",
+                ).to_dict()
+            )
+
+        row["confidence_score"] = str(max(0.0, min(1.0, score)))
+        if warnings:
+            row["extraction_warnings"] = json.dumps(warnings)
 
         # Metadata tagging
         row["Filename"] = self._filename

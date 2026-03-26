@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 # Machine-readable warning codes
 CODE_DATE_PROPAGATED = "DATE_PROPAGATED"
 CODE_CREDIT_CARD_SKIPPED = "CREDIT_CARD_SKIPPED"
+CODE_MISSING_BALANCE = "MISSING_BALANCE"
 
 
 @dataclass
