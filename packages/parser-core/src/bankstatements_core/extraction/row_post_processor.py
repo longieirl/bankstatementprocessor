@@ -6,11 +6,16 @@ filling in missing dates and stamping each row with filename/document_type/templ
 
 from __future__ import annotations
 
+import json
 import logging
 import re
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from bankstatements_core.domain.models.extraction_warning import (
+    CODE_DATE_PROPAGATED,
+    ExtractionWarning,
+)
 from bankstatements_core.extraction.column_identifier import ColumnTypeIdentifier
 
 if TYPE_CHECKING:
@@ -87,6 +92,11 @@ class RowPostProcessor:
             if not current_date:
                 current_date = fallback_date
             self._last_source = "propagated"
+            warning = ExtractionWarning(
+                code=CODE_DATE_PROPAGATED,
+                message=f"date propagated from previous row ('{fallback_date}')",
+            )
+            row["extraction_warnings"] = json.dumps([warning.to_dict()])
 
         # Metadata tagging
         row["Filename"] = self._filename
