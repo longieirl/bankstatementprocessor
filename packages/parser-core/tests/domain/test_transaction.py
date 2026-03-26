@@ -6,6 +6,10 @@ from decimal import Decimal
 
 import pytest
 
+from bankstatements_core.domain.models.extraction_warning import (
+    CODE_DATE_PROPAGATED,
+    ExtractionWarning,
+)
 from bankstatements_core.domain.models.transaction import Transaction
 
 
@@ -602,7 +606,11 @@ class TestTransactionEnrichmentFields:
         assert tx.extraction_warnings == []
 
     def test_extraction_warnings_can_be_set(self):
-        """TXEN-02: Transaction(extraction_warnings=['missing balance']) stores value."""
+        """TXEN-02: Transaction(extraction_warnings=[ExtractionWarning(...)]) stores value."""
+        w = ExtractionWarning(
+            code=CODE_DATE_PROPAGATED,
+            message="date propagated from previous row ('01 Jan 2024')",
+        )
         tx = Transaction(
             date="01/01/2024",
             details="Test",
@@ -610,9 +618,9 @@ class TestTransactionEnrichmentFields:
             credit="10.00",
             balance="100.00",
             filename="test.pdf",
-            extraction_warnings=["missing balance"],
+            extraction_warnings=[w],
         )
-        assert tx.extraction_warnings == ["missing balance"]
+        assert tx.extraction_warnings == [w]
 
     def test_extraction_warnings_no_shared_mutable_default(self):
         """TXEN-02: Two Transaction() instances have separate extraction_warnings lists."""
@@ -632,11 +640,17 @@ class TestTransactionEnrichmentFields:
             balance="120.00",
             filename="test.pdf",
         )
-        tx1.extraction_warnings.append("warning")
+        tx1.extraction_warnings.append(
+            ExtractionWarning(code=CODE_DATE_PROPAGATED, message="test")
+        )
         assert tx2.extraction_warnings == []
 
     def test_to_dict_extraction_warnings_serialises_as_json_string(self):
-        """TXEN-02: to_dict() with extraction_warnings=['missing balance'] → JSON string."""
+        """TXEN-02: to_dict() with an ExtractionWarning → JSON string of list of dicts."""
+        w = ExtractionWarning(
+            code=CODE_DATE_PROPAGATED,
+            message="date propagated from previous row ('01 Jan 2024')",
+        )
         tx = Transaction(
             date="01/01/2024",
             details="Test",
@@ -644,9 +658,18 @@ class TestTransactionEnrichmentFields:
             credit="10.00",
             balance="100.00",
             filename="test.pdf",
-            extraction_warnings=["missing balance"],
+            extraction_warnings=[w],
         )
-        assert tx.to_dict()["extraction_warnings"] == '["missing balance"]'
+        import json
+
+        serialised = json.loads(tx.to_dict()["extraction_warnings"])
+        assert serialised == [
+            {
+                "code": CODE_DATE_PROPAGATED,
+                "message": "date propagated from previous row ('01 Jan 2024')",
+                "page": None,
+            }
+        ]
 
     def test_to_dict_extraction_warnings_empty_serialises_as_json_array(self):
         """TXEN-02: to_dict() with extraction_warnings=[] → '[]'."""
@@ -661,16 +684,25 @@ class TestTransactionEnrichmentFields:
         assert tx.to_dict()["extraction_warnings"] == "[]"
 
     def test_from_dict_extraction_warnings_parses_json_string(self):
-        """TXEN-02: from_dict({'extraction_warnings': '["missing balance"]'}) → list."""
+        """TXEN-02: from_dict with a JSON-encoded ExtractionWarning → list[ExtractionWarning]."""
+        import json
+
+        w = {
+            "code": CODE_DATE_PROPAGATED,
+            "message": "date propagated from previous row ('01 Jan 2024')",
+            "page": None,
+        }
         tx = Transaction.from_dict(
             {
                 "Date": "01/01/2024",
                 "Details": "Test",
                 "Filename": "test.pdf",
-                "extraction_warnings": '["missing balance"]',
+                "extraction_warnings": json.dumps([w]),
             }
         )
-        assert tx.extraction_warnings == ["missing balance"]
+        assert len(tx.extraction_warnings) == 1
+        assert isinstance(tx.extraction_warnings[0], ExtractionWarning)
+        assert tx.extraction_warnings[0].code == CODE_DATE_PROPAGATED
 
     def test_from_dict_extraction_warnings_absent_defaults_to_empty_list(self):
         """TXEN-02: from_dict({}) (key absent) → extraction_warnings == []."""
@@ -684,6 +716,10 @@ class TestTransactionEnrichmentFields:
 
     def test_extraction_warnings_roundtrip(self):
         """TXEN-02: from_dict(tx.to_dict()) preserves extraction_warnings."""
+        w = ExtractionWarning(
+            code=CODE_DATE_PROPAGATED,
+            message="date propagated from previous row ('01 Jan 2024')",
+        )
         original = Transaction(
             date="01/01/2024",
             details="Test",
@@ -691,19 +727,24 @@ class TestTransactionEnrichmentFields:
             credit="10.00",
             balance="100.00",
             filename="test.pdf",
-            extraction_warnings=["missing balance"],
+            extraction_warnings=[w],
         )
         restored = Transaction.from_dict(original.to_dict())
-        assert restored.extraction_warnings == ["missing balance"]
+        assert len(restored.extraction_warnings) == 1
+        assert restored.extraction_warnings[0].code == CODE_DATE_PROPAGATED
+        assert restored.extraction_warnings[0].message == w.message
 
     def test_extraction_warnings_not_in_additional_fields(self):
         """TXEN-02: extraction_warnings JSON key is gated by standard_keys — not absorbed into additional_fields."""
+        import json
+
+        w = {"code": CODE_DATE_PROPAGATED, "message": "test", "page": None}
         tx = Transaction.from_dict(
             {
                 "Date": "01/01/2024",
                 "Details": "Test",
                 "Filename": "test.pdf",
-                "extraction_warnings": '["x"]',
+                "extraction_warnings": json.dumps([w]),
             }
         )
         assert "extraction_warnings" not in tx.additional_fields
@@ -822,12 +863,15 @@ class TestTransactionEnrichmentFields:
             filename="statement.pdf",
             source_page=3,
             confidence_score=0.8,
-            extraction_warnings=["missing balance"],
+            extraction_warnings=[
+                ExtractionWarning(code=CODE_DATE_PROPAGATED, message="missing balance")
+            ],
         )
         restored = Transaction.from_dict(original.to_dict())
         assert restored.source_page == 3
         assert restored.confidence_score == 0.8
-        assert restored.extraction_warnings == ["missing balance"]
+        assert len(restored.extraction_warnings) == 1
+        assert restored.extraction_warnings[0].code == CODE_DATE_PROPAGATED
 
     def test_backward_compat_old_dict_without_new_keys(self):
         """TXEN-04: Old dict without new keys → from_dict() succeeds with defaults."""

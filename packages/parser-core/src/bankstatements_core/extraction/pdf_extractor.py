@@ -15,6 +15,10 @@ if TYPE_CHECKING:
 
 from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.domain.converters import dicts_to_transactions
+from bankstatements_core.domain.models.extraction_warning import (
+    CODE_CREDIT_CARD_SKIPPED,
+    ExtractionWarning,
+)
 from bankstatements_core.extraction.iban_extractor import IBANExtractor
 from bankstatements_core.extraction.page_header_analyser import PageHeaderAnalyser
 from bankstatements_core.extraction.row_builder import RowBuilder
@@ -112,7 +116,12 @@ class PDFTableExtractor:
                         page_count=len(pdf.pages),
                         iban=None,
                         source_file=pdf_path,
-                        warnings=["credit card statement detected, skipped"],
+                        warnings=[
+                            ExtractionWarning(
+                                code=CODE_CREDIT_CARD_SKIPPED,
+                                message="credit card statement detected, skipped",
+                            )
+                        ],
                     )
 
                 if iban is None and page_num == 1:

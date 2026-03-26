@@ -8,6 +8,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from bankstatements_core.domain import ExtractionResult
+from bankstatements_core.domain.models.extraction_warning import (
+    CODE_CREDIT_CARD_SKIPPED,
+    ExtractionWarning,
+)
 from bankstatements_core.extraction.pdf_extractor import PDFTableExtractor
 
 # Test columns configuration
@@ -359,4 +363,6 @@ class TestCreditCardDetection:
         assert len(result.transactions) == 0
         assert result.iban is None
         assert len(result.warnings) > 0
-        assert "credit card" in result.warnings[0].lower()
+        assert isinstance(result.warnings[0], ExtractionWarning)
+        assert result.warnings[0].code == CODE_CREDIT_CARD_SKIPPED
+        assert "credit card" in result.warnings[0].message.lower()

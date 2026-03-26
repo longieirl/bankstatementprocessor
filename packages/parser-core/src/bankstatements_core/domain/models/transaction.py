@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 
 from bankstatements_core.domain.currency import strip_currency_symbols
+from bankstatements_core.domain.models.extraction_warning import ExtractionWarning
 
 
 @dataclass
@@ -52,7 +53,7 @@ class Transaction:
     additional_fields: dict[str, str] = field(default_factory=dict)
     source_page: int | None = None
     confidence_score: float = 1.0
-    extraction_warnings: list[str] = field(default_factory=list)
+    extraction_warnings: list[ExtractionWarning] = field(default_factory=list)
 
     def is_debit(self) -> bool:
         """Check if transaction is a debit (money out).
@@ -246,9 +247,22 @@ class Transaction:
         raw_confidence = data.get("confidence_score")
         confidence_score = float(raw_confidence) if raw_confidence is not None else 1.0
         raw_warnings = data.get("extraction_warnings")
-        extraction_warnings = (
-            json.loads(raw_warnings) if raw_warnings is not None else []
-        )
+        if raw_warnings is not None:
+            parsed = (
+                json.loads(raw_warnings)
+                if isinstance(raw_warnings, str)
+                else raw_warnings
+            )
+            extraction_warnings = [
+                (
+                    ExtractionWarning.from_dict(w)
+                    if isinstance(w, dict)
+                    else ExtractionWarning(code="UNKNOWN", message=str(w))
+                )
+                for w in parsed
+            ]
+        else:
+            extraction_warnings = []
 
         return cls(
             date=date or "",
@@ -313,7 +327,9 @@ class Transaction:
             str(self.source_page) if self.source_page is not None else None
         )
         result["confidence_score"] = str(self.confidence_score)
-        result["extraction_warnings"] = json.dumps(self.extraction_warnings)
+        result["extraction_warnings"] = json.dumps(
+            [w.to_dict() for w in self.extraction_warnings]
+        )
 
         # Add any additional fields
         result.update(self.additional_fields)
