@@ -1,38 +1,12 @@
 {
   "files": {
-    "bank_statements.csv": {
-      "row_count": 2,
-      "size_bytes": 109
-    },
-    "bank_statements.json": {
-      "record_count": 1,
-      "size_bytes": 88
-    },
     "bank_statements_3656.csv": {
-      "row_count": 67,
-      "size_bytes": 7872
-    },
-    "bank_statements_3656.json": {
-      "record_count": 67,
-      "size_bytes": 29904
-    },
-    "bank_statements_3656.xlsx": {
-      "size_bytes": 7335
+      "row_count": 68,
+      "size_bytes": 6815
     },
     "bank_statements_9015.csv": {
-      "row_count": 400,
-      "size_bytes": 26662
-    },
-    "bank_statements_9015.json": {
-      "record_count": 400,
-      "size_bytes": 156629
-    },
-    "bank_statements_9015.xlsx": {
-      "size_bytes": 18959
-    },
-    "duplicates.json": {
-      "record_count": 0,
-      "size_bytes": 2
+      "row_count": 401,
+      "size_bytes": 24161
     },
     "duplicates_3656.json": {
       "record_count": 0,
@@ -47,16 +21,7 @@
         "excluded_files",
         "summary"
       ],
-      "size_bytes": 547
-    },
-    "expense_analysis.json": {
-      "keys": [
-        "generated_at",
-        "insights",
-        "summary",
-        "total_transactions_analyzed"
-      ],
-      "size_bytes": 425
+      "size_bytes": 480
     },
     "expense_analysis_3656.json": {
       "keys": [
@@ -80,15 +45,6 @@
       "record_count": 3,
       "size_bytes": 606
     },
-    "monthly_summary.json": {
-      "keys": [
-        "generated_at",
-        "monthly_data",
-        "summary",
-        "total_months"
-      ],
-      "size_bytes": 170
-    },
     "monthly_summary_3656.json": {
       "keys": [
         "generated_at",
@@ -96,7 +52,7 @@
         "summary",
         "total_months"
       ],
-      "size_bytes": 2032
+      "size_bytes": 1988
     },
     "monthly_summary_9015.json": {
       "keys": [
@@ -105,39 +61,23 @@
         "summary",
         "total_months"
       ],
-      "size_bytes": 1112
+      "size_bytes": 1063
     }
   },
-  "processing_summary": {
-    "duplicates": 0,
-    "pages_read": 24,
-    "pdf_count": 4,
-    "pdfs_extracted": 3,
-    "transactions": 467
-  },
   "summary": {
-    "csv_outputs": 3,
+    "csv_outputs": 2,
     "output_filenames": [
-      "bank_statements.csv",
-      "bank_statements.json",
       "bank_statements_3656.csv",
-      "bank_statements_3656.json",
-      "bank_statements_3656.xlsx",
       "bank_statements_9015.csv",
-      "bank_statements_9015.json",
-      "bank_statements_9015.xlsx",
-      "duplicates.json",
       "duplicates_3656.json",
       "duplicates_9015.json",
       "excluded_files.json",
-      "expense_analysis.json",
       "expense_analysis_3656.json",
       "expense_analysis_9015.json",
       "ibans.json",
-      "monthly_summary.json",
       "monthly_summary_3656.json",
       "monthly_summary_9015.json"
     ],
-    "total_files": 19
+    "total_files": 10
   }
 }
