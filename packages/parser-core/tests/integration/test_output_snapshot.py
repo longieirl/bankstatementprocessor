@@ -1,17 +1,21 @@
 """Integration snapshot test for end-to-end output validation.
 
 Runs the full processing pipeline against the real input/ directory and
-compares key output metrics against a committed snapshot baseline.
+compares key output metrics against a local snapshot baseline.
+
+The snapshot is personal to each developer's machine and input PDFs —
+it is gitignored and never committed. Run with --snapshot-update once
+to create your baseline, then re-run as you make changes to catch
+regressions.
 
 Usage:
-    # Run the integration test (skipped by default):
-    pytest -m integration
-
-    # Update the snapshot baseline (first run or after intentional change):
+    # Create or refresh your local snapshot baseline:
     pytest -m integration --snapshot-update
 
-The snapshot file is committed to source control so changes are visible in
-code review. Input/output folders are gitignored and never committed.
+    # Validate current output against your baseline:
+    pytest -m integration
+
+Input/output folders and the snapshot file are gitignored and never committed.
 """
 
 from __future__ import annotations

@@ -249,3 +249,7 @@ tmp/
 
 # GSD planning artifacts
 .planning/
+
+# Integration test snapshot — personal to each developer's local input/ PDFs.
+# Never commit updates; the copy on main is kept only as a reference baseline.
+packages/parser-core/tests/integration/snapshots/output_snapshot.json

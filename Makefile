@@ -379,7 +379,7 @@ docker-build: ## Build local image without running
 	@cp .env.local .env
 	docker-compose build
 
-docker-integration: ## Build image and run integration test against input/ (requires PDFs in input/)
+docker-integration: ## Run Docker integration test against input/ — compares output to local snapshot
 	@echo "🧪 Running Docker integration test..."
 	@[ -d input ] && [ -n "$$(find input -name '*.pdf' 2>/dev/null | head -1)" ] || { echo "❌ No PDFs found in input/ — add statements first"; exit 1; }
 	@mkdir -p /tmp/docker-integration-output
@@ -390,13 +390,10 @@ docker-integration: ## Build image and run integration test against input/ (requ
 	  -v "/tmp/docker-integration-output:/app/output" \
 	  -e EXIT_AFTER_PROCESSING=true \
 	  bankstatementsprocessor:latest
-	@python3 -c "\
-import json, glob, sys; \
-files = [f for f in glob.glob('/tmp/docker-integration-output/*.json') \
-         if not any(x in f for x in ['summary','duplicate','expense','monthly','excluded','iban'])]; \
-total = sum(len(json.load(open(f))) for f in files); \
-print(f'Transactions extracted: {total}'); \
-sys.exit(0 if total > 0 else 1)"
+	@python3 packages/parser-core/tests/integration/docker_snapshot.py \
+	  /tmp/docker-integration-output \
+	  packages/parser-core/tests/integration/snapshots/output_snapshot.json \
+	  $$([ "$(UPDATE)" = "1" ] && echo "--update" || echo "")
 	@rm -rf /tmp/docker-integration-output
 	@echo "✅ Docker integration test passed"
 
