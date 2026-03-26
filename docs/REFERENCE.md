@@ -2,6 +2,10 @@
 
 Used by Claude and developers when writing architectural refactor issues for this repository.
 
+## Skills that use this file
+
+- [`improve-codebase-architecture`](https://github.com/mattpocock/skills/tree/main/improve-codebase-architecture) — surface architectural friction and propose deep-module refactors as GitHub issue RFCs
+
 ---
 
 ## GitHub Issue RFC Template
@@ -49,23 +53,23 @@ Use these when classifying the coupling between modules in a candidate refactor:
 
 | Category | Description | Example |
 |----------|-------------|---------|
-| **Intra-layer** | Both modules in the same package; no I/O or external state | `template_registry.py` ↔ `template_model.py` within `templates/` |
-| **Cross-package** | One module depends on another installed package | `bankstatements_core` → `pdfplumber` for PDF extraction |
-| **Cross-boundary (I/O)** | Depends on filesystem, network, environment variables, or external process | `TemplateRegistry` reading template JSON from disk; `column_config.py` reading `TABLE_COLUMNS` env var |
-| **Cross-boundary (time)** | Depends on system clock, scheduled jobs, or time-sensitive state | Any service checking dates or timeouts at runtime |
+| **In-process** | Pure computation, in-memory state, no I/O. Always deepenable — merge modules and test directly. | `template_registry.py` ↔ `template_model.py` within `templates/` |
+| **Local-substitutable** | Dependencies with local test stand-ins. Deepenable if the substitute exists. | `TemplateRegistry` reading JSON from disk — testable with `tmp_path` |
+| **Remote but owned (Ports & Adapters)** | Your own services across a network boundary. Define a port (interface); inject an in-memory adapter for tests, real adapter in production. | Internal APIs or services you control |
+| **True external (Mock)** | Third-party services you don't control. Mock at the boundary; inject as a port. | External auth providers, third-party APIs |
 
 ---
 
 ## Dependency Strategy Patterns
 
-How to handle each dependency category when designing a deep module:
+How to handle each category when designing a deep module:
 
-| Strategy | When to use | How |
-|----------|-------------|-----|
-| **Constructor injection** | Intra-layer or cross-package stable deps | Accept as constructor parameter with a sensible default |
-| **Parameter injection** | Cross-package, per-call variability | Accept as a function/method parameter |
-| **Port (Protocol/ABC)** | Cross-boundary I/O; want testability without real I/O | Define a Protocol; inject real impl in production, test double in tests |
-| **Inline with env fallback** | Single cross-boundary dep with one obvious source | Read from env var directly; expose an override parameter for tests |
+| Category | Strategy |
+|----------|----------|
+| **In-process** | Merge modules; test the combined boundary directly |
+| **Local-substitutable** | Test with the local stand-in running in-process (e.g. `tmp_path`, in-memory store) |
+| **Remote but owned** | Define a Protocol port; production uses real adapter, tests use in-memory adapter |
+| **True external** | Define a Protocol port; inject a mock in tests |
 
 ---
 
