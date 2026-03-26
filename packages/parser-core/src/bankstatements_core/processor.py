@@ -13,6 +13,7 @@ from bankstatements_core.config.processor_config import ProcessorConfig
 from bankstatements_core.config.totals_config import parse_totals_columns  # noqa: F401
 from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.domain.converters import transactions_to_dicts
+from bankstatements_core.domain.models.transaction import Transaction
 from bankstatements_core.services.column_analysis import ColumnAnalysisService
 from bankstatements_core.services.date_parser import DateParserService
 from bankstatements_core.services.duplicate_detector import DuplicateDetectionService
@@ -275,7 +276,9 @@ class BankStatementProcessor:
         """
         self._duplicate_strategy = strategy
 
-    def _detect_duplicates(self, all_rows: list[dict]) -> tuple[list[dict], list[dict]]:
+    def _detect_duplicates(
+        self, all_rows: list[Transaction]
+    ) -> tuple[list[Transaction], list[Transaction]]:
         """
         Separate unique transactions from duplicates using the configured strategy.
 
@@ -295,12 +298,12 @@ class BankStatementProcessor:
             self.input_dir, recursive=self.recursive_scan
         )
 
-    def _sort_transactions_by_date(self, rows: list[dict]) -> list[dict]:
+    def _sort_transactions_by_date(self, rows: list[Transaction]) -> list[Transaction]:
         """
         Sort transactions using the configured sorting strategy.
 
         Args:
-            rows: List of transaction dictionaries
+            rows: List of Transaction objects
 
         Returns:
             Sorted list of transactions (or original order if sorting disabled)
@@ -319,17 +322,17 @@ class BankStatementProcessor:
         extraction_results, pdf_count, pages_read = (
             self._process_all_pdfs()
         )  # list[ExtractionResult]
-        all_rows: list[dict] = []
+        all_transactions: list[Transaction] = []
         pdf_ibans: dict[str, str] = {}
         for extraction in extraction_results:
             if extraction.iban:
                 pdf_ibans[extraction.source_file.name] = extraction.iban
-            all_rows.extend(transactions_to_dicts(extraction.transactions))
+            all_transactions.extend(extraction.transactions)
 
         # Step 2: Group transactions by IBAN (delegated to registry)
-        rows_by_iban = self._registry.group_by_iban(all_rows, pdf_ibans)
+        txns_by_iban = self._registry.group_by_iban(all_transactions, pdf_ibans)
         logger.debug(
-            f"Grouped {len(all_rows)} transactions into {len(rows_by_iban)} IBAN groups"
+            f"Grouped {len(all_transactions)} transactions into {len(txns_by_iban)} IBAN groups"
         )
 
         # Step 3: Process each IBAN group
@@ -337,8 +340,8 @@ class BankStatementProcessor:
         total_unique = 0
         total_duplicates = 0
 
-        for iban_suffix, iban_rows in rows_by_iban.items():
-            result = self._process_transaction_group(iban_suffix, iban_rows)
+        for iban_suffix, iban_txns in txns_by_iban.items():
+            result = self._process_transaction_group(iban_suffix, iban_txns)
 
             logger.debug(
                 f"IBAN {iban_suffix}: Adding {result['unique_count']} unique, "
@@ -381,25 +384,25 @@ class BankStatementProcessor:
         )
 
     def _process_transaction_group(
-        self, iban_suffix: str | None, iban_rows: list[dict]
+        self, iban_suffix: str | None, iban_txns: list[Transaction]
     ) -> dict:
         """Process a group of transactions for a single IBAN.
 
         Args:
             iban_suffix: IBAN suffix for this group (or "unknown")
-            iban_rows: List of transaction dictionaries
+            iban_txns: List of Transaction objects
 
         Returns:
             Dictionary with unique_count, duplicate_count, and output_paths
         """
         logger.info(
-            f"Processing {len(iban_rows)} transactions for IBAN suffix: {iban_suffix}"
+            f"Processing {len(iban_txns)} transactions for IBAN suffix: {iban_suffix}"
         )
 
         # Look up template if registry available and transactions have template_id
         template = None
-        if self._template_registry and iban_rows:
-            template_id = iban_rows[0].get("template_id")
+        if self._template_registry and iban_txns:
+            template_id = iban_txns[0].additional_fields.get("template_id")
             if template_id:
                 template = self._template_registry.get_template(template_id)
                 logger.debug(
@@ -407,18 +410,22 @@ class BankStatementProcessor:
                 )
 
         # Detect duplicates and sort (delegated to registry)
-        unique_rows, duplicate_rows = self._registry.process_transaction_group(
-            iban_rows, template=template
+        unique_txns, duplicate_txns = self._registry.process_transaction_group(
+            iban_txns, template=template
         )
 
         # Filter duplicates to remove any empty rows and header rows
-        duplicate_rows = self._filter_service.filter_empty_rows(duplicate_rows)
-        duplicate_rows = self._filter_service.filter_header_rows(duplicate_rows)
+        duplicate_txns = self._filter_service.filter_empty_rows(duplicate_txns)
+        duplicate_txns = self._filter_service.filter_header_rows(duplicate_txns)
 
         logger.info(
-            f"IBAN {iban_suffix}: {len(unique_rows)} unique transactions, "
-            f"{len(duplicate_rows)} duplicates"
+            f"IBAN {iban_suffix}: {len(unique_txns)} unique transactions, "
+            f"{len(duplicate_txns)} duplicates"
         )
+
+        # Convert to dicts at the output boundary
+        unique_rows = transactions_to_dicts(unique_txns)
+        duplicate_rows = transactions_to_dicts(duplicate_txns)
 
         # Create DataFrame for unique transactions
         df_unique = pd.DataFrame(unique_rows, columns=self.column_names)

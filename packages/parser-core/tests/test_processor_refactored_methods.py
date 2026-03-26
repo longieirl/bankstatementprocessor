@@ -140,18 +140,22 @@ class TestProcessorRefactoredMethods(unittest.TestCase):
 
     def test_sort_transactions_by_date_mixed_dates(self):
         """Test _sort_transactions_by_date with various date formats"""
-        rows = [
-            {"Date": "15/06/23", "Details": "Third"},
-            {"Date": "01/01/23", "Details": "First"},
-            {"Date": "10/03/23", "Details": "Second"},
-        ]
+        from bankstatements_core.domain.converters import dicts_to_transactions
+
+        rows = dicts_to_transactions(
+            [
+                {"Date": "15/06/23", "Details": "Third"},
+                {"Date": "01/01/23", "Details": "First"},
+                {"Date": "10/03/23", "Details": "Second"},
+            ]
+        )
 
         sorted_rows = self.processor._sort_transactions_by_date(rows)
 
         # Verify chronological order
-        self.assertEqual(sorted_rows[0]["Details"], "First")
-        self.assertEqual(sorted_rows[1]["Details"], "Second")
-        self.assertEqual(sorted_rows[2]["Details"], "Third")
+        self.assertEqual(sorted_rows[0].details, "First")
+        self.assertEqual(sorted_rows[1].details, "Second")
+        self.assertEqual(sorted_rows[2].details, "Third")
 
     def test_sort_transactions_by_date_empty_list(self):
         """Test _sort_transactions_by_date with empty list"""
@@ -161,12 +165,14 @@ class TestProcessorRefactoredMethods(unittest.TestCase):
 
     def test_sort_transactions_by_date_single_item(self):
         """Test _sort_transactions_by_date with single transaction"""
-        rows = [{"Date": "01/01/23", "Details": "Only"}]
+        from bankstatements_core.domain.converters import dicts_to_transactions
+
+        rows = dicts_to_transactions([{"Date": "01/01/23", "Details": "Only"}])
 
         sorted_rows = self.processor._sort_transactions_by_date(rows)
 
         self.assertEqual(len(sorted_rows), 1)
-        self.assertEqual(sorted_rows[0]["Details"], "Only")
+        self.assertEqual(sorted_rows[0].details, "Only")
 
     def test_write_json_file(self):
         """Test JSON writing through repository"""

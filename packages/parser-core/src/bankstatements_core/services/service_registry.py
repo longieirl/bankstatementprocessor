@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from bankstatements_core.config.processor_config import ProcessorConfig
+    from bankstatements_core.domain.models.transaction import Transaction
     from bankstatements_core.domain.protocols.services import (
         IDuplicateDetector,
         IIBANGrouping,
@@ -144,24 +145,24 @@ class ServiceRegistry:
 
     def process_transaction_group(
         self,
-        transactions: list[dict],
+        transactions: list["Transaction"],
         template: "BankTemplate | None" = None,
-    ) -> tuple[list[dict], list[dict]]:
+    ) -> tuple[list["Transaction"], list["Transaction"]]:
         """Enrich → classify → deduplicate → sort a group of transactions.
 
         Args:
-            transactions: List of transaction dicts for a single IBAN group.
+            transactions: List of Transaction objects for a single IBAN group.
             template: Optional bank template used for transaction type keywords.
 
         Returns:
             Tuple of (unique_transactions, duplicate_transactions).
         """
-        enriched = self._enrich_with_filename(transactions)
-        enriched = self._enrich_with_document_type(enriched)
-        enriched = self._classify_transaction_types(enriched, template)
+        self._enrich_with_filename(transactions)
+        self._enrich_with_document_type(transactions)
+        self._classify_transaction_types(transactions, template)
 
         unique_rows, duplicate_rows = self._duplicate_detector.detect_and_separate(
-            enriched
+            transactions
         )
         logger.info(
             "Duplicate detection: %d unique, %d duplicates",
@@ -174,17 +175,17 @@ class ServiceRegistry:
 
     def group_by_iban(
         self,
-        transactions: list[dict],
+        transactions: list["Transaction"],
         pdf_ibans: dict[str, str],
-    ) -> dict[str, list[dict]]:
+    ) -> dict[str, list["Transaction"]]:
         """Group transactions by IBAN suffix.
 
         Args:
-            transactions: Flat list of all transaction dicts.
+            transactions: Flat list of all Transaction objects.
             pdf_ibans: Mapping of PDF filename → IBAN string.
 
         Returns:
-            Dict of IBAN suffix → list of transaction dicts.
+            Dict of IBAN suffix → list of Transaction objects.
         """
         return self._grouping_service.group_by_iban(transactions, pdf_ibans)
 
@@ -206,44 +207,41 @@ class ServiceRegistry:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _enrich_with_filename(transactions: list[dict]) -> list[dict]:
-        """Set Filename key from source_pdf if not already present."""
-        for row in transactions:
-            if "Filename" not in row:
-                row["Filename"] = row.get("source_pdf", "")
-        return transactions
+    def _enrich_with_filename(transactions: list["Transaction"]) -> None:
+        """Set filename from source_pdf additional_field if not already present."""
+        for tx in transactions:
+            if not tx.filename:
+                tx.filename = tx.additional_fields.get("source_pdf", "")
 
     @staticmethod
     def _enrich_with_document_type(
-        transactions: list[dict], default_type: str = "bank_statement"
-    ) -> list[dict]:
+        transactions: list["Transaction"], default_type: str = "bank_statement"
+    ) -> None:
         """Set document_type if not already present."""
-        for row in transactions:
-            if "document_type" not in row:
-                row["document_type"] = default_type
-        return transactions
+        for tx in transactions:
+            if not tx.document_type:
+                tx.document_type = default_type
 
     @staticmethod
     def _classify_transaction_types(
-        transactions: list[dict],
+        transactions: list["Transaction"],
         template: "BankTemplate | None" = None,
-    ) -> list[dict]:
+    ) -> None:
         """Classify each transaction using Chain of Responsibility."""
         from bankstatements_core.services.transaction_type_classifier import (
             create_transaction_type_classifier_chain,
         )
 
         if not transactions:
-            return transactions
+            return
 
-        document_type = transactions[0].get("document_type")
+        document_type = transactions[0].document_type
         classifier = create_transaction_type_classifier_chain(document_type)
 
-        for transaction in transactions:
-            transaction["transaction_type"] = classifier.classify(transaction, template)
+        for tx in transactions:
+            tx.transaction_type = classifier.classify(tx, template)
 
         logger.info(
             "Transaction type classification: %d transactions classified",
             len(transactions),
         )
-        return transactions

@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 from bankstatements_core.utils import to_float
 
 if TYPE_CHECKING:
+    from bankstatements_core.domain.models.transaction import Transaction
     from bankstatements_core.templates.template_model import BankTemplate
 
 logger = logging.getLogger(__name__)
@@ -45,12 +46,12 @@ class TransactionTypeClassifier(ABC):
         return classifier
 
     def classify(
-        self, transaction: dict, template: "BankTemplate | None" = None
+        self, transaction: "Transaction", template: "BankTemplate | None" = None
     ) -> str:
         """Classify transaction type, delegating to next classifier if needed.
 
         Args:
-            transaction: Transaction dictionary
+            transaction: Transaction object
             template: Optional bank template with transaction type keywords
 
         Returns:
@@ -68,7 +69,7 @@ class TransactionTypeClassifier(ABC):
 
     @abstractmethod
     def _do_classify(
-        self, transaction: dict, template: "BankTemplate | None"
+        self, transaction: "Transaction", template: "BankTemplate | None"
     ) -> str | None:
         """Attempt to classify the transaction.
 
@@ -87,13 +88,13 @@ class TemplateKeywordClassifier(TransactionTypeClassifier):
     """
 
     def _do_classify(
-        self, transaction: dict, template: "BankTemplate | None"
+        self, transaction: "Transaction", template: "BankTemplate | None"
     ) -> str | None:
         """Classify using template transaction_types keyword mappings."""
         if not template or not template.processing.transaction_types:
             return None
 
-        details = transaction.get("Details", "").upper()
+        details = transaction.details.upper()
         if not details:
             return None
 
@@ -152,15 +153,13 @@ class CreditCardPatternClassifier(TransactionTypeClassifier):
     ]
 
     def _do_classify(
-        self, transaction: dict, template: "BankTemplate | None"
+        self, transaction: "Transaction", template: "BankTemplate | None"
     ) -> str | None:
         """Classify credit card transactions."""
-        # Only run for credit card statements
-        document_type = transaction.get("document_type", "")
-        if document_type != "credit_card_statement":
+        if transaction.document_type != "credit_card_statement":
             return None
 
-        details = transaction.get("Details", "").upper()
+        details = transaction.details.upper()
         if not details:
             return None
 
@@ -223,15 +222,13 @@ class BankStatementPatternClassifier(TransactionTypeClassifier):
     ]
 
     def _do_classify(
-        self, transaction: dict, template: "BankTemplate | None"
+        self, transaction: "Transaction", template: "BankTemplate | None"
     ) -> str | None:
         """Classify bank statement transactions."""
-        # Only run for bank statements
-        document_type = transaction.get("document_type", "")
-        if document_type != "bank_statement":
+        if transaction.document_type != "bank_statement":
             return None
 
-        details = transaction.get("Details", "").upper()
+        details = transaction.details.upper()
         if not details:
             return None
 
@@ -259,29 +256,23 @@ class AmountBasedClassifier(TransactionTypeClassifier):
     """
 
     def _do_classify(
-        self, transaction: dict, template: "BankTemplate | None"
+        self, transaction: "Transaction", template: "BankTemplate | None"
     ) -> str | None:
         """Classify based on amount patterns."""
-        debit = transaction.get("Debit_AMT")
-        credit = transaction.get("Credit_AMT")
-
-        debit_amount = to_float(str(debit)) if debit else None
-        credit_amount = to_float(str(credit)) if credit else None
+        debit_amount = to_float(str(transaction.debit)) if transaction.debit else None
+        credit_amount = (
+            to_float(str(transaction.credit)) if transaction.credit else None
+        )
 
         # Credit only (money in) - likely refund or transfer
         if credit_amount and credit_amount > 0 and not debit_amount:
-            # Could be refund or incoming transfer
-            # Without keywords, default to transfer for bank statements
-            document_type = transaction.get("document_type", "")
-            if document_type == "credit_card_statement":
+            if transaction.document_type == "credit_card_statement":
                 return "refund"  # Credits on credit cards are usually refunds
             return "transfer"  # Credits on bank accounts are usually transfers
 
         # Debit only (money out) - likely purchase or payment
         if debit_amount and debit_amount > 0 and not credit_amount:
-            # Could be purchase or outgoing payment
-            document_type = transaction.get("document_type", "")
-            if document_type == "credit_card_statement":
+            if transaction.document_type == "credit_card_statement":
                 return "purchase"  # Debits on credit cards are usually purchases
             return "payment"  # Debits on bank accounts are usually payments
 
@@ -301,7 +292,7 @@ class DefaultClassifier(TransactionTypeClassifier):
     """
 
     def _do_classify(
-        self, transaction: dict, template: "BankTemplate | None"
+        self, transaction: "Transaction", template: "BankTemplate | None"
     ) -> str | None:
         """Always return 'other' as default classification."""
         return "other"

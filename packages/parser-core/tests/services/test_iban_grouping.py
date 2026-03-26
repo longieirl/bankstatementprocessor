@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import unittest
 
+from bankstatements_core.domain.models.transaction import Transaction
 from bankstatements_core.services.iban_grouping import IBANGroupingService
 
 
@@ -18,9 +19,15 @@ class TestIBANGroupingService(unittest.TestCase):
     def test_group_by_iban_with_valid_ibans(self):
         """Test grouping with valid IBANs."""
         rows = [
-            {"Filename": "file1.pdf", "Details": "Transaction 1"},
-            {"Filename": "file2.pdf", "Details": "Transaction 2"},
-            {"Filename": "file1.pdf", "Details": "Transaction 3"},
+            Transaction.from_dict(
+                {"Filename": "file1.pdf", "Details": "Transaction 1"}
+            ),
+            Transaction.from_dict(
+                {"Filename": "file2.pdf", "Details": "Transaction 2"}
+            ),
+            Transaction.from_dict(
+                {"Filename": "file1.pdf", "Details": "Transaction 3"}
+            ),
         ]
         pdf_ibans = {
             "file1.pdf": "IE12 BOFI 9000 0112 3456",
@@ -39,8 +46,12 @@ class TestIBANGroupingService(unittest.TestCase):
     def test_group_by_iban_without_iban(self):
         """Test grouping when PDF has no IBAN."""
         rows = [
-            {"Filename": "file1.pdf", "Details": "Transaction 1"},
-            {"Filename": "file2.pdf", "Details": "Transaction 2"},
+            Transaction.from_dict(
+                {"Filename": "file1.pdf", "Details": "Transaction 1"}
+            ),
+            Transaction.from_dict(
+                {"Filename": "file2.pdf", "Details": "Transaction 2"}
+            ),
         ]
         pdf_ibans = {
             "file1.pdf": "IE12 BOFI 9000 0112 3456",
@@ -59,8 +70,10 @@ class TestIBANGroupingService(unittest.TestCase):
     def test_group_by_iban_missing_filename(self, caplog=None):
         """Test grouping when row has no filename."""
         rows = [
-            {"Details": "Transaction 1"},  # No Filename field
-            {"Filename": "file1.pdf", "Details": "Transaction 2"},
+            Transaction.from_dict({"Details": "Transaction 1"}),  # No Filename field
+            Transaction.from_dict(
+                {"Filename": "file1.pdf", "Details": "Transaction 2"}
+            ),
         ]
         pdf_ibans = {
             "file1.pdf": "IE12 BOFI 9000 0112 3456",
