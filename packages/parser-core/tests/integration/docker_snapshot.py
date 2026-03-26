@@ -131,7 +131,9 @@ def main() -> None:
         for e in current["files"].values()
         if "record_count" in e or "row_count" in e
     )
-    print(f"✅ Snapshot matches baseline ({total} records across {len(curr_files)} files)")
+    print(
+        f"✅ Snapshot matches baseline ({total} records across {len(curr_files)} files)"
+    )
 
 
 if __name__ == "__main__":
