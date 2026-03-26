@@ -13,6 +13,7 @@ from decimal import Decimal
 from typing import Any
 
 from bankstatements_core.domain import Transaction, dicts_to_transactions
+from bankstatements_core.domain.currency import strip_currency_symbols
 from bankstatements_core.services.date_parser import DateParserService
 
 logger = logging.getLogger(__name__)
@@ -173,21 +174,11 @@ class MonthlySummaryService:
             Decimal value or None if parsing fails
         """
         try:
-            # Remove currency symbols and commas
-            cleaned = (
-                amount_str.replace("€", "")
-                .replace("$", "")
-                .replace("£", "")
-                .replace(",", "")
-                .replace(" ", "")
-                .strip()
-            )
+            cleaned = strip_currency_symbols(amount_str).strip()
             if cleaned:
                 return Decimal(cleaned)
         except (ValueError, TypeError, ArithmeticError):
-            # Expected errors: invalid decimal format, type errors, arithmetic errors
             return None
-        # Let unexpected errors bubble up
         return None
 
     def _aggregate_monthly_data(

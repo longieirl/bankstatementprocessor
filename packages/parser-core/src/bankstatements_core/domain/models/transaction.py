@@ -9,6 +9,8 @@ import json
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 
+from bankstatements_core.domain.currency import strip_currency_symbols
+
 
 @dataclass
 class Transaction:
@@ -122,11 +124,7 @@ class Transaction:
         if not amount:
             return "0"
 
-        # Remove common currency symbols and spaces
-        cleaned = amount.replace("€", "").replace("$", "").replace("£", "")
-        cleaned = cleaned.replace(" ", "").replace(",", "")
-        cleaned = cleaned.strip()
-
+        cleaned = strip_currency_symbols(amount).strip()
         return cleaned if cleaned else "0"
 
     def has_valid_date(self) -> bool:
