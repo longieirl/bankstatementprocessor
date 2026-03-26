@@ -137,10 +137,23 @@ class TestProcessorHelperFunctions(unittest.TestCase):
 
         # Same transaction appearing twice in the same file
         from bankstatements_core.domain.converters import dicts_to_transactions
-        all_rows = dicts_to_transactions([
-            {"Date": "01/12/23", "Details": "Test", "Debit €": "100", "Filename": "file1.pdf"},
-            {"Date": "01/12/23", "Details": "Test", "Debit €": "100", "Filename": "file1.pdf"},
-        ])
+
+        all_rows = dicts_to_transactions(
+            [
+                {
+                    "Date": "01/12/23",
+                    "Details": "Test",
+                    "Debit €": "100",
+                    "Filename": "file1.pdf",
+                },
+                {
+                    "Date": "01/12/23",
+                    "Details": "Test",
+                    "Debit €": "100",
+                    "Filename": "file1.pdf",
+                },
+            ]
+        )
 
         unique_rows, duplicate_rows = processor._detect_duplicates(all_rows)
 
