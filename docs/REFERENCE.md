@@ -5,6 +5,7 @@ Used by Claude and developers when writing architectural refactor issues for thi
 ## Skills that use this file
 
 - [`improve-codebase-architecture`](https://github.com/mattpocock/skills/tree/main/improve-codebase-architecture) — surface architectural friction and propose deep-module refactors as GitHub issue RFCs
+- `gsd` suite — built-in Claude Code workflow tool for structured project planning, phase execution, and delivery
 
 ---
 
