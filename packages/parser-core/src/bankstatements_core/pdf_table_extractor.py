@@ -80,7 +80,6 @@ _PAGE_VALIDATION_SERVICE = PageValidationService(
 _ROW_CLASSIFIER_CHAIN = create_row_classifier_chain()
 _HEADER_SERVICE = HeaderDetectionService()
 _ROW_MERGER_SERVICE = RowMergerService()
-_CONTENT_DENSITY_SERVICE = ContentDensityService()
 
 
 # Wrapper functions (backward compatibility)
