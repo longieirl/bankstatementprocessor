@@ -18,14 +18,14 @@ class TestCreditCardDuplicateStrategy:
             {
                 "Date": "01/12/2023",
                 "Details": "POS TESCO STORES",
-                "Debit_EUR": "45.23",
+                "Debit_AMT": "45.23",
                 "Filename": "card1.pdf",
                 "transaction_type": "purchase",
             },
             {
                 "Date": "01/12/2023",
                 "Details": "POS TESCO SUPERMARKET",  # Different description
-                "Debit_EUR": "45.23",
+                "Debit_AMT": "45.23",
                 "Filename": "card2.pdf",
                 "transaction_type": "purchase",
             },
@@ -45,14 +45,14 @@ class TestCreditCardDuplicateStrategy:
             {
                 "Date": "01/12/2023",
                 "Details": "POS TESCO STORES",
-                "Debit_EUR": "50.00",
+                "Debit_AMT": "50.00",
                 "Filename": "card.pdf",
                 "transaction_type": "purchase",
             },
             {
                 "Date": "01/12/2023",
                 "Details": "PAYMENT RECEIVED",
-                "Credit_EUR": "50.00",
+                "Credit_AMT": "50.00",
                 "Filename": "card.pdf",
                 "transaction_type": "payment",
             },
@@ -71,14 +71,14 @@ class TestCreditCardDuplicateStrategy:
             {
                 "Date": "01/12/2023",
                 "Details": "POS TESCO",
-                "Debit_EUR": "45.23",
+                "Debit_AMT": "45.23",
                 "Filename": "card.pdf",
                 "transaction_type": "purchase",
             },
             {
                 "Date": "02/12/2023",  # Different date
                 "Details": "POS TESCO",
-                "Debit_EUR": "45.23",
+                "Debit_AMT": "45.23",
                 "Filename": "card.pdf",
                 "transaction_type": "purchase",
             },
@@ -97,14 +97,14 @@ class TestCreditCardDuplicateStrategy:
             {
                 "Date": "01/12/2023",
                 "Details": "TESCO STORE 123",
-                "Debit_EUR": "45.23",
+                "Debit_AMT": "45.23",
                 "Filename": "card1.pdf",
                 "transaction_type": "purchase",
             },
             {
                 "Date": "01/12/2023",
                 "Details": "TESCO STORES LTD",  # Different merchant description
-                "Debit_EUR": "45.23",
+                "Debit_AMT": "45.23",
                 "Filename": "card2.pdf",
                 "transaction_type": "purchase",
             },
@@ -126,14 +126,14 @@ class TestCreditCardDuplicateStrategy:
             {
                 "Date": "01/12/2023",
                 "Details": "COFFEE SHOP A",
-                "Debit_EUR": "4.50",
+                "Debit_AMT": "4.50",
                 "Filename": "card.pdf",
                 "transaction_type": "purchase",
             },
             {
                 "Date": "01/12/2023",
                 "Details": "COFFEE SHOP B",
-                "Debit_EUR": "4.50",
+                "Debit_AMT": "4.50",
                 "Filename": "card.pdf",  # Same file
                 "transaction_type": "purchase",
             },
@@ -153,14 +153,14 @@ class TestCreditCardDuplicateStrategy:
             {
                 "Date": "01/12/2023",
                 "Details": "POS AMAZON",
-                "Debit_EUR": "99.99",
+                "Debit_AMT": "99.99",
                 "Filename": "statement_nov.pdf",
                 "transaction_type": "purchase",
             },
             {
                 "Date": "01/12/2023",
                 "Details": "AMAZON PURCHASE",
-                "Debit_EUR": "99.99",
+                "Debit_AMT": "99.99",
                 "Filename": "statement_dec.pdf",  # Different file
                 "transaction_type": "purchase",
             },
@@ -180,14 +180,14 @@ class TestCreditCardDuplicateStrategy:
             {
                 "Date": "01/12/2023",
                 "Details": "TRANSACTION 1",
-                "Debit_EUR": "50.00",
+                "Debit_AMT": "50.00",
                 "Filename": "card.pdf",
                 "transaction_type": "purchase",
             },
             {
                 "Date": "01/12/2023",
                 "Details": "TRANSACTION 2",
-                "Debit_EUR": "50.00",
+                "Debit_AMT": "50.00",
                 "Filename": "card.pdf",  # Same file
                 "transaction_type": "purchase",
             },
@@ -207,14 +207,14 @@ class TestCreditCardDuplicateStrategy:
             {
                 "Date": "01/12/2023",
                 "Details": "PURCHASE",
-                "Debit_EUR": "50.00",
+                "Debit_AMT": "50.00",
                 "Filename": "card1.pdf",
                 # Missing transaction_type
             },
             {
                 "Date": "01/12/2023",
                 "Details": "PURCHASE",
-                "Debit_EUR": "50.00",
+                "Debit_AMT": "50.00",
                 "Filename": "card2.pdf",
                 # Missing transaction_type
             },
@@ -234,14 +234,14 @@ class TestCreditCardDuplicateStrategy:
             {
                 "Date": "05/12/2023",
                 "Details": "REFUND",
-                "Credit_EUR": "25.00",  # Credit, not Debit
+                "Credit_AMT": "25.00",  # Credit, not Debit
                 "Filename": "card1.pdf",
                 "transaction_type": "refund",
             },
             {
                 "Date": "05/12/2023",
                 "Details": "REFUND PROCESSED",
-                "Credit_EUR": "25.00",
+                "Credit_AMT": "25.00",
                 "Filename": "card2.pdf",
                 "transaction_type": "refund",
             },
@@ -260,16 +260,16 @@ class TestCreditCardDuplicateStrategy:
             {
                 "Date": "01/12/2023",
                 "Details": "PURCHASE",
-                "Debit_EUR": "50.00",
-                "Credit_EUR": None,
+                "Debit_AMT": "50.00",
+                "Credit_AMT": None,
                 "Filename": "card.pdf",
                 "transaction_type": "purchase",
             },
             {
                 "Date": "01/12/2023",
                 "Details": "REFUND",
-                "Debit_EUR": None,
-                "Credit_EUR": "50.00",
+                "Debit_AMT": None,
+                "Credit_AMT": "50.00",
                 "Filename": "card.pdf",
                 "transaction_type": "refund",
             },
@@ -289,16 +289,16 @@ class TestCreditCardDuplicateStrategy:
             {
                 "Date": "01/12/2023",
                 "Details": "AUTHORIZATION HOLD",
-                "Debit_EUR": None,
-                "Credit_EUR": None,
+                "Debit_AMT": None,
+                "Credit_AMT": None,
                 "Filename": "card1.pdf",
                 "transaction_type": "other",
             },
             {
                 "Date": "01/12/2023",
                 "Details": "AUTHORIZATION HOLD",
-                "Debit_EUR": None,
-                "Credit_EUR": None,
+                "Debit_AMT": None,
+                "Credit_AMT": None,
                 "Filename": "card2.pdf",
                 "transaction_type": "other",
             },
@@ -317,7 +317,7 @@ class TestCreditCardDuplicateStrategy:
         transaction = {
             "Date": "01/12/2023",
             "Details": "POS TESCO",
-            "Debit_EUR": "45.23",
+            "Debit_AMT": "45.23",
             "transaction_type": "purchase",
         }
 
@@ -332,7 +332,7 @@ class TestCreditCardDuplicateStrategy:
         transaction = {
             "Date": "01/12/2023",
             "Details": "UNKNOWN",
-            "Debit_EUR": "10.00",
+            "Debit_AMT": "10.00",
         }
 
         key = strategy.create_key(transaction)
@@ -346,8 +346,8 @@ class TestCreditCardDuplicateStrategy:
         transaction = {
             "Date": "01/12/2023",
             "Details": "TRANSACTION",
-            "Debit_EUR": "50.00",
-            "Credit_EUR": "25.00",  # Both present
+            "Debit_AMT": "50.00",
+            "Credit_AMT": "25.00",  # Both present
             "transaction_type": "purchase",
         }
 

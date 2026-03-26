@@ -156,10 +156,10 @@ class CreditCardDuplicateStrategy(DuplicateDetectionStrategy):
 
         # Get primary amount (prefer Debit, then Credit)
         amount = None
-        if transaction.get("Debit_EUR"):
-            amount = to_float(str(transaction.get("Debit_EUR")))
-        elif transaction.get("Credit_EUR"):
-            amount = to_float(str(transaction.get("Credit_EUR")))
+        if transaction.get("Debit_AMT"):
+            amount = to_float(str(transaction.get("Debit_AMT")))
+        elif transaction.get("Credit_AMT"):
+            amount = to_float(str(transaction.get("Credit_AMT")))
 
         amount_str = f"{amount:.2f}" if amount is not None else "0.00"
 

@@ -337,8 +337,8 @@ class TestTransactionFromDict:
         data = {
             "Transaction Date": "01/12/2023",
             "Description": "Payment",
-            "Debit_EUR": "50.00",
-            "Credit_EUR": None,
+            "Debit_AMT": "50.00",
+            "Credit_AMT": None,
             "Running Balance": "100.00",
             "source_pdf": "test.pdf",
         }

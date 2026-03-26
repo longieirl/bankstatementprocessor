@@ -101,7 +101,7 @@ class TestTemplateKeywordClassifier:
         transaction = {
             "Date": "01/12/2023",
             "Details": "POS TESCO STORES",
-            "Debit_EUR": "45.23",
+            "Debit_AMT": "45.23",
         }
 
         result = classifier.classify(transaction, credit_card_template)
@@ -114,7 +114,7 @@ class TestTemplateKeywordClassifier:
         transaction = {
             "Date": "02/12/2023",
             "Details": "PAYMENT RECEIVED",
-            "Credit_EUR": "500.00",
+            "Credit_AMT": "500.00",
         }
 
         result = classifier.classify(transaction, credit_card_template)
@@ -127,7 +127,7 @@ class TestTemplateKeywordClassifier:
         transaction = {
             "Date": "01/12/2023",
             "Details": "contactless payment at shop",
-            "Debit_EUR": "12.50",
+            "Debit_AMT": "12.50",
         }
 
         result = classifier.classify(transaction, credit_card_template)
@@ -140,7 +140,7 @@ class TestTemplateKeywordClassifier:
         transaction = {
             "Date": "01/12/2023",
             "Details": "UNKNOWN TRANSACTION TYPE",
-            "Debit_EUR": "10.00",
+            "Debit_AMT": "10.00",
         }
 
         result = classifier._do_classify(transaction, credit_card_template)
@@ -153,7 +153,7 @@ class TestTemplateKeywordClassifier:
         transaction = {
             "Date": "01/12/2023",
             "Details": "POS TESCO",
-            "Debit_EUR": "45.23",
+            "Debit_AMT": "45.23",
         }
 
         result = classifier._do_classify(transaction, None)
@@ -183,7 +183,7 @@ class TestTemplateKeywordClassifier:
         transaction = {
             "Date": "01/12/2023",
             "Details": "POS TESCO",
-            "Debit_EUR": "45.23",
+            "Debit_AMT": "45.23",
         }
 
         result = classifier._do_classify(transaction, template)
@@ -203,7 +203,7 @@ class TestCreditCardPatternClassifier:
         transaction = {
             "Date": "01/12/2023",
             "Details": "POS TESCO STORES",
-            "Debit_EUR": "45.23",
+            "Debit_AMT": "45.23",
             "document_type": "credit_card_statement",
         }
 
@@ -217,7 +217,7 @@ class TestCreditCardPatternClassifier:
         transaction = {
             "Date": "01/12/2023",
             "Details": "ONLINE AMAZON.COM",
-            "Debit_EUR": "25.99",
+            "Debit_AMT": "25.99",
             "document_type": "credit_card_statement",
         }
 
@@ -231,7 +231,7 @@ class TestCreditCardPatternClassifier:
         transaction = {
             "Date": "05/12/2023",
             "Details": "PAYMENT RECEIVED THANK YOU",
-            "Credit_EUR": "500.00",
+            "Credit_AMT": "500.00",
             "document_type": "credit_card_statement",
         }
 
@@ -245,7 +245,7 @@ class TestCreditCardPatternClassifier:
         transaction = {
             "Date": "01/01/2024",
             "Details": "ANNUAL FEE",
-            "Debit_EUR": "12.00",
+            "Debit_AMT": "12.00",
             "document_type": "credit_card_statement",
         }
 
@@ -259,7 +259,7 @@ class TestCreditCardPatternClassifier:
         transaction = {
             "Date": "10/12/2023",
             "Details": "REFUND AMAZON.COM",
-            "Credit_EUR": "15.00",
+            "Credit_AMT": "15.00",
             "document_type": "credit_card_statement",
         }
 
@@ -273,7 +273,7 @@ class TestCreditCardPatternClassifier:
         transaction = {
             "Date": "01/12/2023",
             "Details": "POS TESCO STORES",
-            "Debit_EUR": "45.23",
+            "Debit_AMT": "45.23",
             "document_type": "bank_statement",
         }
 
@@ -294,7 +294,7 @@ class TestBankStatementPatternClassifier:
         transaction = {
             "Date": "01/12/2023",
             "Details": "SEPA CREDIT FROM JOHN DOE",
-            "Credit_EUR": "100.00",
+            "Credit_AMT": "100.00",
             "document_type": "bank_statement",
         }
 
@@ -308,7 +308,7 @@ class TestBankStatementPatternClassifier:
         transaction = {
             "Date": "05/12/2023",
             "Details": "DIRECT DEBIT ELECTRICITY COMPANY",
-            "Debit_EUR": "75.50",
+            "Debit_AMT": "75.50",
             "document_type": "bank_statement",
         }
 
@@ -322,7 +322,7 @@ class TestBankStatementPatternClassifier:
         transaction = {
             "Date": "01/12/2023",
             "Details": "STANDING ORDER RENT",
-            "Debit_EUR": "1200.00",
+            "Debit_AMT": "1200.00",
             "document_type": "bank_statement",
         }
 
@@ -336,7 +336,7 @@ class TestBankStatementPatternClassifier:
         transaction = {
             "Date": "31/12/2023",
             "Details": "INTEREST CREDIT",
-            "Credit_EUR": "2.50",
+            "Credit_AMT": "2.50",
             "document_type": "bank_statement",
         }
 
@@ -350,7 +350,7 @@ class TestBankStatementPatternClassifier:
         transaction = {
             "Date": "01/12/2023",
             "Details": "SEPA CREDIT",
-            "Credit_EUR": "100.00",
+            "Credit_AMT": "100.00",
             "document_type": "credit_card_statement",
         }
 
@@ -371,8 +371,8 @@ class TestAmountBasedClassifier:
         transaction = {
             "Date": "01/12/2023",
             "Details": "MERCHANT NAME",
-            "Debit_EUR": "50.00",
-            "Credit_EUR": None,
+            "Debit_AMT": "50.00",
+            "Credit_AMT": None,
             "document_type": "credit_card_statement",
         }
 
@@ -386,8 +386,8 @@ class TestAmountBasedClassifier:
         transaction = {
             "Date": "01/12/2023",
             "Details": "MERCHANT NAME",
-            "Debit_EUR": None,
-            "Credit_EUR": "25.00",
+            "Debit_AMT": None,
+            "Credit_AMT": "25.00",
             "document_type": "credit_card_statement",
         }
 
@@ -401,8 +401,8 @@ class TestAmountBasedClassifier:
         transaction = {
             "Date": "01/12/2023",
             "Details": "MERCHANT NAME",
-            "Debit_EUR": "50.00",
-            "Credit_EUR": None,
+            "Debit_AMT": "50.00",
+            "Credit_AMT": None,
             "document_type": "bank_statement",
         }
 
@@ -416,8 +416,8 @@ class TestAmountBasedClassifier:
         transaction = {
             "Date": "01/12/2023",
             "Details": "INCOMING TRANSFER",
-            "Debit_EUR": None,
-            "Credit_EUR": "100.00",
+            "Debit_AMT": None,
+            "Credit_AMT": "100.00",
             "document_type": "bank_statement",
         }
 
@@ -431,8 +431,8 @@ class TestAmountBasedClassifier:
         transaction = {
             "Date": "01/12/2023",
             "Details": "MONTHLY CHARGE",
-            "Debit_EUR": "0.00",
-            "Credit_EUR": None,
+            "Debit_AMT": "0.00",
+            "Credit_AMT": None,
         }
 
         result = classifier.classify(transaction, None)
@@ -470,7 +470,7 @@ class TestClassifierChain:
         transaction = {
             "Date": "01/12/2023",
             "Details": "POS TESCO STORES",
-            "Debit_EUR": "45.23",
+            "Debit_AMT": "45.23",
             "document_type": "credit_card_statement",
         }
 
@@ -500,7 +500,7 @@ class TestClassifierChain:
         transaction = {
             "Date": "01/12/2023",
             "Details": "CONTACTLESS PAYMENT",
-            "Debit_EUR": "12.50",
+            "Debit_AMT": "12.50",
             "document_type": "credit_card_statement",
         }
 
@@ -514,7 +514,7 @@ class TestClassifierChain:
         transaction = {
             "Date": "01/12/2023",
             "Details": "SEPA TRANSFER FROM JOHN",
-            "Credit_EUR": "100.00",
+            "Credit_AMT": "100.00",
             "document_type": "bank_statement",
         }
 
@@ -528,7 +528,7 @@ class TestClassifierChain:
         transaction = {
             "Date": "01/12/2023",
             "Details": "SOME TRANSACTION",
-            "Debit_EUR": "50.00",
+            "Debit_AMT": "50.00",
         }
 
         chain = create_transaction_type_classifier_chain(None)
@@ -542,7 +542,7 @@ class TestClassifierChain:
         transaction = {
             "Date": "01/12/2023",
             "Details": "SEPA CREDIT",  # Both template keyword and pattern
-            "Credit_EUR": "100.00",
+            "Credit_AMT": "100.00",
             "document_type": "bank_statement",
         }
 

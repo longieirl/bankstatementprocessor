@@ -173,12 +173,12 @@ class Transaction:
         details = cls._get_value(
             data, ["Details", "details", "Description", "Narrative"]
         )
-        debit = cls._get_value(data, ["Debit €", "Debit_EUR", "Debit", "Debit Amount"])
+        debit = cls._get_value(data, ["Debit €", "Debit_AMT", "Debit", "Debit Amount"])
         credit = cls._get_value(
-            data, ["Credit €", "Credit_EUR", "Credit", "Credit Amount"]
+            data, ["Credit €", "Credit_AMT", "Credit", "Credit Amount"]
         )
         balance = cls._get_value(
-            data, ["Balance €", "Balance_EUR", "Balance", "Running Balance"]
+            data, ["Balance €", "Balance_AMT", "Balance", "Running Balance"]
         )
         filename = cls._get_value(data, ["Filename", "filename", "source_pdf"]) or ""
 
@@ -192,15 +192,15 @@ class Transaction:
             "Description",
             "Narrative",
             "Debit €",
-            "Debit_EUR",
+            "Debit_AMT",
             "Debit",
             "Debit Amount",
             "Credit €",
-            "Credit_EUR",
+            "Credit_AMT",
             "Credit",
             "Credit Amount",
             "Balance €",
-            "Balance_EUR",
+            "Balance_AMT",
             "Balance",
             "Running Balance",
             "Filename",
