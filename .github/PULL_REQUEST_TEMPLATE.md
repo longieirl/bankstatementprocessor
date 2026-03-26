@@ -19,6 +19,7 @@
 ## Testing
 - [ ] Tests pass (coverage ≥ 91%)
 - [ ] Manually tested
+- [ ] `make docker-integration` passed locally *(required when touching `Dockerfile`, `entrypoint.sh`, `docker-compose.yml`, or `packages/parser-core/`)*
 
 ## Checklist
 - [ ] Code follows project style
