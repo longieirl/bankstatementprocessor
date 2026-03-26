@@ -115,7 +115,13 @@ class DateAmountDuplicateStrategy(DuplicateDetectionStrategy):
     """
 
     def create_key(self, transaction: "Transaction") -> str:
-        """Create key from date and sum of all amounts."""
+        """Create key from date and sum of all monetary amounts.
+
+        Only monetary fields (debit, credit, balance) and explicit
+        additional_fields are summed. Metadata fields such as source_page
+        and confidence_score are intentionally excluded — the old dict-based
+        implementation accidentally included them, producing inflated totals.
+        """
         total = 0.0
         for field_name in ("debit", "credit", "balance"):
             value = getattr(transaction, field_name, None)

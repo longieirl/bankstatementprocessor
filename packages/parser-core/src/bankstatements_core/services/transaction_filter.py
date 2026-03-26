@@ -152,7 +152,17 @@ class TransactionFilterService:
 
     def _is_header_transaction(self, tx: Transaction) -> bool:
         """Check if a Transaction is a header row by inspecting its field values."""
-        row = tx.to_dict()
+        # Build a dict of only the data columns — exclude metadata fields
+        # (source_page, confidence_score, extraction_warnings, document_type,
+        # transaction_type) so they don't inflate non_empty_fields and dilute
+        # the 50% header-match threshold.
+        row = {
+            "Date": tx.date,
+            "Details": tx.details,
+            "Debit": tx.debit,
+            "Credit": tx.credit,
+            "Balance": tx.balance,
+        }
         return self._is_header_row(row)
 
     def _is_header_row(self, row: dict) -> bool:
