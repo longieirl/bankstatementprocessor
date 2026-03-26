@@ -15,7 +15,9 @@ if TYPE_CHECKING:
 
 from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.domain.converters import dicts_to_transactions
-from bankstatements_core.domain.models.extraction_scoring_config import ExtractionScoringConfig
+from bankstatements_core.domain.models.extraction_scoring_config import (
+    ExtractionScoringConfig,
+)
 from bankstatements_core.domain.models.extraction_warning import (
     CODE_CREDIT_CARD_SKIPPED,
     ExtractionWarning,

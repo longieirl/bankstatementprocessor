@@ -12,7 +12,9 @@ import re
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from bankstatements_core.domain.models.extraction_scoring_config import ExtractionScoringConfig
+from bankstatements_core.domain.models.extraction_scoring_config import (
+    ExtractionScoringConfig,
+)
 from bankstatements_core.domain.models.extraction_warning import (
     CODE_DATE_PROPAGATED,
     CODE_MISSING_BALANCE,
@@ -62,9 +64,15 @@ class RowPostProcessor:
         self._template = template
         self._filename_date = filename_date
         self._filename = filename
-        self._scoring_config = scoring_config if scoring_config is not None else ExtractionScoringConfig.default()
+        self._scoring_config = (
+            scoring_config
+            if scoring_config is not None
+            else ExtractionScoringConfig.default()
+        )
         self._date_col = ColumnTypeIdentifier.find_first_column_of_type(columns, "date")
-        self._balance_col = ColumnTypeIdentifier.find_first_column_of_type(columns, "balance")
+        self._balance_col = ColumnTypeIdentifier.find_first_column_of_type(
+            columns, "balance"
+        )
         self._last_source: str = ""
 
     def process(self, row: dict, current_date: str) -> str:

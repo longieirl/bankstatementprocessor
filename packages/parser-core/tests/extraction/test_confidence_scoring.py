@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import json
 from unittest.mock import Mock
 
@@ -65,7 +66,9 @@ class TestExtractionScoringConfig:
         assert cfg.penalty_missing_balance == 0.2
 
     def test_custom_weights(self):
-        cfg = ExtractionScoringConfig(penalty_date_propagated=0.3, penalty_missing_balance=0.4)
+        cfg = ExtractionScoringConfig(
+            penalty_date_propagated=0.3, penalty_missing_balance=0.4
+        )
         assert cfg.penalty_date_propagated == 0.3
         assert cfg.penalty_missing_balance == 0.4
 
@@ -79,7 +82,7 @@ class TestExtractionScoringConfig:
 
     def test_frozen(self):
         cfg = ExtractionScoringConfig.default()
-        with pytest.raises(Exception):
+        with pytest.raises(dataclasses.FrozenInstanceError):
             cfg.penalty_date_propagated = 0.9  # type: ignore[misc]
 
 
@@ -161,7 +164,9 @@ class TestBothPenalties:
 
 class TestScoreClamping:
     def test_score_clamped_to_zero(self):
-        cfg = ExtractionScoringConfig(penalty_date_propagated=0.6, penalty_missing_balance=0.6)
+        cfg = ExtractionScoringConfig(
+            penalty_date_propagated=0.6, penalty_missing_balance=0.6
+        )
         proc = _make_processor(scoring_config=cfg)
         row = _clean_row(balance="")
         row["Date"] = ""
@@ -169,7 +174,9 @@ class TestScoreClamping:
         assert float(row["confidence_score"]) == 0.0
 
     def test_score_never_negative(self):
-        cfg = ExtractionScoringConfig(penalty_date_propagated=1.0, penalty_missing_balance=1.0)
+        cfg = ExtractionScoringConfig(
+            penalty_date_propagated=1.0, penalty_missing_balance=1.0
+        )
         proc = _make_processor(scoring_config=cfg)
         row = _clean_row(balance="")
         row["Date"] = ""
@@ -179,7 +186,9 @@ class TestScoreClamping:
 
 class TestInjectableScoringConfig:
     def test_custom_config_honoured(self):
-        cfg = ExtractionScoringConfig(penalty_date_propagated=0.3, penalty_missing_balance=0.0)
+        cfg = ExtractionScoringConfig(
+            penalty_date_propagated=0.3, penalty_missing_balance=0.0
+        )
         proc = _make_processor(scoring_config=cfg)
         row = _clean_row()
         row["Date"] = ""
@@ -187,7 +196,9 @@ class TestInjectableScoringConfig:
         assert float(row["confidence_score"]) == pytest.approx(0.7)
 
     def test_zero_penalties_leaves_score_at_1(self):
-        cfg = ExtractionScoringConfig(penalty_date_propagated=0.0, penalty_missing_balance=0.0)
+        cfg = ExtractionScoringConfig(
+            penalty_date_propagated=0.0, penalty_missing_balance=0.0
+        )
         proc = _make_processor(scoring_config=cfg)
         row = _clean_row(balance="")
         row["Date"] = ""
@@ -198,6 +209,12 @@ class TestInjectableScoringConfig:
 class TestNonTransactionRowNotScored:
     def test_non_transaction_row_has_no_confidence_score(self):
         proc = _make_processor(row_type="metadata")
-        row = {"Date": "", "Details": "Opening Balance", "Debit €": "", "Credit €": "", "Balance €": ""}
+        row = {
+            "Date": "",
+            "Details": "Opening Balance",
+            "Debit €": "",
+            "Credit €": "",
+            "Balance €": "",
+        }
         proc.process(row, "")
         assert "confidence_score" not in row
