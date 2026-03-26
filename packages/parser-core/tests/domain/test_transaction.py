@@ -843,3 +843,55 @@ class TestTransactionEnrichmentFields:
         assert tx.source_page is None
         assert tx.confidence_score == 1.0
         assert tx.extraction_warnings == []
+
+
+class TestTransactionToDictCurrencySymbol:
+    """Tests for to_dict() currency_symbol parameter (issue #62)."""
+
+    def test_to_dict_with_pound_symbol(self):
+        """to_dict() with currency_symbol='£' uses £ in column names."""
+        tx = Transaction(
+            date="01/01/2024",
+            details="UK Store",
+            debit="50.00",
+            credit=None,
+            balance="100.00",
+            filename="test.pdf",
+        )
+        d = tx.to_dict(currency_symbol="£")
+        assert "Debit £" in d
+        assert "Credit £" in d
+        assert "Balance £" in d
+        assert d["Debit £"] == "50.00"
+
+    def test_to_dict_with_empty_symbol(self):
+        """to_dict() with currency_symbol='' uses neutral column names."""
+        tx = Transaction(
+            date="01/01/2024",
+            details="Test",
+            debit="50.00",
+            credit=None,
+            balance="100.00",
+            filename="test.pdf",
+        )
+        d = tx.to_dict(currency_symbol="")
+        assert "Debit" in d
+        assert "Credit" in d
+        assert "Balance" in d
+        assert "Debit €" not in d
+        assert d["Debit"] == "50.00"
+
+    def test_from_dict_round_trips_pound(self):
+        """from_dict() handles 'Debit £' keys produced by to_dict(currency_symbol='£')."""
+        tx = Transaction(
+            date="01/01/2024",
+            details="UK Store",
+            debit="50.00",
+            credit=None,
+            balance="100.00",
+            filename="test.pdf",
+        )
+        d = tx.to_dict(currency_symbol="£")
+        tx2 = Transaction.from_dict(d)
+        assert tx2.debit == "50.00"
+        assert tx2.balance == "100.00"

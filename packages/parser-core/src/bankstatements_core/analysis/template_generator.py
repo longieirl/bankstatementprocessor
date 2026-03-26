@@ -137,7 +137,7 @@ class TemplateGenerator:
                 template["processing"] = {
                     "supports_multiline": False,
                     "date_format": "%d/%m/%Y",
-                    "currency_symbol": "€",
+                    "currency_symbol": "",
                     "decimal_separator": ".",
                 }
             # Update the setting
@@ -203,7 +203,7 @@ class TemplateGenerator:
             "processing": {
                 "supports_multiline": False,
                 "date_format": "%d/%m/%Y",
-                "currency_symbol": "€",
+                "currency_symbol": "",
                 "decimal_separator": ".",
             },
         }

@@ -292,7 +292,7 @@ class TemplateProcessingConfig:
 
     supports_multiline: bool = False
     date_format: str = "%d/%m/%Y"
-    currency_symbol: str = "€"
+    currency_symbol: str = ""
     decimal_separator: str = "."
     transaction_types: dict[str, list[str]] = field(default_factory=dict)
 
