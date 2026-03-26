@@ -360,7 +360,7 @@ show-retention-status:	## Show data retention status
 	@python3 -c "from src.services.data_retention import DataRetentionService; from src.app import AppConfig; config = AppConfig.from_env(); service = DataRetentionService(config.data_retention_days, config.output_dir); files = service.find_expired_files(); print(f'Retention period: {config.data_retention_days} days'); print(f'Expired files: {len(files)}')"
 
 # Docker build modes
-.PHONY: docker-local docker-remote docker-build docker-pull
+.PHONY: docker-local docker-remote docker-build docker-pull docker-integration
 
 docker-local: ## Build and run from local code
 	@echo "🔨 Building from local code..."
@@ -378,6 +378,27 @@ docker-remote: ## Pull and run from GitHub registry
 docker-build: ## Build local image without running
 	@cp .env.local .env
 	docker-compose build
+
+docker-integration: ## Build image and run integration test against input/ (requires PDFs in input/)
+	@echo "🧪 Running Docker integration test..."
+	@[ -d input ] && [ -n "$$(find input -name '*.pdf' 2>/dev/null | head -1)" ] || { echo "❌ No PDFs found in input/ — add statements first"; exit 1; }
+	@mkdir -p /tmp/docker-integration-output
+	@cp .env.local .env
+	@docker-compose build -q
+	@docker run --rm \
+	  -v "$$(pwd)/input:/app/input:ro" \
+	  -v "/tmp/docker-integration-output:/app/output" \
+	  -e EXIT_AFTER_PROCESSING=true \
+	  bankstatementsprocessor:latest
+	@python3 -c "\
+import json, glob, sys; \
+files = [f for f in glob.glob('/tmp/docker-integration-output/*.json') \
+         if not any(x in f for x in ['summary','duplicate','expense','monthly','excluded','iban'])]; \
+total = sum(len(json.load(open(f))) for f in files); \
+print(f'Transactions extracted: {total}'); \
+sys.exit(0 if total > 0 else 1)"
+	@rm -rf /tmp/docker-integration-output
+	@echo "✅ Docker integration test passed"
 
 docker-pull: ## Pull remote image without running
 	@cp .env.remote .env
