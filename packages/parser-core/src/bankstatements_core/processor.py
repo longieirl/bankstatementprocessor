@@ -8,6 +8,8 @@ import pandas as pd
 
 from bankstatements_core.config.column_config import DEFAULT_COLUMNS, get_column_names
 from bankstatements_core.config.processor_config import ProcessorConfig
+from bankstatements_core.config.totals_config import parse_totals_columns  # noqa: F401 — re-exported for backward compat
+from bankstatements_core.utils import is_date_column, to_float  # noqa: F401 — re-exported for backward compat
 from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.domain.converters import transactions_to_dicts
 from bankstatements_core.domain.models.transaction import Transaction

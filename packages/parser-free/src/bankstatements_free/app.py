@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from bankstatements_core.config.app_config import AppConfig, ConfigurationError
+from bankstatements_core.config.column_config import get_columns_config  # noqa: F401 — re-exported for backward compat
 from bankstatements_core.entitlements import Entitlements
 
 logger = logging.getLogger(__name__)
