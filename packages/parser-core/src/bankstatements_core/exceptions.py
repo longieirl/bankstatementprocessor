@@ -359,22 +359,22 @@ __all__ = [
     "BankStatementError",
     # Configuration
     "ConfigurationError",
+    "DataValidationError",
+    "DuplicateDetectionError",
+    # Entitlements
+    "EntitlementError",
+    "InputValidationError",
     # PDF Extraction
     "PDFExtractionError",
     "PDFReadError",
-    "TableExtractionError",
-    # Templates
-    "TemplateError",
-    "TemplateDetectionError",
-    "TemplateValidationError",
-    # Validation
-    "ValidationError",
-    "DataValidationError",
-    "InputValidationError",
-    # Entitlements
-    "EntitlementError",
     # Processing
     "ProcessingError",
-    "DuplicateDetectionError",
+    "TableExtractionError",
+    "TemplateDetectionError",
+    # Templates
+    "TemplateError",
+    "TemplateValidationError",
     "TransactionProcessingError",
+    # Validation
+    "ValidationError",
 ]

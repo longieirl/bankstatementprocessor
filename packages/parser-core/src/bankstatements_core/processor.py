@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import json  # noqa: F401 - imported for test mocking
 import logging
-from collections import defaultdict  # noqa: F401 - imported for test mocking
 from datetime import datetime
 from typing import Any
 
@@ -10,7 +8,6 @@ import pandas as pd
 
 from bankstatements_core.config.column_config import DEFAULT_COLUMNS, get_column_names
 from bankstatements_core.config.processor_config import ProcessorConfig
-from bankstatements_core.config.totals_config import parse_totals_columns  # noqa: F401
 from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.domain.converters import transactions_to_dicts
 from bankstatements_core.domain.models.transaction import Transaction
@@ -30,7 +27,6 @@ from bankstatements_core.services.sorting_service import (
     TransactionSortingService,
 )
 from bankstatements_core.services.transaction_filter import TransactionFilterService
-from bankstatements_core.utils import is_date_column, to_float  # noqa: F401
 
 logger = logging.getLogger(__name__)
 

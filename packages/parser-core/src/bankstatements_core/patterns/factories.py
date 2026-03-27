@@ -48,7 +48,7 @@ class ProcessorFactory:
         output_strategies: dict[str, OutputFormatStrategy] | None = None,
         activity_log: Any | None = None,
         entitlements: Any | None = None,
-    ) -> "BankStatementProcessor":
+    ) -> BankStatementProcessor:
         """
         Create a processor from application configuration using Builder pattern.
 
@@ -127,7 +127,7 @@ class ProcessorFactory:
         return builder.build()
 
     @staticmethod
-    def create_for_bank(bank_type: str, config: AppConfig) -> "BankStatementProcessor":
+    def create_for_bank(bank_type: str, config: AppConfig) -> BankStatementProcessor:
         """
         Create a processor optimized for a specific bank.
 
@@ -164,7 +164,7 @@ class ProcessorFactory:
         output_strategies: dict[str, OutputFormatStrategy] | None = None,
         entitlements: Any | None = None,
         **kwargs: Any,
-    ) -> "BankStatementProcessor":
+    ) -> BankStatementProcessor:
         """
         Create a processor with custom parameters.
 

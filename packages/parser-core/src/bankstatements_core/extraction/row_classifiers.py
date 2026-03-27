@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 from abc import ABC, abstractmethod
-from typing import Sequence
+from collections.abc import Sequence
 
 from bankstatements_core.extraction.column_identifier import ColumnTypeIdentifier
 from bankstatements_core.services.row_analysis import RowAnalysisService
@@ -30,7 +30,7 @@ class RowClassifier(ABC):
         """Initialize classifier with no next classifier."""
         self._next_classifier: RowClassifier | None = None
 
-    def set_next(self, classifier: "RowClassifier") -> "RowClassifier":
+    def set_next(self, classifier: RowClassifier) -> RowClassifier:
         """
         Set the next classifier in the chain.
 
@@ -154,8 +154,9 @@ class HeaderMetadataClassifier(RowClassifier):
         for _col_name, col_value in row_values.items():
             col_value_lower = col_value.lower()
             if (
-                col_value_lower.startswith("'")
-                and "(" in col_value_lower  # 'Field'(description)
+                (
+                    col_value_lower.startswith("'") and "(" in col_value_lower
+                )  # 'Field'(description)
                 or re.match(
                     r"^\w+(date|time|amount|balance|detail)", col_value_lower
                 )  # FieldName patterns

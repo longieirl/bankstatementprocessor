@@ -27,7 +27,7 @@ def detect_table_end_boundary_smart(
     min_section_gap: int = 50,
     structure_breakdown_threshold: int = 8,
     dynamic_boundary_threshold: int = 15,
-    row_classifier: "RowClassifier | None" = None,
+    row_classifier: RowClassifier | None = None,
 ) -> int:
     """
     Detect table end intelligently (facade).
@@ -70,7 +70,7 @@ def extract_tables_from_pdf(
     enable_dynamic_boundary: bool = False,
     enable_page_validation: bool | None = None,
     enable_header_check: bool | None = None,
-    template: "BankTemplate" | None = None,
+    template: BankTemplate | None = None,
 ) -> ExtractionResult:
     """
     Extract table data from PDF within specified bounds (facade function).

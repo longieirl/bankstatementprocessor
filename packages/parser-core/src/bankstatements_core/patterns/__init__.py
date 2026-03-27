@@ -28,19 +28,19 @@ from .strategies import (  # pragma: no cover
 )
 
 __all__ = [  # pragma: no cover
+    "AllFieldsDuplicateStrategy",
+    "CSVOutputStrategy",
     # Repositories
     "ConfigRepository",
-    "EnvironmentConfigRepository",
-    "TransactionRepository",
-    "FileSystemTransactionRepository",
+    "DateAmountDuplicateStrategy",
     # Strategies
     "DuplicateDetectionStrategy",
-    "AllFieldsDuplicateStrategy",
-    "DateAmountDuplicateStrategy",
-    "OutputFormatStrategy",
-    "CSVOutputStrategy",
-    "JSONOutputStrategy",
+    "EnvironmentConfigRepository",
     "ExcelOutputStrategy",
+    "FileSystemTransactionRepository",
+    "JSONOutputStrategy",
+    "OutputFormatStrategy",
     # Factories
     "ProcessorFactory",
+    "TransactionRepository",
 ]

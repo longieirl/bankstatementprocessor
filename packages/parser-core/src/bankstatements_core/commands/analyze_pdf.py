@@ -14,7 +14,7 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pdfplumber
 
@@ -33,9 +33,9 @@ class PDFAnalyzer:
     def __init__(
         self,
         pdf_path: Path,
-        output_path: Optional[Path] = None,
-        template_path: Optional[Path] = None,
-        base_template_path: Optional[Path] = None,
+        output_path: Path | None = None,
+        template_path: Path | None = None,
+        base_template_path: Path | None = None,
     ):
         """Initialize PDF analyzer.
 
@@ -143,27 +143,26 @@ class PDFAnalyzer:
                         )
                         logger.info(f"    Location: {best_iban.bbox}")
                         logger.info("    Reason: Header area bonus, Y-position score")
+                # Fallback: If spatial filtering removed all IBANs,
+                # use unfiltered candidates (for template generation,
+                # any valid IBAN is better than none)
+                elif iban_candidates:
+                    logger.warning(
+                        "  ⚠️  All IBANs filtered by spatial overlap, "
+                        "using best unfiltered candidate for template"
+                    )
+                    scored_candidates = self.iban_filter.score_candidates(
+                        iban_candidates, page_height
+                    )
+                    best_iban = self.iban_filter.select_best_iban(scored_candidates)
+                    if best_iban:
+                        logger.info(
+                            f"  ✓ Using unfiltered IBAN: {best_iban.masked} "
+                            f"(score: {best_iban.confidence_score:.1f})"
+                        )
                 else:
-                    # Fallback: If spatial filtering removed all IBANs,
-                    # use unfiltered candidates (for template generation,
-                    # any valid IBAN is better than none)
-                    if iban_candidates:
-                        logger.warning(
-                            "  ⚠️  All IBANs filtered by spatial overlap, "
-                            "using best unfiltered candidate for template"
-                        )
-                        scored_candidates = self.iban_filter.score_candidates(
-                            iban_candidates, page_height
-                        )
-                        best_iban = self.iban_filter.select_best_iban(scored_candidates)
-                        if best_iban:
-                            logger.info(
-                                f"  ✓ Using unfiltered IBAN: {best_iban.masked} "
-                                f"(score: {best_iban.confidence_score:.1f})"
-                            )
-                    else:
-                        best_iban = None
-                        logger.warning("  ⚠️  No valid IBAN found")
+                    best_iban = None
+                    logger.warning("  ⚠️  No valid IBAN found")
 
                 # Step 7: Analyze columns and generate template
                 logger.info("Step 7: Analyzing column boundaries...")
@@ -268,7 +267,7 @@ class PDFAnalyzer:
 
         try:
             # Load template manually (no TemplateRegistry to avoid entitlement checks)
-            with open(template_path, "r") as f:
+            with open(template_path) as f:
                 template_data = json.load(f)
 
             extraction_config = template_data.get("extraction", {})

@@ -29,7 +29,7 @@ class DataRetentionService:
         self,
         retention_days: int,
         output_dir: Path,
-        file_deleter: "IFileDeleter | None" = None,
+        file_deleter: IFileDeleter | None = None,
     ):
         """
         Initialize data retention service.
@@ -74,7 +74,7 @@ class DataRetentionService:
         return expired_files
 
     def cleanup_expired_files(
-        self, audit_log: "ProcessingActivityLog" | None = None
+        self, audit_log: ProcessingActivityLog | None = None
     ) -> int:
         """
         Delete files older than retention period with secure deletion.
@@ -119,9 +119,7 @@ class DataRetentionService:
         logger.info("Cleanup completed: %d files deleted", deleted_count)
         return deleted_count
 
-    def cleanup_all_files(
-        self, audit_log: "ProcessingActivityLog" | None = None
-    ) -> int:
+    def cleanup_all_files(self, audit_log: ProcessingActivityLog | None = None) -> int:
         """
         Delete all output files (GDPR Article 17: Right to Erasure).
 
@@ -167,7 +165,7 @@ class DataRetentionService:
         self,
         start_date: datetime,
         end_date: datetime,
-        audit_log: "ProcessingActivityLog" | None = None,
+        audit_log: ProcessingActivityLog | None = None,
     ) -> int:
         """
         Delete files within a specific date range.

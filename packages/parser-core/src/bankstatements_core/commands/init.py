@@ -100,9 +100,8 @@ OUTPUT_FORMATS=csv,json
                     logger.warning(f"Failed to create .env file: {e}")
                     if verbose:
                         print(f"✗ Failed to create .env: {e}")
-            else:
-                if verbose:
-                    print("✓ Already exists: .env")
+            elif verbose:
+                print("✓ Already exists: .env")
 
             # Create README in input directory
             input_readme = base / "input" / "README.md"

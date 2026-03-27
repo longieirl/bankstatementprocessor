@@ -53,8 +53,8 @@ class RowPostProcessor:
     def __init__(
         self,
         columns: dict[str, tuple[int | float, int | float]],
-        row_classifier: "RowClassifier",
-        template: "BankTemplate | None",
+        row_classifier: RowClassifier,
+        template: BankTemplate | None,
         filename_date: str,
         filename: str,
         scoring_config: ExtractionScoringConfig | None = None,

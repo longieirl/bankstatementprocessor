@@ -58,9 +58,9 @@ class ServiceRegistry:
     def __init__(
         self,
         context: _ServiceContext,
-        duplicate_detector: "IDuplicateDetector",
-        sorting_service: "ITransactionSorting",
-        grouping_service: "IIBANGrouping",
+        duplicate_detector: IDuplicateDetector,
+        sorting_service: ITransactionSorting,
+        grouping_service: IIBANGrouping,
     ) -> None:
         self._context = context
         self._duplicate_detector = duplicate_detector
@@ -74,12 +74,12 @@ class ServiceRegistry:
     @classmethod
     def from_config(
         cls,
-        config: "ProcessorConfig",
-        entitlements: "Entitlements | None" = None,
-        duplicate_detector: "IDuplicateDetector | None" = None,
-        sorting_service: "ITransactionSorting | None" = None,
-        grouping_service: "IIBANGrouping | None" = None,
-    ) -> "ServiceRegistry":
+        config: ProcessorConfig,
+        entitlements: Entitlements | None = None,
+        duplicate_detector: IDuplicateDetector | None = None,
+        sorting_service: ITransactionSorting | None = None,
+        grouping_service: IIBANGrouping | None = None,
+    ) -> ServiceRegistry:
         """Build a ServiceRegistry from a ProcessorConfig.
 
         Args:
@@ -145,9 +145,9 @@ class ServiceRegistry:
 
     def process_transaction_group(
         self,
-        transactions: list["Transaction"],
-        template: "BankTemplate | None" = None,
-    ) -> tuple[list["Transaction"], list["Transaction"]]:
+        transactions: list[Transaction],
+        template: BankTemplate | None = None,
+    ) -> tuple[list[Transaction], list[Transaction]]:
         """Enrich → classify → deduplicate → sort a group of transactions.
 
         Args:
@@ -175,9 +175,9 @@ class ServiceRegistry:
 
     def group_by_iban(
         self,
-        transactions: list["Transaction"],
+        transactions: list[Transaction],
         pdf_ibans: dict[str, str],
-    ) -> dict[str, list["Transaction"]]:
+    ) -> dict[str, list[Transaction]]:
         """Group transactions by IBAN suffix.
 
         Args:
@@ -193,13 +193,13 @@ class ServiceRegistry:
     # Escape hatches (20 % case)
     # ------------------------------------------------------------------
 
-    def get_duplicate_detector(self) -> "IDuplicateDetector":
+    def get_duplicate_detector(self) -> IDuplicateDetector:
         return self._duplicate_detector
 
-    def get_sorting_service(self) -> "ITransactionSorting":
+    def get_sorting_service(self) -> ITransactionSorting:
         return self._sorting_service
 
-    def get_grouping_service(self) -> "IIBANGrouping":
+    def get_grouping_service(self) -> IIBANGrouping:
         return self._grouping_service
 
     # ------------------------------------------------------------------
@@ -207,7 +207,7 @@ class ServiceRegistry:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _enrich_with_filename(transactions: list["Transaction"]) -> None:
+    def _enrich_with_filename(transactions: list[Transaction]) -> None:
         """Set filename from source_pdf additional_field if not already present."""
         for tx in transactions:
             if not tx.filename:
@@ -215,7 +215,7 @@ class ServiceRegistry:
 
     @staticmethod
     def _enrich_with_document_type(
-        transactions: list["Transaction"], default_type: str = "bank_statement"
+        transactions: list[Transaction], default_type: str = "bank_statement"
     ) -> None:
         """Set document_type if not already present."""
         for tx in transactions:
@@ -224,8 +224,8 @@ class ServiceRegistry:
 
     @staticmethod
     def _classify_transaction_types(
-        transactions: list["Transaction"],
-        template: "BankTemplate | None" = None,
+        transactions: list[Transaction],
+        template: BankTemplate | None = None,
     ) -> None:
         """Classify each transaction using Chain of Responsibility."""
         from bankstatements_core.services.transaction_type_classifier import (

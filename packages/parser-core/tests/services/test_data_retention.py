@@ -335,7 +335,7 @@ class TestErrorHandling:
             if str(path) == str(file_path) and (
                 "wb" in args or kwargs.get("mode") == "wb"
             ):
-                raise IOError("Cannot write")
+                raise OSError("Cannot write")
             return original_open(path, *args, **kwargs)
 
         monkeypatch.setattr("builtins.open", mock_open)

@@ -41,13 +41,13 @@ class OutputOrchestrator:
         self,
         output_dir: Path,
         output_strategies: dict[str, Any],
-        monthly_summary_service: "IMonthlySummary",
+        monthly_summary_service: IMonthlySummary,
         column_names: list[str],
         totals_columns: list[str] | None,
         generate_monthly_summary: bool,
-        totals_service: "IColumnTotals | None" = None,
-        file_writer: "IJsonWriter | None" = None,
-        expense_analysis_service: "IExpenseAnalysis | None" = None,
+        totals_service: IColumnTotals | None = None,
+        file_writer: IJsonWriter | None = None,
+        expense_analysis_service: IExpenseAnalysis | None = None,
         generate_expense_analysis: bool = False,
     ):
         """Initialize output orchestrator.

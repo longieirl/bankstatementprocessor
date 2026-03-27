@@ -47,7 +47,7 @@ class ExpenseAnalysisService:
         >>> print(insights["insights"]["recurring_charges"])
     """
 
-    def __init__(self, entitlements: "Entitlements | None" = None):
+    def __init__(self, entitlements: Entitlements | None = None):
         """
         Initialize expense analysis service.
 

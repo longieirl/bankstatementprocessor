@@ -154,7 +154,7 @@ class TestPDFDiscoveryService(unittest.TestCase):
 
     def test_discover_pdfs_creation_permission_error(self):
         """Test that permission errors when creating directory are properly raised."""
-        import unittest.mock as mock
+        from unittest import mock
 
         non_existent = Path(self.temp_dir) / "no_permission"
 

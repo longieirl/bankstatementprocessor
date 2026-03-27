@@ -45,12 +45,12 @@ class BankStatementProcessingFacade:
         """
         self.config = config
         self.entitlements = entitlements or Entitlements.free_tier()
-        self._processor: "BankStatementProcessor" | None = None
+        self._processor: BankStatementProcessor | None = None
 
     @classmethod
     def from_environment(
         cls, entitlements: Entitlements | None = None
-    ) -> "BankStatementProcessingFacade":
+    ) -> BankStatementProcessingFacade:
         """
         Create facade from environment variables.
 

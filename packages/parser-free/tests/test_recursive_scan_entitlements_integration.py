@@ -11,10 +11,10 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from bankstatements_free.app import AppConfig, ConfigurationError
 
 from bankstatements_core.entitlements import Entitlements
 from bankstatements_core.facades.processing_facade import BankStatementProcessingFacade
-from bankstatements_free.app import AppConfig, ConfigurationError
 
 
 class TestRecursiveScanEntitlementEnforcement:

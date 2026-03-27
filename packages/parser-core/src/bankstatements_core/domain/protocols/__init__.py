@@ -22,18 +22,18 @@ from bankstatements_core.domain.protocols.services import (
 )
 
 __all__ = [
-    "IJsonWriter",
+    "IColumnTotals",
+    "IDuplicateDetector",
     "IFileDeleter",
     "IFileReader",
-    "IPDFReader",
+    "IIBANGrouping",
+    "IJsonWriter",
+    "IMonthlySummary",
+    "IPDFDiscovery",
     "IPDFDocument",
     "IPDFPage",
-    "IPDFDiscovery",
-    "ITransactionFilter",
-    "IIBANGrouping",
-    "IColumnTotals",
+    "IPDFReader",
     "ITemplateDetector",
-    "IDuplicateDetector",
+    "ITransactionFilter",
     "ITransactionSorting",
-    "IMonthlySummary",
 ]

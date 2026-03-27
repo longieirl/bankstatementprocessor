@@ -86,10 +86,9 @@ def assign_words_to_columns(
                 if xmin <= x0 and x1 <= xmax:
                     row[col] += text + " "
                     break
-            else:
-                if xmin <= x0 < xmax:
-                    row[col] += text + " "
-                    break
+            elif xmin <= x0 < xmax:
+                row[col] += text + " "
+                break
 
     return {k: v.strip() for k, v in row.items()}
 

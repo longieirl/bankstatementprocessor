@@ -29,7 +29,7 @@ _IBAN_HEADER_Y = 350
 class PageHeaderAnalyser:
     """Inspects the page header area for credit card indicators and IBAN."""
 
-    def __init__(self, iban_extractor: "IBANExtractor") -> None:
+    def __init__(self, iban_extractor: IBANExtractor) -> None:
         self._iban_extractor = iban_extractor
 
     def is_credit_card_statement(self, page: Any, table_top_y: int) -> bool:

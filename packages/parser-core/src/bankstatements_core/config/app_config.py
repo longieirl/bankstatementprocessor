@@ -102,7 +102,7 @@ class AppConfig:
                 )
 
     @classmethod
-    def from_env(cls) -> "AppConfig":
+    def from_env(cls) -> AppConfig:
         """
         Load configuration from environment variables with validation.
 

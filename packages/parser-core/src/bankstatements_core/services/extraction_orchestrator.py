@@ -31,10 +31,10 @@ class ExtractionOrchestrator:
     def __init__(
         self,
         extraction_config: ExtractionConfig | None = None,
-        template_detector: "ITemplateDetector | None" = None,
+        template_detector: ITemplateDetector | None = None,
         forced_template: BankTemplate | None = None,
         entitlements: Entitlements | None = None,
-        pdf_reader: "IPDFReader | None" = None,
+        pdf_reader: IPDFReader | None = None,
     ):
         """Initialize the extraction orchestrator.
 

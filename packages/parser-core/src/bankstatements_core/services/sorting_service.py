@@ -24,7 +24,7 @@ class SortingStrategy(ABC):
     """Abstract base class for transaction sorting strategies."""
 
     @abstractmethod
-    def sort(self, transactions: list["Transaction"]) -> list["Transaction"]:
+    def sort(self, transactions: list[Transaction]) -> list[Transaction]:
         """
         Sort transactions according to the strategy.
 
@@ -40,7 +40,7 @@ class SortingStrategy(ABC):
 class ChronologicalSortingStrategy(SortingStrategy):
     """Strategy that sorts transactions chronologically by date."""
 
-    def sort(self, transactions: list["Transaction"]) -> list["Transaction"]:
+    def sort(self, transactions: list[Transaction]) -> list[Transaction]:
         """
         Sort transactions chronologically by date.
 
@@ -64,7 +64,7 @@ class ChronologicalSortingStrategy(SortingStrategy):
 class NoSortingStrategy(SortingStrategy):
     """Strategy that keeps original order (no sorting)."""
 
-    def sort(self, transactions: list["Transaction"]) -> list["Transaction"]:
+    def sort(self, transactions: list[Transaction]) -> list[Transaction]:
         """
         Keep transactions in original order.
 
@@ -95,7 +95,7 @@ class TransactionSortingService:
         """
         self.strategy = strategy
 
-    def sort(self, transactions: list["Transaction"]) -> list["Transaction"]:
+    def sort(self, transactions: list[Transaction]) -> list[Transaction]:
         """
         Sort transactions using the configured strategy.
 

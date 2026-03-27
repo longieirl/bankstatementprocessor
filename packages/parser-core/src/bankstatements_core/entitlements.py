@@ -51,7 +51,7 @@ class Entitlements:
     require_iban: bool
 
     @classmethod
-    def free_tier(cls) -> "Entitlements":
+    def free_tier(cls) -> Entitlements:
         """
         Create FREE tier entitlements.
 
@@ -72,7 +72,7 @@ class Entitlements:
         )
 
     @classmethod
-    def paid_tier(cls) -> "Entitlements":
+    def paid_tier(cls) -> Entitlements:
         """
         Create PAID tier entitlements.
 

@@ -54,9 +54,9 @@ class PDFTableExtractor:
         enable_page_validation: bool = True,
         enable_header_check: bool = True,
         header_check_top_y: int | None = None,
-        pdf_reader: "IPDFReader | None" = None,
-        extraction_config: "Any | None" = None,
-        template: "Any | None" = None,
+        pdf_reader: IPDFReader | None = None,
+        extraction_config: Any | None = None,
+        template: Any | None = None,
         scoring_config: ExtractionScoringConfig | None = None,
     ):
         self.columns = columns

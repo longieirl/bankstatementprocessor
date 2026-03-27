@@ -19,9 +19,9 @@ from bankstatements_core.templates.detectors.loan_reference_detector import (
 
 __all__ = [
     "BaseDetector",
-    "DetectionResult",
     "CardNumberDetector",
     "ColumnHeaderDetector",
+    "DetectionResult",
     "ExclusionDetector",
     "FilenameDetector",
     "HeaderDetector",

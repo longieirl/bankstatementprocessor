@@ -7,10 +7,10 @@ from pathlib import Path
 from unittest.mock import ANY, MagicMock, patch
 
 import pytest
+from bankstatements_free.app import AppConfig, ConfigurationError
 
 from bankstatements_core.entitlements import Entitlements
 from bankstatements_core.facades import BankStatementProcessingFacade
-from bankstatements_free.app import AppConfig, ConfigurationError
 
 
 class TestBankStatementProcessingFacade:

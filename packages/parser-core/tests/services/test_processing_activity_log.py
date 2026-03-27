@@ -58,7 +58,7 @@ class TestLogProcessing:
         )
 
         # Read log file
-        with open(activity_log.log_file, "r", encoding="utf-8") as f:
+        with open(activity_log.log_file, encoding="utf-8") as f:
             line = f.readline()
             entry = json.loads(line)
 
@@ -82,7 +82,7 @@ class TestLogProcessing:
             duration_seconds=1.0,
         )
 
-        with open(activity_log.log_file, "r", encoding="utf-8") as f:
+        with open(activity_log.log_file, encoding="utf-8") as f:
             entry = json.loads(f.readline())
 
         # Verify timestamp is valid ISO format
@@ -100,7 +100,7 @@ class TestLogProcessing:
             duration_seconds=12.3456789,
         )
 
-        with open(activity_log.log_file, "r", encoding="utf-8") as f:
+        with open(activity_log.log_file, encoding="utf-8") as f:
             entry = json.loads(f.readline())
 
         assert entry["duration_seconds"] == 12.35
@@ -117,7 +117,7 @@ class TestLogDeletion:
             age_days=95,
         )
 
-        with open(activity_log.log_file, "r", encoding="utf-8") as f:
+        with open(activity_log.log_file, encoding="utf-8") as f:
             entry = json.loads(f.readline())
 
         assert entry["event_type"] == "deletion"
@@ -133,7 +133,7 @@ class TestLogDeletion:
             reason="User requested deletion",
         )
 
-        with open(activity_log.log_file, "r", encoding="utf-8") as f:
+        with open(activity_log.log_file, encoding="utf-8") as f:
             entry = json.loads(f.readline())
 
         assert entry["event_type"] == "deletion"
@@ -149,7 +149,7 @@ class TestLogEncryption:
         """Test log_encryption creates entry for encryption."""
         activity_log.log_encryption(file_count=5, operation="encrypt")
 
-        with open(activity_log.log_file, "r", encoding="utf-8") as f:
+        with open(activity_log.log_file, encoding="utf-8") as f:
             entry = json.loads(f.readline())
 
         assert entry["event_type"] == "encryption"
@@ -161,7 +161,7 @@ class TestLogEncryption:
         """Test log_encryption creates entry for decryption."""
         activity_log.log_encryption(file_count=3, operation="decrypt")
 
-        with open(activity_log.log_file, "r", encoding="utf-8") as f:
+        with open(activity_log.log_file, encoding="utf-8") as f:
             entry = json.loads(f.readline())
 
         assert entry["event_type"] == "encryption"
@@ -191,7 +191,7 @@ class TestMultipleEntries:
         activity_log.log_encryption(file_count=2, operation="encrypt")
 
         # Read all entries
-        with open(activity_log.log_file, "r", encoding="utf-8") as f:
+        with open(activity_log.log_file, encoding="utf-8") as f:
             lines = f.readlines()
 
         assert len(lines) == 3
@@ -223,7 +223,7 @@ class TestMultipleEntries:
             duration_seconds=2.0,
         )
 
-        with open(activity_log.log_file, "r", encoding="utf-8") as f:
+        with open(activity_log.log_file, encoding="utf-8") as f:
             lines = f.readlines()
 
         entry1 = json.loads(lines[0])
@@ -297,7 +297,7 @@ class TestJSONLFormat:
         )
         activity_log.log_deletion(file_name="test.csv", reason="Test")
 
-        with open(activity_log.log_file, "r", encoding="utf-8") as f:
+        with open(activity_log.log_file, encoding="utf-8") as f:
             for line in f:
                 # Each line should be valid JSON
                 entry = json.loads(line.strip())

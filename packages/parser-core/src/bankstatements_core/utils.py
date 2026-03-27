@@ -39,15 +39,15 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     "CurrencyParseError",
-    "to_float",
-    "format_currency",
-    "strip_currency_symbols",
     "calculate_column_sum",
-    "is_date_column",
-    "parse_int_env",
-    "parse_bool_env",
     "discover_pdfs",
+    "format_currency",
+    "is_date_column",
     "log_summary",
+    "parse_bool_env",
+    "parse_int_env",
+    "strip_currency_symbols",
+    "to_float",
 ]
 
 
@@ -126,7 +126,7 @@ def parse_bool_env(var_name: str, default: bool = False) -> bool:
 
 
 def discover_pdfs(
-    input_dir: Path, recursive: bool, entitlements: "Entitlements"
+    input_dir: Path, recursive: bool, entitlements: Entitlements
 ) -> list[Path]:
     """
     Discover PDF files with entitlement enforcement for recursive scanning.

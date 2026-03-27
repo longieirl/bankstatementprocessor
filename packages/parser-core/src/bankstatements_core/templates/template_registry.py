@@ -37,7 +37,7 @@ class TemplateRegistry:
             )
 
     @classmethod
-    def from_json(cls, config_path: Path) -> "TemplateRegistry":
+    def from_json(cls, config_path: Path) -> TemplateRegistry:
         """Load templates from JSON configuration file.
 
         Args:
@@ -53,7 +53,7 @@ class TemplateRegistry:
         if not config_path.exists():
             raise FileNotFoundError(f"Template config not found: {config_path}")
 
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             config = json.load(f)
 
         # Validate config structure
@@ -86,7 +86,7 @@ class TemplateRegistry:
         return cls(templates, default_template_id)
 
     @classmethod
-    def from_default_config(cls) -> "TemplateRegistry":
+    def from_default_config(cls) -> TemplateRegistry:
         """Load templates from default or configured directory.
 
         Supports custom template directory for user-added templates.
@@ -127,7 +127,7 @@ class TemplateRegistry:
             return cls.from_directory(default_dir)
 
     @classmethod
-    def from_directory(cls, templates_dir: Path | str) -> "TemplateRegistry":
+    def from_directory(cls, templates_dir: Path | str) -> TemplateRegistry:
         """Load all templates from a directory.
 
         Args:
@@ -196,7 +196,7 @@ class TemplateRegistry:
     @classmethod
     def from_multiple_directories(
         cls, directories: list[Path | str]
-    ) -> "TemplateRegistry":
+    ) -> TemplateRegistry:
         """Load templates from multiple directories with priority order.
 
         Templates from earlier directories have higher priority and can override
@@ -306,7 +306,7 @@ class TemplateRegistry:
         Returns:
             BankTemplate if valid, None if invalid
         """
-        with open(template_file, "r", encoding="utf-8") as f:
+        with open(template_file, encoding="utf-8") as f:
             data = json.load(f)
 
         # Single template format (new)
@@ -535,7 +535,7 @@ class TemplateRegistry:
         """
         return list(self._templates.keys())
 
-    def filtered_by_ids(self, ids: set[str]) -> "TemplateRegistry":
+    def filtered_by_ids(self, ids: set[str]) -> TemplateRegistry:
         """Return a new registry containing only the templates with the given IDs.
 
         The shared registry is never mutated. The default template is preserved if

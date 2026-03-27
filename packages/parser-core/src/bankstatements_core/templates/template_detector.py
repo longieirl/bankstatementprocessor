@@ -58,7 +58,7 @@ class ScoringConfig:
                 )
 
     @classmethod
-    def default(cls) -> "ScoringConfig":
+    def default(cls) -> ScoringConfig:
         """Production scoring — used when no config is injected."""
         return cls(
             weights={

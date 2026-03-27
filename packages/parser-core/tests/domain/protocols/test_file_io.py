@@ -36,7 +36,7 @@ class TestIJsonWriterProtocol:
             repo.write_json(test_file, test_data)
 
             assert test_file.exists()
-            with open(test_file, "r") as f:
+            with open(test_file) as f:
                 loaded = json.load(f)
                 assert loaded == test_data
 
@@ -54,7 +54,7 @@ class TestIJsonWriterProtocol:
             repo.write_json(test_file, {"version": 2})
 
             # Should have second version
-            with open(test_file, "r") as f:
+            with open(test_file) as f:
                 loaded = json.load(f)
                 assert loaded["version"] == 2
 

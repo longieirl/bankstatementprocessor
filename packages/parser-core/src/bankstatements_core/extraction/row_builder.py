@@ -32,7 +32,7 @@ class RowBuilder:
     def __init__(
         self,
         columns: dict[str, tuple[int | float, int | float]],
-        row_classifier: "RowClassifier",
+        row_classifier: RowClassifier,
     ) -> None:
         self._columns = columns
         self._row_classifier = row_classifier

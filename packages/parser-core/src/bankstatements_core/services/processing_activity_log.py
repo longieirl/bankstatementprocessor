@@ -24,7 +24,7 @@ class ProcessingActivityLog:
     Log format: JSON Lines (JSONL) - one JSON object per line
     """
 
-    def __init__(self, logs_dir: Path, file_writer: "IJsonWriter | None" = None):
+    def __init__(self, logs_dir: Path, file_writer: IJsonWriter | None = None):
         """
         Initialize processing activity log.
 

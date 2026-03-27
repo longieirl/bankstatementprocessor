@@ -8,7 +8,6 @@ import sys
 from pathlib import Path
 
 from bankstatements_core.config.app_config import AppConfig, ConfigurationError
-from bankstatements_core.config.column_config import get_columns_config  # noqa: F401
 from bankstatements_core.entitlements import Entitlements
 
 logger = logging.getLogger(__name__)
@@ -16,10 +15,10 @@ logger = logging.getLogger(__name__)
 __all__ = [
     "AppConfig",
     "ConfigurationError",
+    "log_summary",
     "main",
     "resolve_entitlements",
     "setup_logging",
-    "log_summary",
 ]
 
 

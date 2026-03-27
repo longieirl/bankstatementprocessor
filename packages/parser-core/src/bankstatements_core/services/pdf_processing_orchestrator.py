@@ -50,11 +50,11 @@ class PDFProcessingOrchestrator:
         extraction_config: ExtractionConfig,
         column_names: list[str],
         output_dir: Path,
-        repository: "FileSystemTransactionRepository",
+        repository: FileSystemTransactionRepository,
         entitlements: Entitlements | None = None,
-        pdf_discovery: "IPDFDiscovery | None" = None,
-        extraction_orchestrator: "ExtractionOrchestrator | None" = None,
-        filter_service: "ITransactionFilter | None" = None,
+        pdf_discovery: IPDFDiscovery | None = None,
+        extraction_orchestrator: ExtractionOrchestrator | None = None,
+        filter_service: ITransactionFilter | None = None,
     ):
         """Initialize PDF processing orchestrator.
 

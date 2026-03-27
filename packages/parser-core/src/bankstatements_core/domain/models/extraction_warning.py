@@ -35,7 +35,7 @@ class ExtractionWarning:
         return {"code": self.code, "message": self.message, "page": self.page}
 
     @classmethod
-    def from_dict(cls, data: dict) -> "ExtractionWarning":
+    def from_dict(cls, data: dict) -> ExtractionWarning:
         """Deserialise from a plain dict."""
         return cls(
             code=data["code"],

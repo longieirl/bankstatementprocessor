@@ -32,8 +32,8 @@ class TransactionTypeClassifier(ABC):
         self._next_classifier: TransactionTypeClassifier | None = None
 
     def set_next(
-        self, classifier: "TransactionTypeClassifier"
-    ) -> "TransactionTypeClassifier":
+        self, classifier: TransactionTypeClassifier
+    ) -> TransactionTypeClassifier:
         """Set the next classifier in the chain.
 
         Args:
@@ -46,7 +46,7 @@ class TransactionTypeClassifier(ABC):
         return classifier
 
     def classify(
-        self, transaction: "Transaction", template: "BankTemplate | None" = None
+        self, transaction: Transaction, template: BankTemplate | None = None
     ) -> str:
         """Classify transaction type, delegating to next classifier if needed.
 
@@ -69,7 +69,7 @@ class TransactionTypeClassifier(ABC):
 
     @abstractmethod
     def _do_classify(
-        self, transaction: "Transaction", template: "BankTemplate | None"
+        self, transaction: Transaction, template: BankTemplate | None
     ) -> str | None:
         """Attempt to classify the transaction.
 
@@ -88,7 +88,7 @@ class TemplateKeywordClassifier(TransactionTypeClassifier):
     """
 
     def _do_classify(
-        self, transaction: "Transaction", template: "BankTemplate | None"
+        self, transaction: Transaction, template: BankTemplate | None
     ) -> str | None:
         """Classify using template transaction_types keyword mappings."""
         if not template or not template.processing.transaction_types:
@@ -153,7 +153,7 @@ class CreditCardPatternClassifier(TransactionTypeClassifier):
     ]
 
     def _do_classify(
-        self, transaction: "Transaction", template: "BankTemplate | None"
+        self, transaction: Transaction, template: BankTemplate | None
     ) -> str | None:
         """Classify credit card transactions."""
         if transaction.document_type != "credit_card_statement":
@@ -222,7 +222,7 @@ class BankStatementPatternClassifier(TransactionTypeClassifier):
     ]
 
     def _do_classify(
-        self, transaction: "Transaction", template: "BankTemplate | None"
+        self, transaction: Transaction, template: BankTemplate | None
     ) -> str | None:
         """Classify bank statement transactions."""
         if transaction.document_type != "bank_statement":
@@ -256,7 +256,7 @@ class AmountBasedClassifier(TransactionTypeClassifier):
     """
 
     def _do_classify(
-        self, transaction: "Transaction", template: "BankTemplate | None"
+        self, transaction: Transaction, template: BankTemplate | None
     ) -> str | None:
         """Classify based on amount patterns."""
         debit_amount = to_float(str(transaction.debit)) if transaction.debit else None
@@ -292,7 +292,7 @@ class DefaultClassifier(TransactionTypeClassifier):
     """
 
     def _do_classify(
-        self, transaction: "Transaction", template: "BankTemplate | None"
+        self, transaction: Transaction, template: BankTemplate | None
     ) -> str | None:
         """Always return 'other' as default classification."""
         return "other"

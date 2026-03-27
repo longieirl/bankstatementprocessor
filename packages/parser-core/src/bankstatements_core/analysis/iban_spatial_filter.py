@@ -9,7 +9,7 @@ IMPORTANT: Only processes first page for IBAN extraction.
 import logging
 import re
 from dataclasses import dataclass
-from typing import Any, List, Optional
+from typing import Any
 
 from bankstatements_core.analysis.bbox_utils import BBox, overlaps
 from bankstatements_core.extraction.iban_extractor import IBANExtractor
@@ -33,7 +33,7 @@ class IBANCandidate:
     masked: str
     bbox: BBox
     confidence_score: float = 0.0
-    rejection_reason: Optional[str] = None
+    rejection_reason: str | None = None
 
 
 class IBANSpatialFilter:
@@ -46,7 +46,7 @@ class IBANSpatialFilter:
         """Initialize IBAN spatial filter."""
         self.iban_extractor = IBANExtractor()
 
-    def extract_iban_candidates(self, page: Any) -> List[IBANCandidate]:
+    def extract_iban_candidates(self, page: Any) -> list[IBANCandidate]:
         """Extract IBAN candidates with spatial coordinates from page.
 
         Uses two strategies:
@@ -169,10 +169,10 @@ class IBANSpatialFilter:
 
     def filter_by_table_overlap(
         self,
-        candidates: List[IBANCandidate],
-        table_regions: List[BBox],
+        candidates: list[IBANCandidate],
+        table_regions: list[BBox],
         overlap_threshold: float = 0.0,
-    ) -> List[IBANCandidate]:
+    ) -> list[IBANCandidate]:
         """Filter out IBANs that overlap with table regions.
 
         Args:
@@ -216,8 +216,8 @@ class IBANSpatialFilter:
         return filtered
 
     def score_candidates(
-        self, candidates: List[IBANCandidate], page_height: float
-    ) -> List[IBANCandidate]:
+        self, candidates: list[IBANCandidate], page_height: float
+    ) -> list[IBANCandidate]:
         """Score IBAN candidates based on location and context.
 
         Higher scores are given to:
@@ -265,9 +265,7 @@ class IBANSpatialFilter:
 
         return candidates_sorted
 
-    def select_best_iban(
-        self, candidates: List[IBANCandidate]
-    ) -> Optional[IBANCandidate]:
+    def select_best_iban(self, candidates: list[IBANCandidate]) -> IBANCandidate | None:
         """Select the best IBAN from scored candidates.
 
         Args:
