@@ -33,19 +33,12 @@ repos:
       - id: black
         language_version: python3
 
-  # Ruff - fast Python linter and auto-fixer
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.265
+  # Python linting (ruff)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.0
     hooks:
-      - id: ruff
+      - id: ruff-check
         args: ["--fix"]
-
-  # Python linting
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.0.0
-    hooks:
-      - id: flake8
-        args: ["--max-line-length=88", "--extend-ignore=E203,W503,E501,W504,D,C420"]
 
   # Type checking
   - repo: https://github.com/pre-commit/mirrors-mypy
