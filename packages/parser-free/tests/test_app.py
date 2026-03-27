@@ -5,9 +5,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from bankstatements_free.app import AppConfig, ConfigurationError, main
-
 from bankstatements_core.patterns.repositories import reset_config_singleton
+from bankstatements_free.app import AppConfig, ConfigurationError, main
 
 
 class TestApp(unittest.TestCase):

@@ -5,12 +5,12 @@ from __future__ import annotations
 import os
 
 import pytest
-from bankstatements_free.app import AppConfig
 
 from bankstatements_core.patterns.repositories import (
     get_config_singleton,
     reset_config_singleton,
 )
+from bankstatements_free.app import AppConfig
 
 
 class TestConfigSingleton:
