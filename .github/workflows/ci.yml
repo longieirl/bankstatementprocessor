@@ -366,6 +366,9 @@ jobs:
   # Fires only on push to main (not PRs), only when parser-core files changed,
   # and only after test-core passes.
   #
+  # To skip the downstream trigger (e.g. formatting fixes, doc updates):
+  #   add [skip downstream] anywhere in the commit message.
+  #
   # Security:
   #   - Gated on push to main + test-core success — PRs never trigger this
   #   - DOWNSTREAM_DISPATCH_TOKEN must be a fine-grained PAT scoped to
@@ -376,7 +379,10 @@ jobs:
     name: Dispatch downstream CI (bankstatements)
     runs-on: ubuntu-latest
     needs: test-core
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: |
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      !contains(github.event.head_commit.message, '[skip downstream]')
     steps:
       - uses: actions/checkout@v6
 
