@@ -16,9 +16,9 @@ from bankstatements_core.config.processor_config import (
     ProcessingConfig,
     ProcessorConfig,
 )
+from bankstatements_core.config.totals_config import parse_totals_columns
 from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.domain.converters import dicts_to_transactions
-from bankstatements_core.config.totals_config import parse_totals_columns
 from bankstatements_core.processor import (
     BankStatementProcessor,
     calculate_column_totals,
