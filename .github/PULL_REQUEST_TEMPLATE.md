@@ -26,3 +26,7 @@
 - [ ] Self-reviewed
 - [ ] Documentation updated (if needed)
 - [ ] No new warnings
+
+## Downstream impact
+- [ ] This PR changes a public interface in `bankstatements_core` (exported class, function, or exception)
+  <!-- If checked: describe what changed and what the private repo needs to update -->
