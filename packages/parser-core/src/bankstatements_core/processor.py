@@ -108,7 +108,7 @@ def parse_transaction_date(date_str: str) -> datetime:
 
 
 class BankStatementProcessor:
-    def __init__(
+    def __init__(  # noqa: PLR0913, PLR0915
         self,
         config: ProcessorConfig,
         output_strategies: dict[str, Any] | None = None,
@@ -167,7 +167,7 @@ class BankStatementProcessor:
 
         # Strategy pattern: Output format strategies (defaults based on config)
         if output_strategies is None:
-            from bankstatements_core.patterns.strategies import (
+            from bankstatements_core.patterns.strategies import (  # noqa: PLC0415
                 CSVOutputStrategy,
                 JSONOutputStrategy,
                 OutputFormatStrategy,
@@ -184,7 +184,7 @@ class BankStatementProcessor:
 
         # Strategy pattern: Duplicate detection strategy (defaults to AllFieldsStrategy)
         if duplicate_strategy is None:
-            from bankstatements_core.patterns.strategies import (
+            from bankstatements_core.patterns.strategies import (  # noqa: PLC0415
                 AllFieldsDuplicateStrategy,
             )
 
@@ -218,7 +218,7 @@ class BankStatementProcessor:
 
         # Repository pattern: Transaction repository (defaults to FileSystemTransactionRepository)
         if repository is None:
-            from bankstatements_core.patterns.repositories import (
+            from bankstatements_core.patterns.repositories import (  # noqa: PLC0415
                 FileSystemTransactionRepository,
             )
 

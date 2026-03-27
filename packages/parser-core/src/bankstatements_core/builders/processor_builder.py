@@ -351,7 +351,9 @@ class BankStatementProcessorBuilder:
             ValueError: If required parameters are missing
         """
         # Import here to avoid circular dependencies
-        from bankstatements_core.processor import BankStatementProcessor
+        from bankstatements_core.processor import (  # noqa: PLC0415
+            BankStatementProcessor,
+        )
 
         # Build configuration object
         config = self.build_config()
@@ -363,12 +365,16 @@ class BankStatementProcessorBuilder:
             config.extraction.enable_dynamic_boundary,
         )
 
-        from bankstatements_core.patterns.strategies import AllFieldsDuplicateStrategy
-        from bankstatements_core.services.duplicate_detector import (
+        from bankstatements_core.patterns.strategies import (  # noqa: PLC0415
+            AllFieldsDuplicateStrategy,
+        )
+        from bankstatements_core.services.duplicate_detector import (  # noqa: PLC0415
             DuplicateDetectionService,
         )
-        from bankstatements_core.services.service_registry import ServiceRegistry
-        from bankstatements_core.services.sorting_service import (
+        from bankstatements_core.services.service_registry import (  # noqa: PLC0415
+            ServiceRegistry,
+        )
+        from bankstatements_core.services.sorting_service import (  # noqa: PLC0415
             ChronologicalSortingStrategy,
             NoSortingStrategy,
             TransactionSortingService,

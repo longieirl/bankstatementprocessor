@@ -146,7 +146,9 @@ class TableDetector:
         logger.debug(f"Largest table: {largest} (area={largest.area:.0f}px²)")
         return largest
 
-    def _detect_text_based_table(self, page: Any) -> BBox | None:
+    def _detect_text_based_table(  # noqa: C901, PLR0912, PLR0915
+        self, page: Any
+    ) -> BBox | None:
         """Detect table region from text patterns (fallback method).
 
         For PDFs without explicit table borders, this method:
@@ -160,7 +162,7 @@ class TableDetector:
         Returns:
             BBox of detected table, or None if no table found
         """
-        from collections import defaultdict
+        from collections import defaultdict  # noqa: PLC0415
 
         # Stricter keywords that are more likely to be column headers
         # Avoid words that commonly appear in transaction descriptions
@@ -301,7 +303,7 @@ class TableDetector:
                     bottom_margin = avg_row_spacing * 1.5
                     logger.debug(
                         f"Calculated bottom margin: {bottom_margin:.1f}px "
-                        f"(avg row spacing: {avg_row_spacing:.1f}px × 1.5)"
+                        f"(avg row spacing: {avg_row_spacing:.1f}px × 1.5)"  # noqa: RUF001
                     )
                 else:
                     bottom_margin = 20

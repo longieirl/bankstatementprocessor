@@ -88,10 +88,12 @@ def main(argv: list[str] | None = None) -> int:
     Returns:
         Exit code: 0 for success, non-zero for failure
     """
-    import argparse
+    import argparse  # noqa: PLC0415
 
-    from bankstatements_core.__version__ import __version__
-    from bankstatements_core.facades import BankStatementProcessingFacade
+    from bankstatements_core.__version__ import __version__  # noqa: PLC0415
+    from bankstatements_core.facades import (  # noqa: PLC0415
+        BankStatementProcessingFacade,
+    )
 
     parser = argparse.ArgumentParser(
         prog="bankstatements", description="Bank Statement Processor"
@@ -119,7 +121,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.init:
-        from bankstatements_core.commands.init import init_directories
+        from bankstatements_core.commands.init import init_directories  # noqa: PLC0415
 
         return init_directories(
             base_dir=args.base_dir,

@@ -64,7 +64,9 @@ class ProcessorFactory:
         Returns:
             Configured BankStatementProcessor instance
         """
-        from bankstatements_core.builders import BankStatementProcessorBuilder
+        from bankstatements_core.builders import (  # noqa: PLC0415
+            BankStatementProcessorBuilder,
+        )
 
         # Get column configuration
         columns = get_columns_config()
@@ -155,7 +157,7 @@ class ProcessorFactory:
         return ProcessorFactory.create_from_config(config, strategy)
 
     @staticmethod
-    def create_custom(
+    def create_custom(  # noqa: PLR0913
         input_dir: Path,
         output_dir: Path,
         table_top_y: int = 100,
@@ -184,7 +186,9 @@ class ProcessorFactory:
         Returns:
             Configured BankStatementProcessor instance
         """
-        from bankstatements_core.processor import BankStatementProcessor
+        from bankstatements_core.processor import (  # noqa: PLC0415
+            BankStatementProcessor,
+        )
 
         columns = get_columns_config()
 
@@ -223,7 +227,9 @@ class ProcessorFactory:
             ),
         )
 
-        from bankstatements_core.services.service_registry import ServiceRegistry
+        from bankstatements_core.services.service_registry import (  # noqa: PLC0415
+            ServiceRegistry,
+        )
 
         registry = ServiceRegistry.from_config(config, entitlements=entitlements)
 

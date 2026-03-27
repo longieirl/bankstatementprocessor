@@ -46,7 +46,7 @@ class IBANSpatialFilter:
         """Initialize IBAN spatial filter."""
         self.iban_extractor = IBANExtractor()
 
-    def extract_iban_candidates(self, page: Any) -> list[IBANCandidate]:
+    def extract_iban_candidates(self, page: Any) -> list[IBANCandidate]:  # noqa: C901
         """Extract IBAN candidates with spatial coordinates from page.
 
         Uses two strategies:

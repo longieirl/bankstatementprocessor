@@ -28,7 +28,7 @@ class DateParserService:
     DEFAULT_YEAR = 2023  # Default year for partial dates without year component
 
     # Common date formats found in bank statements
-    DATE_FORMATS = [
+    DATE_FORMATS = [  # noqa: RUF012
         "%d/%m/%y",  # 01/12/23
         "%d/%m/%Y",  # 01/12/2023
         "%d-%m-%y",  # 01-12-23

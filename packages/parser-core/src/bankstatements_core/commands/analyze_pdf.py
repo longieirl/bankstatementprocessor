@@ -58,7 +58,7 @@ class PDFAnalyzer:
             base_template_path=base_template_path
         )
 
-    def analyze(self) -> dict:
+    def analyze(self) -> dict:  # noqa: C901, PLR0912, PLR0915
         """Run full PDF analysis workflow.
 
         Returns:
@@ -248,7 +248,7 @@ class PDFAnalyzer:
 
         except (OSError, ValueError, AttributeError, TypeError) as e:
             # Expected errors: file I/O, invalid PDF structure, missing attributes, type errors
-            logger.error(f"❌ Analysis failed: {e}", exc_info=True)
+            logger.exception(f"❌ Analysis failed: {e}")
             raise ValueError(f"PDF analysis failed: {e}") from e
         # Let unexpected errors bubble up
 
@@ -261,7 +261,7 @@ class PDFAnalyzer:
             pdf: Opened pdfplumber PDF object
             template_path: Path to template JSON file
         """
-        import json
+        import json  # noqa: PLC0415
 
         logger.info(f"  Loading template: {template_path.stem}")
 
@@ -297,7 +297,9 @@ class PDFAnalyzer:
             )
 
             # Try to find IBAN using IBANExtractor
-            from bankstatements_core.extraction.iban_extractor import IBANExtractor
+            from bankstatements_core.extraction.iban_extractor import (  # noqa: PLC0415
+                IBANExtractor,
+            )
 
             iban_extractor = IBANExtractor()
 

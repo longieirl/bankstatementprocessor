@@ -182,7 +182,7 @@ class TemplateRegistry:
             default_id = (
                 enabled_templates[0].id
                 if enabled_templates
-                else list(all_templates.keys())[0]
+                else next(iter(all_templates.keys()))
             )
 
         logger.info(
@@ -194,7 +194,7 @@ class TemplateRegistry:
         return cls(templates=all_templates, default_template_id=default_id)
 
     @classmethod
-    def from_multiple_directories(
+    def from_multiple_directories(  # noqa: C901
         cls, directories: list[Path | str]
     ) -> TemplateRegistry:
         """Load templates from multiple directories with priority order.
@@ -284,7 +284,7 @@ class TemplateRegistry:
                 default_id = (
                     enabled_templates[0].id
                     if enabled_templates
-                    else list(all_templates.keys())[0]
+                    else next(iter(all_templates.keys()))
                 )
 
         template_names = ", ".join(t.name for t in all_templates.values())
@@ -315,7 +315,7 @@ class TemplateRegistry:
 
         # Legacy format with templates dict (for backward compatibility)
         if "templates" in data and len(data["templates"]) == 1:
-            template_id = list(data["templates"].keys())[0]
+            template_id = next(iter(data["templates"].keys()))
             template_data = data["templates"][template_id]
             return cls._parse_template(template_id, template_data)
 
@@ -372,7 +372,9 @@ class TemplateRegistry:
             columns[col_name] = tuple(coords)
 
         # Parse per-page overrides (NEW)
-        from bankstatements_core.templates.template_model import PerPageBoundaries
+        from bankstatements_core.templates.template_model import (  # noqa: PLC0415
+            PerPageBoundaries,
+        )
 
         per_page_overrides = {}
         if "per_page_overrides" in extraction_data:

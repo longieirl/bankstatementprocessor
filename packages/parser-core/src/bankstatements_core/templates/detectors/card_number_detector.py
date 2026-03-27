@@ -26,7 +26,7 @@ class CardNumberDetector(BaseDetector):
     def name(self) -> str:
         return "CardNumber"
 
-    def detect(
+    def detect(  # noqa: C901
         self, pdf_path: Path, first_page: Page, templates: list[BankTemplate]
     ) -> list[DetectionResult]:
         """Detect templates by searching for card number patterns in header area.

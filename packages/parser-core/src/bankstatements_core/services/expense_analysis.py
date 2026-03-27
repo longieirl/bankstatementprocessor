@@ -123,7 +123,7 @@ class ExpenseAnalysisService:
         except EntitlementError:
             # Re-raise tier restriction errors (fail fast)
             raise
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 — service-boundary catch
             # Unexpected errors: log warning and return empty insights
             logger.warning(
                 f"Expense analysis failed: {e}. Returning empty insights.",
@@ -131,7 +131,7 @@ class ExpenseAnalysisService:
             )
             return self._empty_insights(error=str(e))
 
-    def _detect_recurring_charges(
+    def _detect_recurring_charges(  # noqa: C901, PLR0912
         self, tx_objects: list[Transaction]
     ) -> list[dict[str, Any]]:
         """
@@ -164,7 +164,7 @@ class ExpenseAnalysisService:
                     txs,
                     key=lambda t: _date_parser_service.parse_transaction_date(t.date),
                 )
-            except Exception as e:
+            except (ValueError, TypeError) as e:
                 logger.warning(f"Failed to sort transactions for {description}: {e}")
                 continue
 
@@ -199,7 +199,7 @@ class ExpenseAnalysisService:
                     delta = (date2 - date1).days
                     if delta > 0:  # Only positive intervals
                         intervals.append(delta)
-                except Exception as e:
+                except (ValueError, TypeError, AttributeError) as e:
                     logger.warning(f"Failed to calculate interval: {e}")
                     continue
 
@@ -315,7 +315,7 @@ class ExpenseAnalysisService:
                     txs,
                     key=lambda t: _date_parser_service.parse_transaction_date(t.date),
                 )
-            except Exception as e:
+            except (ValueError, TypeError) as e:
                 logger.warning(f"Failed to sort transactions for {description}: {e}")
                 txs_sorted = txs  # Use unsorted if date parsing fails
 

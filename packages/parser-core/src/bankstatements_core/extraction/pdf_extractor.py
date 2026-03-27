@@ -45,7 +45,7 @@ class PDFTableExtractor:
     - RowPostProcessor: date propagation and metadata tagging
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         columns: dict[str, tuple[int | float, int | float]],
         table_top_y: int = 300,
@@ -75,7 +75,7 @@ class PDFTableExtractor:
         self._header_analyser = PageHeaderAnalyser(IBANExtractor())
 
         if pdf_reader is None:
-            from bankstatements_core.adapters.pdfplumber_adapter import (
+            from bankstatements_core.adapters.pdfplumber_adapter import (  # noqa: PLC0415
                 PDFPlumberReaderAdapter,
             )
 
@@ -172,7 +172,7 @@ class PDFTableExtractor:
         page_rows = self._row_builder.build_rows(words)
 
         if self.page_validation_enabled:
-            from bankstatements_core.services.page_validation import (
+            from bankstatements_core.services.page_validation import (  # noqa: PLC0415
                 PageValidationService,
             )
 
@@ -185,7 +185,9 @@ class PDFTableExtractor:
                 )
                 return None
 
-        from bankstatements_core.services.row_merger import RowMergerService
+        from bankstatements_core.services.row_merger import (  # noqa: PLC0415
+            RowMergerService,
+        )
 
         return RowMergerService().merge_continuation_lines(page_rows, self.columns)
 
@@ -216,10 +218,10 @@ class PDFTableExtractor:
             all_words = initial_area.extract_words(use_text_flow=True)
 
             if self.header_check_enabled:
-                from bankstatements_core.extraction.extraction_params import (
+                from bankstatements_core.extraction.extraction_params import (  # noqa: PLC0415
                     MIN_HEADER_KEYWORDS,
                 )
-                from bankstatements_core.services.header_detection import (
+                from bankstatements_core.services.header_detection import (  # noqa: PLC0415
                     HeaderDetectionService,
                 )
 
@@ -237,7 +239,7 @@ class PDFTableExtractor:
                     logger.info(f"Page {page_num}: No table headers detected, skipping")
                     return None
 
-            from bankstatements_core.extraction.extraction_facade import (
+            from bankstatements_core.extraction.extraction_facade import (  # noqa: PLC0415
                 detect_table_end_boundary_smart,
             )
 
@@ -264,10 +266,10 @@ class PDFTableExtractor:
         words = table_area.extract_words(use_text_flow=True)
 
         if self.header_check_enabled:
-            from bankstatements_core.extraction.extraction_params import (
+            from bankstatements_core.extraction.extraction_params import (  # noqa: PLC0415
                 MIN_HEADER_KEYWORDS,
             )
-            from bankstatements_core.services.header_detection import (
+            from bankstatements_core.services.header_detection import (  # noqa: PLC0415
                 HeaderDetectionService,
             )
 

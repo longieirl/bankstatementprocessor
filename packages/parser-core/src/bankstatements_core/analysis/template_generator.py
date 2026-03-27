@@ -30,7 +30,7 @@ class TemplateGenerator:
         self.base_template_path = base_template_path
         logger.debug(f"Using base template: {self.base_template_path}")
 
-    def generate_template(
+    def generate_template(  # noqa: PLR0913
         self,
         columns: dict[str, tuple[float, float]],
         iban: str | None,
@@ -230,7 +230,7 @@ class TemplateGenerator:
         Returns:
             True if date grouping detected, False otherwise
         """
-        from collections import defaultdict
+        from collections import defaultdict  # noqa: PLC0415
 
         # Extract words in the Date column within table region
         x_min, x_max = date_column

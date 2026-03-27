@@ -130,7 +130,7 @@ class MonthlySummaryService:
             }
         )
 
-        for tx, tx_dict in zip(transactions, original_dicts):
+        for tx, tx_dict in zip(transactions, original_dicts, strict=False):
             # Use domain object's date field (type-safe)
             date_obj = _date_parser_service.parse_transaction_date(tx.date)
 

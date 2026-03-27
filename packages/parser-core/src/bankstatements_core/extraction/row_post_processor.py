@@ -50,7 +50,7 @@ def extract_filename_date(filename: str) -> str:
 class RowPostProcessor:
     """Tags rows with metadata and propagates dates to dateless transaction rows."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         columns: dict[str, tuple[int | float, int | float]],
         row_classifier: RowClassifier,

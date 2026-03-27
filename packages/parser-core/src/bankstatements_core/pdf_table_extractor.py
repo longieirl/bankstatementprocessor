@@ -126,7 +126,9 @@ def analyze_content_density(
 # from the explicit public list.
 def _looks_like_date(text: str) -> bool:
     """Check if text looks like a valid date (backward compatibility wrapper)."""
-    from bankstatements_core.services.row_analysis import RowAnalysisService
+    from bankstatements_core.services.row_analysis import (  # noqa: PLC0415
+        RowAnalysisService,
+    )
 
     service = RowAnalysisService()
     return service.looks_like_date(text)
@@ -134,7 +136,9 @@ def _looks_like_date(text: str) -> bool:
 
 def calculate_row_completeness_score(row: dict, columns: dict) -> float:
     """Score row completeness (backward compatibility wrapper)."""
-    from bankstatements_core.services.row_analysis import RowAnalysisService
+    from bankstatements_core.services.row_analysis import (  # noqa: PLC0415
+        RowAnalysisService,
+    )
 
     service = RowAnalysisService()
     return service.calculate_row_completeness_score(row, columns)

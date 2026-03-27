@@ -9,7 +9,12 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-def init_directories(
+def _echo(msg: str = "") -> None:
+    """Write a line to stdout (T201-compliant replacement for print)."""
+    sys.stdout.write(msg + "\n")
+
+
+def init_directories(  # noqa: C901, PLR0912, PLR0915
     base_dir: Path | None = None,
     create_samples: bool = False,
     verbose: bool = True,
@@ -41,8 +46,8 @@ def init_directories(
         base = base_dir if base_dir else Path.cwd()
 
         if verbose:
-            print(f"Initializing directory structure in: {base.resolve()}")
-            print()
+            _echo(f"Initializing directory structure in: {base.resolve()}")
+            _echo()
 
         # Define directories to create
         directories = {
@@ -59,29 +64,29 @@ def init_directories(
 
             if dir_path.exists():
                 if verbose:
-                    print(f"✓ Already exists: {dir_path.relative_to(base)}")
+                    _echo(f"✓ Already exists: {dir_path.relative_to(base)}")
             else:
                 try:
                     dir_path.mkdir(parents=True, exist_ok=True)
                     created_count += 1
                     if verbose:
-                        print(f"✓ Created: {dir_path.relative_to(base)}")
+                        _echo(f"✓ Created: {dir_path.relative_to(base)}")
                 except OSError as e:
                     # Expected errors: permission issues, disk full
                     logger.error(f"Failed to create directory {dir_path}: {e}")
                     if verbose:
-                        print(f"✗ Failed to create {dir_path.relative_to(base)}: {e}")
+                        _echo(f"✗ Failed to create {dir_path.relative_to(base)}: {e}")
                     return 1
                 # Let unexpected errors bubble up
 
             if verbose and description:
-                print(f"  {description}")
+                _echo(f"  {description}")
 
         # Create sample files if requested
         if create_samples:
             if verbose:
-                print()
-                print("Creating sample files...")
+                _echo()
+                _echo("Creating sample files...")
 
             # Create .env file if it doesn't exist
             env_file = base / ".env"
@@ -95,13 +100,13 @@ OUTPUT_FORMATS=csv,json
 """
                     env_file.write_text(env_content)
                     if verbose:
-                        print("✓ Created: .env")
+                        _echo("✓ Created: .env")
                 except OSError as e:
                     logger.warning(f"Failed to create .env file: {e}")
                     if verbose:
-                        print(f"✗ Failed to create .env: {e}")
+                        _echo(f"✗ Failed to create .env: {e}")
             elif verbose:
-                print("✓ Already exists: .env")
+                _echo("✓ Already exists: .env")
 
             # Create README in input directory
             input_readme = base / "input" / "README.md"
@@ -132,25 +137,25 @@ For recursive scanning (PAID tier), organize statements in subdirectories.
 """
                     input_readme.write_text(readme_content)
                     if verbose:
-                        print("✓ Created: input/README.md")
+                        _echo("✓ Created: input/README.md")
                 except OSError as e:
                     logger.warning(f"Failed to create input README: {e}")
 
         # Success message
         if verbose:
-            print()
+            _echo()
             if created_count > 0:
-                print(
+                _echo(
                     f"✅ Successfully created {created_count} director{'y' if created_count == 1 else 'ies'}"
                 )
             else:
-                print("✅ All directories already exist")
-            print()
-            print("Next steps:")
-            print("  1. Place PDF bank statements in input/")
-            print("  2. Run: bankstatements")
-            print("  3. Find processed files in output/")
-            print()
+                _echo("✅ All directories already exist")
+            _echo()
+            _echo("Next steps:")
+            _echo("  1. Place PDF bank statements in input/")
+            _echo("  2. Run: bankstatements")
+            _echo("  3. Find processed files in output/")
+            _echo()
 
         return 0
 
@@ -158,7 +163,7 @@ For recursive scanning (PAID tier), organize statements in subdirectories.
         # Catch-all for unexpected errors
         logger.exception("Unexpected error during initialization")
         if verbose:
-            print(f"\n❌ Initialization failed: {e}")
+            _echo(f"\n❌ Initialization failed: {e}")
         return 1
 
 
@@ -169,7 +174,7 @@ def main() -> int:
     Returns:
         Exit code
     """
-    import argparse
+    import argparse  # noqa: PLC0415
 
     parser = argparse.ArgumentParser(
         description="Initialize directory structure for bank statement processing"

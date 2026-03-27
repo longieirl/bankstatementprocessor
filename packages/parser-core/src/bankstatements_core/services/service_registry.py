@@ -94,14 +94,22 @@ class ServiceRegistry:
         Returns:
             Fully wired ServiceRegistry instance.
         """
-        from bankstatements_core.config.column_config import get_column_names
-        from bankstatements_core.patterns.strategies import AllFieldsDuplicateStrategy
-        from bankstatements_core.services.column_analysis import ColumnAnalysisService
-        from bankstatements_core.services.duplicate_detector import (
+        from bankstatements_core.config.column_config import (  # noqa: PLC0415
+            get_column_names,
+        )
+        from bankstatements_core.patterns.strategies import (  # noqa: PLC0415
+            AllFieldsDuplicateStrategy,
+        )
+        from bankstatements_core.services.column_analysis import (  # noqa: PLC0415
+            ColumnAnalysisService,
+        )
+        from bankstatements_core.services.duplicate_detector import (  # noqa: PLC0415
             DuplicateDetectionService,
         )
-        from bankstatements_core.services.iban_grouping import IBANGroupingService
-        from bankstatements_core.services.sorting_service import (
+        from bankstatements_core.services.iban_grouping import (  # noqa: PLC0415
+            IBANGroupingService,
+        )
+        from bankstatements_core.services.sorting_service import (  # noqa: PLC0415
             ChronologicalSortingStrategy,
             NoSortingStrategy,
             TransactionSortingService,
@@ -228,7 +236,7 @@ class ServiceRegistry:
         template: BankTemplate | None = None,
     ) -> None:
         """Classify each transaction using Chain of Responsibility."""
-        from bankstatements_core.services.transaction_type_classifier import (
+        from bankstatements_core.services.transaction_type_classifier import (  # noqa: PLC0415
             create_transaction_type_classifier_chain,
         )
 

@@ -21,7 +21,7 @@ class IBANDetector(BaseDetector):
     def name(self) -> str:
         return "IBAN"
 
-    def detect(
+    def detect(  # noqa: C901, PLR0912
         self, pdf_path: Path, first_page: Page, templates: list[BankTemplate]
     ) -> list[DetectionResult]:
         """Detect templates by searching for IBAN patterns in header area.

@@ -174,7 +174,7 @@ class PDFPlumberReaderAdapter:
             # pdfplumber.open returns pdfplumber.PDF but type system expects pdfplumber.pdf.PDF
             return PDFPlumberDocumentAdapter(pdf_doc)  # type: ignore[arg-type]
         except FileNotFoundError:
-            raise FileNotFoundError(f"PDF file not found: {pdf_path}")
+            raise FileNotFoundError(f"PDF file not found: {pdf_path}") from None
         except (OSError, ValueError, TypeError, RuntimeError) as e:
             # Expected errors: file I/O errors, invalid PDF structure, type errors, PDF library errors
             # PDFSyntaxError and other pdfminer exceptions inherit from RuntimeError or are library-specific

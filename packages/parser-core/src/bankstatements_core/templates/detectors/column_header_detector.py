@@ -20,7 +20,7 @@ class ColumnHeaderDetector(BaseDetector):
     def name(self) -> str:
         return "ColumnHeader"
 
-    def detect(
+    def detect(  # noqa: C901
         self, pdf_path: Path, first_page: Page, templates: list[BankTemplate]
     ) -> list[DetectionResult]:
         """Detect templates by finding column headers near top of table area.

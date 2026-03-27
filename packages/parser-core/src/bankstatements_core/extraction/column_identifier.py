@@ -35,7 +35,7 @@ class ColumnTypeIdentifier:
     """
 
     # Pattern mappings for each column type (re-exported from domain)
-    from bankstatements_core.domain.column_types import (
+    from bankstatements_core.domain.column_types import (  # noqa: PLC0415
         BALANCE_PATTERNS,
         CREDIT_PATTERNS,
         DATE_PATTERNS,

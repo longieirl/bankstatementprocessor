@@ -257,7 +257,7 @@ class OutputFormatStrategy(ABC):
         """
         return False
 
-    def _write_totals(
+    def _write_totals(  # noqa: B027 — intentional hook: not all output strategies support totals
         self,
         file_path: Path,
         totals_row: list[str],
@@ -371,7 +371,7 @@ class ExcelOutputStrategy(OutputFormatStrategy):
         totals_row: list[str],
     ) -> None:
         """Append pre-calculated totals row to Excel file."""
-        from openpyxl import load_workbook
+        from openpyxl import load_workbook  # noqa: PLC0415
 
         # Re-open workbook to append totals
         workbook = load_workbook(file_path)
@@ -460,7 +460,7 @@ class ExcelOutputStrategy(OutputFormatStrategy):
             df: DataFrame containing the data
             column_names: Ordered list of column names
         """
-        from openpyxl.styles import numbers
+        from openpyxl.styles import numbers  # noqa: PLC0415
 
         worksheet = writer.sheets["Transactions"]
 

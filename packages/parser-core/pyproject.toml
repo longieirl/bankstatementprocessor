@@ -167,9 +167,11 @@ select = [
 ignore = [
     "E501",    # line too long — handled by black
     "PLR2004", # magic value comparison — acceptable in tests and config
-    "G004",    # logging f-string — 214 violations, deferred, see GitHub issue #XX
+    "G004",    # logging f-string — 214 violations, deferred, see GitHub issue #90
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"tests/**/*.py" = ["F401"]
+"tests/**/*.py" = ["F401", "PLC0415", "PLR0913", "C901", "RUF043", "RUF059", "RUF005", "RUF003"]
+"tests/integration/*.py" = ["T201"]
+"src/bankstatements_core/pdf_table_extractor.py" = ["E402"]

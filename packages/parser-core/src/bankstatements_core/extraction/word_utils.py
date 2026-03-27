@@ -114,7 +114,7 @@ def calculate_column_coverage(
 
     Note:
         Canonical source: ``PageValidationService.calculate_column_coverage``
-        in ``services/page_validation.py`` (L116–L133).
+        in ``services/page_validation.py`` (L116-L133).
     """
     if not rows or not columns:
         return 0.0

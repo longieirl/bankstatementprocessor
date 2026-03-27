@@ -52,7 +52,7 @@ class ExtractionOrchestrator:
 
         # Inject PDF reader or use default pdfplumber adapter
         if pdf_reader is None:
-            from bankstatements_core.adapters.pdfplumber_adapter import (
+            from bankstatements_core.adapters.pdfplumber_adapter import (  # noqa: PLC0415
                 PDFPlumberReaderAdapter,
             )
 
