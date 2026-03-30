@@ -75,12 +75,11 @@ repos:
         args: ['--baseline', '.secrets.baseline']
         exclude: package.lock.json
 
-  # Docker linting (disabled - requires hadolint binary installation)
-  # - repo: https://github.com/hadolint/hadolint
-  #   rev: v2.12.0
-  #   hooks:
-  #     - id: hadolint-docker
-  #       args: [--ignore, DL3008, --ignore, DL3009]
+  # Docker linting
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.14.0
+    hooks:
+      - id: hadolint-docker
 
   # Markdown linting (disabled - requires npm package installation)
   # - repo: https://github.com/igorshubovych/markdownlint-cli
