@@ -28,7 +28,7 @@ class HeaderDetectionService:
     """
 
     # Common header keywords to look for (including variations)
-    HEADER_KEYWORDS = {
+    HEADER_KEYWORDS = {  # noqa: RUF012
         "date",
         "trans date",
         "transaction date",
@@ -164,7 +164,7 @@ class HeaderDetectionService:
         )
         return False
 
-    def check_page_for_headers(
+    def check_page_for_headers(  # noqa: PLR0913
         self,
         page: pdfplumber.page.Page,
         columns: dict[str, tuple[int | float, int | float]],

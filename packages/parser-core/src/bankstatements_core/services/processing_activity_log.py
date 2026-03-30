@@ -24,7 +24,7 @@ class ProcessingActivityLog:
     Log format: JSON Lines (JSONL) - one JSON object per line
     """
 
-    def __init__(self, logs_dir: Path, file_writer: "IJsonWriter | None" = None):
+    def __init__(self, logs_dir: Path, file_writer: IJsonWriter | None = None):
         """
         Initialize processing activity log.
 
@@ -44,7 +44,7 @@ class ProcessingActivityLog:
             logger.warning("Failed to create logs directory: %s", e)
         # Let unexpected errors bubble up
 
-    def log_processing(
+    def log_processing(  # noqa: PLR0913
         self,
         pdf_count: int,
         pages_read: int,

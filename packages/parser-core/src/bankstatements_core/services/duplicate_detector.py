@@ -26,7 +26,7 @@ class DuplicateDetectionService:
     constitutes a duplicate transaction.
     """
 
-    def __init__(self, strategy: "DuplicateDetectionStrategy"):
+    def __init__(self, strategy: DuplicateDetectionStrategy):
         """
         Initialize duplicate detection service.
 
@@ -46,8 +46,8 @@ class DuplicateDetectionService:
         self.strategy = strategy
 
     def detect_and_separate(
-        self, transactions: list["Transaction"]
-    ) -> tuple[list["Transaction"], list["Transaction"]]:
+        self, transactions: list[Transaction]
+    ) -> tuple[list[Transaction], list[Transaction]]:
         """
         Detect duplicates and separate into unique and duplicate lists.
 
@@ -70,8 +70,8 @@ class DuplicateDetectionService:
 
     def get_statistics(
         self,
-        unique_transactions: list["Transaction"],
-        duplicate_transactions: list["Transaction"],
+        unique_transactions: list[Transaction],
+        duplicate_transactions: list[Transaction],
     ) -> dict[str, int | float]:
         """
         Get statistics about duplicate detection results.

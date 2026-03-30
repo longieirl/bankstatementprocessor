@@ -8,7 +8,9 @@ import sys
 from pathlib import Path
 
 from bankstatements_core.config.app_config import AppConfig, ConfigurationError
-from bankstatements_core.config.column_config import get_columns_config  # noqa: F401
+from bankstatements_core.config.column_config import (  # noqa: F401 — re-exported for backward compat
+    get_columns_config,
+)
 from bankstatements_core.entitlements import Entitlements
 
 logger = logging.getLogger(__name__)
@@ -16,10 +18,10 @@ logger = logging.getLogger(__name__)
 __all__ = [
     "AppConfig",
     "ConfigurationError",
+    "log_summary",
     "main",
     "resolve_entitlements",
     "setup_logging",
-    "log_summary",
 ]
 
 
@@ -89,10 +91,12 @@ def main(argv: list[str] | None = None) -> int:
     Returns:
         Exit code: 0 for success, non-zero for failure
     """
-    import argparse
+    import argparse  # noqa: PLC0415
 
-    from bankstatements_core.__version__ import __version__
-    from bankstatements_core.facades import BankStatementProcessingFacade
+    from bankstatements_core.__version__ import __version__  # noqa: PLC0415
+    from bankstatements_core.facades import (  # noqa: PLC0415
+        BankStatementProcessingFacade,
+    )
 
     parser = argparse.ArgumentParser(
         prog="bankstatements", description="Bank Statement Processor"
@@ -120,7 +124,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.init:
-        from bankstatements_core.commands.init import init_directories
+        from bankstatements_core.commands.init import init_directories  # noqa: PLC0415
 
         return init_directories(
             base_dir=args.base_dir,

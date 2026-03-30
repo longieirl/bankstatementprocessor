@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from bankstatements_core.templates.template_model import BankTemplate
 
 
-def detect_table_end_boundary_smart(
+def detect_table_end_boundary_smart(  # noqa: PLR0913
     words: list[dict],
     table_top_y: int,
     columns: dict[str, tuple[int | float, int | float]],
@@ -27,7 +27,7 @@ def detect_table_end_boundary_smart(
     min_section_gap: int = 50,
     structure_breakdown_threshold: int = 8,
     dynamic_boundary_threshold: int = 15,
-    row_classifier: "RowClassifier | None" = None,
+    row_classifier: RowClassifier | None = None,
 ) -> int:
     """
     Detect table end intelligently (facade).
@@ -47,7 +47,9 @@ def detect_table_end_boundary_smart(
     Returns:
         Detected bottom Y coordinate
     """
-    from bankstatements_core.extraction.boundary_detector import TableBoundaryDetector
+    from bankstatements_core.extraction.boundary_detector import (  # noqa: PLC0415
+        TableBoundaryDetector,
+    )
 
     detector = TableBoundaryDetector(
         columns=columns,
@@ -62,7 +64,7 @@ def detect_table_end_boundary_smart(
     return detector.detect_boundary(words)
 
 
-def extract_tables_from_pdf(
+def extract_tables_from_pdf(  # noqa: PLR0913
     pdf_path: Path,
     table_top_y: int = TABLE_TOP_Y,
     table_bottom_y: int = TABLE_BOTTOM_Y,
@@ -70,7 +72,7 @@ def extract_tables_from_pdf(
     enable_dynamic_boundary: bool = False,
     enable_page_validation: bool | None = None,
     enable_header_check: bool | None = None,
-    template: "BankTemplate" | None = None,
+    template: BankTemplate | None = None,
 ) -> ExtractionResult:
     """
     Extract table data from PDF within specified bounds (facade function).
@@ -91,7 +93,9 @@ def extract_tables_from_pdf(
         ExtractionResult containing extracted transactions, page count, IBAN,
         source file path, and any document-level warnings
     """
-    from bankstatements_core.extraction.pdf_extractor import PDFTableExtractor
+    from bankstatements_core.extraction.pdf_extractor import (  # noqa: PLC0415
+        PDFTableExtractor,
+    )
 
     # If template provided, use template configuration
     if template is not None:

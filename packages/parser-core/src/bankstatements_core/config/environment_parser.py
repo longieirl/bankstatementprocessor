@@ -80,7 +80,9 @@ class EnvironmentParser:
         try:
             return int(value_str)
         except ValueError:
-            raise ValueError(f"{var_name} must be an integer, got: {value_str}")
+            raise ValueError(
+                f"{var_name} must be an integer, got: {value_str}"
+            ) from None
 
     @staticmethod
     def parse_bool(var_name: str, default: bool = False) -> bool:

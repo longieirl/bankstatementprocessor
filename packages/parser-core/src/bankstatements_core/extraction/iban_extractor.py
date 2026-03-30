@@ -26,7 +26,7 @@ class IBANExtractor:
 
     # IBAN format: 2-letter country code + 2 check digits + up to 30 alphanumeric characters
     # Common formats by country (code: length)
-    IBAN_LENGTHS = {
+    IBAN_LENGTHS = {  # noqa: RUF012
         "AD": 24,  # Andorra
         "AE": 23,  # UAE
         "AL": 28,  # Albania

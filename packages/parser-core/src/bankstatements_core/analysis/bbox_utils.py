@@ -5,7 +5,6 @@ in PDF coordinate space.
 """
 
 from dataclasses import dataclass
-from typing import List, Tuple
 
 
 @dataclass
@@ -133,7 +132,7 @@ def expand_bbox(bbox: BBox, margin: float) -> BBox:
     )
 
 
-def merge_bboxes(bboxes: List[BBox]) -> BBox:
+def merge_bboxes(bboxes: list[BBox]) -> BBox:
     """Merge multiple bounding boxes into a single container bbox.
 
     Args:
@@ -156,7 +155,7 @@ def merge_bboxes(bboxes: List[BBox]) -> BBox:
     return BBox(x0=min_x0, y0=min_y0, x1=max_x1, y1=max_y1)
 
 
-def bbox_from_words(words: List[dict]) -> BBox:
+def bbox_from_words(words: list[dict]) -> BBox:
     """Create a bounding box that contains all given words.
 
     Args:
@@ -179,7 +178,7 @@ def bbox_from_words(words: List[dict]) -> BBox:
     return BBox(x0=min_x0, y0=min_y0, x1=max_x1, y1=max_y1)
 
 
-def bbox_intersection(bbox1: BBox, bbox2: BBox) -> Tuple[float, float]:
+def bbox_intersection(bbox1: BBox, bbox2: BBox) -> tuple[float, float]:
     """Calculate the intersection dimensions of two bounding boxes.
 
     Args:

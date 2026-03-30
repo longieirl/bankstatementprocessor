@@ -45,16 +45,16 @@ class PDFProcessingOrchestrator:
     - Error handling for failed PDFs
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         extraction_config: ExtractionConfig,
         column_names: list[str],
         output_dir: Path,
-        repository: "FileSystemTransactionRepository",
+        repository: FileSystemTransactionRepository,
         entitlements: Entitlements | None = None,
-        pdf_discovery: "IPDFDiscovery | None" = None,
-        extraction_orchestrator: "ExtractionOrchestrator | None" = None,
-        filter_service: "ITransactionFilter | None" = None,
+        pdf_discovery: IPDFDiscovery | None = None,
+        extraction_orchestrator: ExtractionOrchestrator | None = None,
+        filter_service: ITransactionFilter | None = None,
     ):
         """Initialize PDF processing orchestrator.
 
@@ -68,11 +68,13 @@ class PDFProcessingOrchestrator:
             extraction_orchestrator: Service for extracting data from PDFs (optional, creates default if None)
             filter_service: Service for filtering transactions (optional, creates default if None)
         """
-        from bankstatements_core.services.extraction_orchestrator import (
+        from bankstatements_core.services.extraction_orchestrator import (  # noqa: PLC0415
             ExtractionOrchestrator,
         )
-        from bankstatements_core.services.pdf_discovery import PDFDiscoveryService
-        from bankstatements_core.services.transaction_filter import (
+        from bankstatements_core.services.pdf_discovery import (  # noqa: PLC0415
+            PDFDiscoveryService,
+        )
+        from bankstatements_core.services.transaction_filter import (  # noqa: PLC0415
             TransactionFilterService,
         )
 

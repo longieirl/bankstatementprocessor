@@ -16,6 +16,7 @@ from bankstatements_core.config.processor_config import (
     ProcessingConfig,
     ProcessorConfig,
 )
+from bankstatements_core.config.totals_config import parse_totals_columns
 from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.domain.converters import dicts_to_transactions
 from bankstatements_core.processor import (
@@ -23,7 +24,6 @@ from bankstatements_core.processor import (
     calculate_column_totals,
     find_matching_columns,
     generate_monthly_summary,
-    parse_totals_columns,
     parse_transaction_date,
 )
 from bankstatements_core.services.date_parser import DateParserService

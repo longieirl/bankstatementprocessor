@@ -64,7 +64,7 @@ class TestCSVOutputWithDocumentType:
         strategy.write(sample_transactions, output_file, column_names)
 
         # Read CSV and verify structure
-        with open(output_file, "r", encoding="utf-8") as f:
+        with open(output_file, encoding="utf-8") as f:
             reader = csv.DictReader(f)
             headers = reader.fieldnames
 
@@ -91,7 +91,7 @@ class TestCSVOutputWithDocumentType:
         strategy.write(sample_transactions, output_file, column_names)
 
         # Read CSV and verify values
-        with open(output_file, "r", encoding="utf-8") as f:
+        with open(output_file, encoding="utf-8") as f:
             reader = csv.DictReader(f)
             rows = list(reader)
 
@@ -113,7 +113,7 @@ class TestJSONOutputWithDocumentType:
         strategy.write(sample_transactions, output_file, column_names)
 
         # Read JSON and verify structure
-        with open(output_file, "r", encoding="utf-8") as f:
+        with open(output_file, encoding="utf-8") as f:
             data = json.load(f)
 
             assert len(data) == 3
@@ -134,7 +134,7 @@ class TestJSONOutputWithDocumentType:
         strategy.write(sample_transactions, output_file, column_names)
 
         # Read JSON and verify values
-        with open(output_file, "r", encoding="utf-8") as f:
+        with open(output_file, encoding="utf-8") as f:
             data = json.load(f)
 
             assert data[0]["document_type"] == "bank_statement"

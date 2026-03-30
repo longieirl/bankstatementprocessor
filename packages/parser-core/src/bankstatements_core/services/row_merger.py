@@ -31,7 +31,7 @@ class RowMergerService:
         """Initialize the row merger service."""
         self._last_transaction_row: dict | None = None
 
-    def merge_continuation_lines(
+    def merge_continuation_lines(  # noqa: C901, PLR0912, PLR0915
         self, rows: list[dict], columns: dict[str, tuple[int | float, int | float]]
     ) -> list[dict]:
         """Merge continuation lines with their parent transactions.
@@ -157,7 +157,7 @@ class RowMergerService:
         Returns:
             String classification: 'transaction', 'continuation', etc.
         """
-        from bankstatements_core.extraction.row_classifiers import (
+        from bankstatements_core.extraction.row_classifiers import (  # noqa: PLC0415
             create_row_classifier_chain,
         )
 

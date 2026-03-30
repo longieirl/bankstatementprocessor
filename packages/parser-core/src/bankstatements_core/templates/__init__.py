@@ -20,8 +20,8 @@ __all__ = [
     "DetectionExplanation",
     "ScoringConfig",
     "TemplateDetectionConfig",
+    "TemplateDetector",
     "TemplateExtractionConfig",
     "TemplateProcessingConfig",
     "TemplateRegistry",
-    "TemplateDetector",
 ]

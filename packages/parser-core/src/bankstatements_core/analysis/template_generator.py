@@ -6,7 +6,7 @@ This module generates template configuration files based on analyzed PDF structu
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class TemplateGenerator:
     """Generate template JSON configurations from analysis results."""
 
-    def __init__(self, base_template_path: Optional[Path] = None):
+    def __init__(self, base_template_path: Path | None = None):
         """Initialize template generator.
 
         Args:
@@ -30,17 +30,17 @@ class TemplateGenerator:
         self.base_template_path = base_template_path
         logger.debug(f"Using base template: {self.base_template_path}")
 
-    def generate_template(
+    def generate_template(  # noqa: PLR0913
         self,
-        columns: Dict[str, Tuple[float, float]],
-        iban: Optional[str],
+        columns: dict[str, tuple[float, float]],
+        iban: str | None,
         table_top_y: float,
         table_bottom_y: float,
         page_height: float,
         template_id: str = "custom_generated",
         template_name: str = "Custom Template - Generated",
-        page: Optional[Any] = None,
-    ) -> Dict[str, Any]:
+        page: Any | None = None,
+    ) -> dict[str, Any]:
         """Generate template JSON from analysis results.
 
         Args:
@@ -60,8 +60,8 @@ class TemplateGenerator:
 
         # Load base template
         try:
-            with open(self.base_template_path, "r") as f:
-                template: Dict[str, Any] = json.load(f)
+            with open(self.base_template_path) as f:
+                template: dict[str, Any] = json.load(f)
                 logger.debug(f"Loaded base template from {self.base_template_path}")
         except (OSError, ValueError, KeyError) as e:
             # Expected errors: file I/O errors, invalid JSON, missing keys
@@ -155,7 +155,7 @@ class TemplateGenerator:
 
         return template
 
-    def save_template(self, template: Dict, output_path: Path) -> None:
+    def save_template(self, template: dict, output_path: Path) -> None:
         """Save template JSON to file.
 
         Creates or overwrites the file at output_path.
@@ -179,10 +179,10 @@ class TemplateGenerator:
         except (OSError, TypeError) as e:
             # Expected errors: file I/O errors, JSON serialization errors
             logger.error(f"Failed to save template: {e}")
-            raise IOError(f"Could not save template to {output_path}: {e}") from e
+            raise OSError(f"Could not save template to {output_path}: {e}") from e
         # Let unexpected errors bubble up
 
-    def _create_minimal_template(self) -> Dict:
+    def _create_minimal_template(self) -> dict:
         """Create a minimal template structure if base template not available.
 
         Returns:
@@ -211,7 +211,7 @@ class TemplateGenerator:
     def _detect_date_grouping(
         self,
         page: Any,
-        date_column: Tuple[float, float],
+        date_column: tuple[float, float],
         table_top_y: float,
         table_bottom_y: float,
     ) -> bool:
@@ -230,7 +230,7 @@ class TemplateGenerator:
         Returns:
             True if date grouping detected, False otherwise
         """
-        from collections import defaultdict
+        from collections import defaultdict  # noqa: PLC0415
 
         # Extract words in the Date column within table region
         x_min, x_max = date_column
@@ -291,7 +291,7 @@ class TemplateGenerator:
 
         return False
 
-    def format_template_for_display(self, template: Dict) -> str:
+    def format_template_for_display(self, template: dict) -> str:
         """Format template as pretty-printed JSON for logging.
 
         Args:

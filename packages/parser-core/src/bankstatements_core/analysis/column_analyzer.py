@@ -5,7 +5,7 @@ by clustering X-coordinates of words.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from bankstatements_core.analysis.bbox_utils import BBox
 
@@ -34,7 +34,7 @@ class ColumnAnalyzer:
 
     def analyze_columns(
         self, page: Any, table_bbox: BBox
-    ) -> Dict[str, Tuple[float, float]]:
+    ) -> dict[str, tuple[float, float]]:
         """Analyze table and detect column boundaries.
 
         Args:
@@ -95,7 +95,7 @@ class ColumnAnalyzer:
         logger.info(f"Detected {len(columns)} columns")
         return columns
 
-    def _cluster_x_coordinates(self, words: List[dict]) -> List[float]:
+    def _cluster_x_coordinates(self, words: list[dict]) -> list[float]:
         """Cluster word X coordinates to find column alignment points.
 
         Args:
@@ -135,8 +135,8 @@ class ColumnAnalyzer:
         return sorted(clusters)
 
     def _detect_boundaries_from_clusters(
-        self, clusters: List[float]
-    ) -> List[Tuple[float, float]]:
+        self, clusters: list[float]
+    ) -> list[tuple[float, float]]:
         """Detect column boundaries from cluster centers.
 
         Args:
@@ -165,21 +165,20 @@ class ColumnAnalyzer:
                 else:
                     # Small gap - columns are close, use midpoint
                     x_max = (clusters[i] + clusters[i + 1]) / 2
+            # Last column - extend to reasonable width
+            elif i > 0:
+                avg_width = (clusters[i] - clusters[0]) / i
+                x_max = clusters[i] + avg_width
             else:
-                # Last column - extend to reasonable width
-                if i > 0:
-                    avg_width = (clusters[i] - clusters[0]) / i
-                    x_max = clusters[i] + avg_width
-                else:
-                    x_max = clusters[i] + 100  # Default width
+                x_max = clusters[i] + 100  # Default width
 
             boundaries.append((x_min, x_max))
 
         return boundaries
 
     def _find_header_words(
-        self, table_words: List[dict], table_bbox: BBox
-    ) -> List[dict]:
+        self, table_words: list[dict], table_bbox: BBox
+    ) -> list[dict]:
         """Find words in the header row of the table.
 
         Args:
@@ -208,8 +207,8 @@ class ColumnAnalyzer:
         return header_words
 
     def _assign_column_names(
-        self, boundaries: List[Tuple[float, float]], header_words: List[dict]
-    ) -> List[str]:
+        self, boundaries: list[tuple[float, float]], header_words: list[dict]
+    ) -> list[str]:
         """Assign names to columns based on header words.
 
         Strategy: Each header word should be assigned to its BEST matching column only.
@@ -246,7 +245,7 @@ class ColumnAnalyzer:
         word_groups.append(current_group)
 
         # Assign each word group to the best matching column boundary
-        column_names: List[Optional[str]] = [None] * len(boundaries)
+        column_names: list[str | None] = [None] * len(boundaries)
 
         for group in word_groups:
             # Calculate group center
@@ -278,7 +277,7 @@ class ColumnAnalyzer:
                 )
 
         # Fill in any unassigned columns with generic names
-        result_names: List[str] = []
+        result_names: list[str] = []
         for i in range(len(column_names)):
             name_val = column_names[i]
             if name_val is None:
@@ -294,8 +293,8 @@ class ColumnAnalyzer:
         return result_names
 
     def _resolve_overlapping_boundaries(
-        self, boundaries: List[Tuple[float, float]]
-    ) -> List[Tuple[float, float]]:
+        self, boundaries: list[tuple[float, float]]
+    ) -> list[tuple[float, float]]:
         """Resolve overlapping column boundaries.
 
         When columns overlap, adjust boundaries so column i ends just before
@@ -337,8 +336,8 @@ class ColumnAnalyzer:
         return resolved
 
     def _create_columns_from_headers(
-        self, header_words: List[dict], table_bbox: BBox
-    ) -> Tuple[List[Tuple[float, float]], List[str]]:
+        self, header_words: list[dict], table_bbox: BBox
+    ) -> tuple[list[tuple[float, float]], list[str]]:
         """Create column boundaries and names directly from header words.
 
         Args:

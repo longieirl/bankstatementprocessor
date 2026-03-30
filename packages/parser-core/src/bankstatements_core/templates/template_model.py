@@ -203,7 +203,7 @@ class TemplateExtractionConfig:
 
         Issues are logged as warnings (non-fatal) to maintain backward compatibility.
         """
-        import logging
+        import logging  # noqa: PLC0415
 
         logger = logging.getLogger(__name__)
 

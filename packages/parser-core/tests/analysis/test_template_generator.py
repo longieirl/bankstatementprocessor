@@ -268,7 +268,7 @@ class TestTemplateGenerator:
             assert output_path.exists()
 
             # Verify content
-            with open(output_path, "r") as f:
+            with open(output_path) as f:
                 loaded = json.load(f)
                 assert loaded["id"] == "test"
                 assert loaded["name"] == "Test Template"
@@ -299,13 +299,13 @@ class TestTemplateGenerator:
 
             # Save first template
             generator.save_template(template1, output_path)
-            with open(output_path, "r") as f:
+            with open(output_path) as f:
                 loaded1 = json.load(f)
                 assert loaded1["name"] == "First"
 
             # Save second template (should overwrite)
             generator.save_template(template2, output_path)
-            with open(output_path, "r") as f:
+            with open(output_path) as f:
                 loaded2 = json.load(f)
                 assert loaded2["name"] == "Second"
 

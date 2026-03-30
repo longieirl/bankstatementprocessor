@@ -37,7 +37,7 @@ class TemplateRegistry:
             )
 
     @classmethod
-    def from_json(cls, config_path: Path) -> "TemplateRegistry":
+    def from_json(cls, config_path: Path) -> TemplateRegistry:
         """Load templates from JSON configuration file.
 
         Args:
@@ -53,7 +53,7 @@ class TemplateRegistry:
         if not config_path.exists():
             raise FileNotFoundError(f"Template config not found: {config_path}")
 
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             config = json.load(f)
 
         # Validate config structure
@@ -86,7 +86,7 @@ class TemplateRegistry:
         return cls(templates, default_template_id)
 
     @classmethod
-    def from_default_config(cls) -> "TemplateRegistry":
+    def from_default_config(cls) -> TemplateRegistry:
         """Load templates from default or configured directory.
 
         Supports custom template directory for user-added templates.
@@ -127,7 +127,7 @@ class TemplateRegistry:
             return cls.from_directory(default_dir)
 
     @classmethod
-    def from_directory(cls, templates_dir: Path | str) -> "TemplateRegistry":
+    def from_directory(cls, templates_dir: Path | str) -> TemplateRegistry:
         """Load all templates from a directory.
 
         Args:
@@ -182,7 +182,7 @@ class TemplateRegistry:
             default_id = (
                 enabled_templates[0].id
                 if enabled_templates
-                else list(all_templates.keys())[0]
+                else next(iter(all_templates.keys()))
             )
 
         logger.info(
@@ -194,9 +194,9 @@ class TemplateRegistry:
         return cls(templates=all_templates, default_template_id=default_id)
 
     @classmethod
-    def from_multiple_directories(
+    def from_multiple_directories(  # noqa: C901
         cls, directories: list[Path | str]
-    ) -> "TemplateRegistry":
+    ) -> TemplateRegistry:
         """Load templates from multiple directories with priority order.
 
         Templates from earlier directories have higher priority and can override
@@ -284,7 +284,7 @@ class TemplateRegistry:
                 default_id = (
                     enabled_templates[0].id
                     if enabled_templates
-                    else list(all_templates.keys())[0]
+                    else next(iter(all_templates.keys()))
                 )
 
         template_names = ", ".join(t.name for t in all_templates.values())
@@ -306,7 +306,7 @@ class TemplateRegistry:
         Returns:
             BankTemplate if valid, None if invalid
         """
-        with open(template_file, "r", encoding="utf-8") as f:
+        with open(template_file, encoding="utf-8") as f:
             data = json.load(f)
 
         # Single template format (new)
@@ -315,7 +315,7 @@ class TemplateRegistry:
 
         # Legacy format with templates dict (for backward compatibility)
         if "templates" in data and len(data["templates"]) == 1:
-            template_id = list(data["templates"].keys())[0]
+            template_id = next(iter(data["templates"].keys()))
             template_data = data["templates"][template_id]
             return cls._parse_template(template_id, template_data)
 
@@ -372,7 +372,9 @@ class TemplateRegistry:
             columns[col_name] = tuple(coords)
 
         # Parse per-page overrides (NEW)
-        from bankstatements_core.templates.template_model import PerPageBoundaries
+        from bankstatements_core.templates.template_model import (  # noqa: PLC0415
+            PerPageBoundaries,
+        )
 
         per_page_overrides = {}
         if "per_page_overrides" in extraction_data:
@@ -535,7 +537,7 @@ class TemplateRegistry:
         """
         return list(self._templates.keys())
 
-    def filtered_by_ids(self, ids: set[str]) -> "TemplateRegistry":
+    def filtered_by_ids(self, ids: set[str]) -> TemplateRegistry:
         """Return a new registry containing only the templates with the given IDs.
 
         The shared registry is never mutated. The default template is preserved if

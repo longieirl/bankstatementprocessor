@@ -16,8 +16,8 @@ from bankstatements_core.domain.models.extraction_result import ExtractionResult
 from bankstatements_core.domain.models.transaction import Transaction
 
 __all__ = [
-    "Transaction",
     "ExtractionResult",
+    "Transaction",
     "dict_to_transaction",
     "dicts_to_transactions",
     "transaction_to_dict",

@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import json  # noqa: F401 - imported for test mocking
 import logging
-from collections import defaultdict  # noqa: F401 - imported for test mocking
 from datetime import datetime
 from typing import Any
 
@@ -10,7 +8,9 @@ import pandas as pd
 
 from bankstatements_core.config.column_config import DEFAULT_COLUMNS, get_column_names
 from bankstatements_core.config.processor_config import ProcessorConfig
-from bankstatements_core.config.totals_config import parse_totals_columns  # noqa: F401
+from bankstatements_core.config.totals_config import (  # noqa: F401 — re-exported for backward compat
+    parse_totals_columns,
+)
 from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.domain.converters import transactions_to_dicts
 from bankstatements_core.domain.models.transaction import Transaction
@@ -30,7 +30,10 @@ from bankstatements_core.services.sorting_service import (
     TransactionSortingService,
 )
 from bankstatements_core.services.transaction_filter import TransactionFilterService
-from bankstatements_core.utils import is_date_column, to_float  # noqa: F401
+from bankstatements_core.utils import (  # noqa: F401 — re-exported for backward compat
+    is_date_column,
+    to_float,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +115,7 @@ def parse_transaction_date(date_str: str) -> datetime:
 
 
 class BankStatementProcessor:
-    def __init__(
+    def __init__(  # noqa: PLR0913, PLR0915
         self,
         config: ProcessorConfig,
         output_strategies: dict[str, Any] | None = None,
@@ -171,7 +174,7 @@ class BankStatementProcessor:
 
         # Strategy pattern: Output format strategies (defaults based on config)
         if output_strategies is None:
-            from bankstatements_core.patterns.strategies import (
+            from bankstatements_core.patterns.strategies import (  # noqa: PLC0415
                 CSVOutputStrategy,
                 JSONOutputStrategy,
                 OutputFormatStrategy,
@@ -188,7 +191,7 @@ class BankStatementProcessor:
 
         # Strategy pattern: Duplicate detection strategy (defaults to AllFieldsStrategy)
         if duplicate_strategy is None:
-            from bankstatements_core.patterns.strategies import (
+            from bankstatements_core.patterns.strategies import (  # noqa: PLC0415
                 AllFieldsDuplicateStrategy,
             )
 
@@ -222,7 +225,7 @@ class BankStatementProcessor:
 
         # Repository pattern: Transaction repository (defaults to FileSystemTransactionRepository)
         if repository is None:
-            from bankstatements_core.patterns.repositories import (
+            from bankstatements_core.patterns.repositories import (  # noqa: PLC0415
                 FileSystemTransactionRepository,
             )
 

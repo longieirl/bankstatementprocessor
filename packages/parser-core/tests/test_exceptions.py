@@ -150,11 +150,11 @@ class TestExceptionCatching:
 
         try:
             raise PDFReadError("Cannot read PDF")
-        except PDFReadError as e:  # noqa: F841
+        except PDFReadError:
             caught_exception = "PDFReadError"
-        except PDFExtractionError as e:  # noqa: F841
+        except PDFExtractionError:
             caught_exception = "PDFExtractionError"
-        except BankStatementError as e:  # noqa: F841
+        except BankStatementError:
             caught_exception = "BankStatementError"
 
         assert caught_exception == "PDFReadError"

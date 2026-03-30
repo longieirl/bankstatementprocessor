@@ -58,7 +58,7 @@ class ScoringConfig:
                 )
 
     @classmethod
-    def default(cls) -> "ScoringConfig":
+    def default(cls) -> ScoringConfig:
         """Production scoring — used when no config is injected."""
         return cls(
             weights={
@@ -143,7 +143,7 @@ class TemplateDetector:
             ColumnHeaderDetector(),
         ]
 
-    def _classify_document_type(self, first_page: Page) -> str | None:
+    def _classify_document_type(self, first_page: Page) -> str | None:  # noqa: PLR0911
         """Classify document type based on content signals.
 
         This pre-classification helps narrow down templates before running
@@ -224,7 +224,9 @@ class TemplateDetector:
         logger.debug("Document type classification uncertain")
         return None
 
-    def detect_template(self, pdf_path: Path, first_page: Page) -> BankTemplate:
+    def detect_template(  # noqa: C901, PLR0911, PLR0912
+        self, pdf_path: Path, first_page: Page
+    ) -> BankTemplate:
         """Detect template using document type classification and aggregated scoring.
 
         Phase 2 enhancements:

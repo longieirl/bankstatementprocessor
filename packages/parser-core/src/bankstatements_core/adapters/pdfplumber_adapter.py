@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class PDFPlumberPageAdapter:
     """Adapter wrapping pdfplumber Page to implement IPDFPage protocol."""
 
-    def __init__(self, page: "Page"):
+    def __init__(self, page: Page):
         """Initialize page adapter.
 
         Args:
@@ -118,7 +118,7 @@ class PDFPlumberPageAdapter:
 class PDFPlumberDocumentAdapter:
     """Adapter wrapping pdfplumber PDF to implement IPDFDocument protocol."""
 
-    def __init__(self, pdf_doc: "PDF"):
+    def __init__(self, pdf_doc: PDF):
         """Initialize document adapter.
 
         Args:
@@ -174,12 +174,12 @@ class PDFPlumberReaderAdapter:
             # pdfplumber.open returns pdfplumber.PDF but type system expects pdfplumber.pdf.PDF
             return PDFPlumberDocumentAdapter(pdf_doc)  # type: ignore[arg-type]
         except FileNotFoundError:
-            raise FileNotFoundError(f"PDF file not found: {pdf_path}")
+            raise FileNotFoundError(f"PDF file not found: {pdf_path}") from None
         except (OSError, ValueError, TypeError, RuntimeError) as e:
             # Expected errors: file I/O errors, invalid PDF structure, type errors, PDF library errors
             # PDFSyntaxError and other pdfminer exceptions inherit from RuntimeError or are library-specific
-            raise IOError(f"Failed to open PDF {pdf_path}: {e}") from e
+            raise OSError(f"Failed to open PDF {pdf_path}: {e}") from e
         except Exception as e:
             # Catch any other PDF library exceptions (PDFSyntaxError, etc.)
             # These are library-specific errors that indicate corrupted/invalid PDFs
-            raise IOError(f"Failed to open PDF {pdf_path}: {e}") from e
+            raise OSError(f"Failed to open PDF {pdf_path}: {e}") from e

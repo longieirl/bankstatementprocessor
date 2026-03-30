@@ -2,8 +2,8 @@
 #
 # Jobs (all lint jobs run in parallel):
 #   changes     — detect which paths changed (skips heavy jobs on workflow-only PRs)
-#   lint-core   — black, isort, flake8, mypy on packages/parser-core
-#   lint-free   — black, isort, flake8 on packages/parser-free
+#   lint-core   — black, isort, ruff, mypy on packages/parser-core
+#   lint-free   — black, isort, ruff on packages/parser-free
 #   security    — bandit + safety on both packages
 #   test-core   — pytest with 91% coverage gate (Python matrix), needs lint-core
 #   test-free   — pytest on packages/parser-free, needs lint-free
@@ -115,8 +115,8 @@ jobs:
     - name: isort
       run: isort --check-only --diff src tests
 
-    - name: Flake8
-      run: flake8 src tests --max-line-length=88 --extend-ignore=E203,W503,E501,W504,D,C420
+    - name: Ruff
+      run: ruff check src tests
 
     - name: MyPy
       run: mypy src --ignore-missing-imports
@@ -162,7 +162,7 @@ jobs:
         pip install --upgrade pip
         pip install -e ../parser-core
         pip install -e ".[test]"
-        pip install black isort flake8
+        pip install black isort ruff
 
     - name: Black
       run: black --check --diff src tests
@@ -170,8 +170,8 @@ jobs:
     - name: isort
       run: isort --check-only --diff src tests
 
-    - name: Flake8
-      run: flake8 src tests --max-line-length=88 --extend-ignore=E203,W503,E501,W504,D,C420
+    - name: Ruff
+      run: ruff check src tests
 
   security:
     name: Security — bandit + safety

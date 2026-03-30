@@ -20,7 +20,7 @@ from bankstatements_core.utils import to_float
 
 if TYPE_CHECKING:
     from bankstatements_core.domain.models.transaction import Transaction
-    from bankstatements_core.entitlements import Entitlements  # noqa: F401
+    from bankstatements_core.entitlements import Entitlements
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ class DuplicateDetectionStrategy(ABC):
     """Abstract strategy for detecting duplicate transactions."""
 
     @abstractmethod
-    def create_key(self, transaction: "Transaction") -> str:
+    def create_key(self, transaction: Transaction) -> str:
         """
         Create a unique key for a transaction.
 
@@ -44,8 +44,8 @@ class DuplicateDetectionStrategy(ABC):
         pass
 
     def detect_duplicates(
-        self, transactions: list["Transaction"]
-    ) -> tuple[list["Transaction"], list["Transaction"]]:
+        self, transactions: list[Transaction]
+    ) -> tuple[list[Transaction], list[Transaction]]:
         """
         Detect duplicates in a list of transactions.
 
@@ -55,8 +55,8 @@ class DuplicateDetectionStrategy(ABC):
         Returns:
             Tuple of (unique_transactions, duplicate_transactions)
         """
-        unique_rows: list["Transaction"] = []
-        duplicate_rows: list["Transaction"] = []
+        unique_rows: list[Transaction] = []
+        duplicate_rows: list[Transaction] = []
         transaction_files: dict[str, str] = {}
 
         for tx in transactions:
@@ -86,7 +86,7 @@ class AllFieldsDuplicateStrategy(DuplicateDetectionStrategy):
     details, and all monetary fields to be considered duplicates.
     """
 
-    def create_key(self, transaction: "Transaction") -> str:
+    def create_key(self, transaction: Transaction) -> str:
         """Create key from date, details, and all monetary columns."""
         amounts = []
         for field_name in ("debit", "credit", "balance"):
@@ -114,7 +114,7 @@ class DateAmountDuplicateStrategy(DuplicateDetectionStrategy):
     between statements, but the date and amount should match.
     """
 
-    def create_key(self, transaction: "Transaction") -> str:
+    def create_key(self, transaction: Transaction) -> str:
         """Create key from date and sum of all monetary amounts.
 
         Only monetary fields (debit, credit, balance) and explicit
@@ -152,7 +152,7 @@ class CreditCardDuplicateStrategy(DuplicateDetectionStrategy):
     - Transaction type provides critical disambiguation
     """
 
-    def create_key(self, transaction: "Transaction") -> str:
+    def create_key(self, transaction: Transaction) -> str:
         """Create composite key: date:transaction_type:amount.
 
         Args:
@@ -257,7 +257,7 @@ class OutputFormatStrategy(ABC):
         """
         return False
 
-    def _write_totals(  # noqa: B027
+    def _write_totals(  # noqa: B027 — intentional hook: not all output strategies support totals
         self,
         file_path: Path,
         totals_row: list[str],
@@ -371,7 +371,7 @@ class ExcelOutputStrategy(OutputFormatStrategy):
         totals_row: list[str],
     ) -> None:
         """Append pre-calculated totals row to Excel file."""
-        from openpyxl import load_workbook
+        from openpyxl import load_workbook  # noqa: PLC0415
 
         # Re-open workbook to append totals
         workbook = load_workbook(file_path)
@@ -460,7 +460,7 @@ class ExcelOutputStrategy(OutputFormatStrategy):
             df: DataFrame containing the data
             column_names: Ordered list of column names
         """
-        from openpyxl.styles import numbers
+        from openpyxl.styles import numbers  # noqa: PLC0415
 
         worksheet = writer.sheets["Transactions"]
 
@@ -474,7 +474,7 @@ class ExcelOutputStrategy(OutputFormatStrategy):
 
 
 def create_output_strategy(
-    format_name: str, entitlements: "Entitlements"
+    format_name: str, entitlements: Entitlements
 ) -> OutputFormatStrategy:
     """
     Create output strategy with entitlement enforcement.
@@ -504,7 +504,6 @@ def create_output_strategy(
         >>> ent = Entitlements.paid_tier()
         >>> strategy = create_output_strategy("json", ent)  # OK
     """
-    from bankstatements_core.entitlements import Entitlements  # noqa: F401
 
     # Normalize format name
     format_lower = format_name.lower()

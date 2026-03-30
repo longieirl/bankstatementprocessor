@@ -42,6 +42,6 @@ class ExtractionScoringConfig:
                 raise ValueError(f"{name} must be >= 0.0, got {val}")
 
     @classmethod
-    def default(cls) -> "ExtractionScoringConfig":
+    def default(cls) -> ExtractionScoringConfig:
         """Return the default production scoring configuration."""
         return cls()

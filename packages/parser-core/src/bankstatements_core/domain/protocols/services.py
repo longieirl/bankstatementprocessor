@@ -23,15 +23,15 @@ class IPDFDiscovery(Protocol):
 class ITransactionFilter(Protocol):
     """Protocol for filtering transaction rows."""
 
-    def apply_all_filters(self, rows: list["Transaction"]) -> list["Transaction"]:
+    def apply_all_filters(self, rows: list[Transaction]) -> list[Transaction]:
         """Apply all configured filters to rows."""
         ...
 
-    def filter_empty_rows(self, rows: list["Transaction"]) -> list["Transaction"]:
+    def filter_empty_rows(self, rows: list[Transaction]) -> list[Transaction]:
         """Filter out rows with insufficient data."""
         ...
 
-    def filter_header_rows(self, rows: list["Transaction"]) -> list["Transaction"]:
+    def filter_header_rows(self, rows: list[Transaction]) -> list[Transaction]:
         """Filter out header rows that were incorrectly extracted."""
         ...
 
@@ -41,9 +41,9 @@ class IIBANGrouping(Protocol):
 
     def group_by_iban(
         self,
-        transactions: list["Transaction"],
+        transactions: list[Transaction],
         pdf_ibans: dict[str, str],
-    ) -> dict[str, list["Transaction"]]:
+    ) -> dict[str, list[Transaction]]:
         """Group transactions by IBAN suffix (last 4 digits)."""
         ...
 
@@ -65,7 +65,7 @@ class IColumnTotals(Protocol):
 class ITemplateDetector(Protocol):
     """Protocol for detecting PDF bank statement templates."""
 
-    def detect_template(self, pdf_path: Path, first_page: Any) -> "BankTemplate":
+    def detect_template(self, pdf_path: Path, first_page: Any) -> BankTemplate:
         """Detect template from PDF first page."""
         ...
 
@@ -75,8 +75,8 @@ class IDuplicateDetector(Protocol):
 
     def detect_and_separate(
         self,
-        transactions: list["Transaction"],
-    ) -> tuple[list["Transaction"], list["Transaction"]]:
+        transactions: list[Transaction],
+    ) -> tuple[list[Transaction], list[Transaction]]:
         """Separate unique transactions from duplicates."""
         ...
 
@@ -84,7 +84,7 @@ class IDuplicateDetector(Protocol):
 class ITransactionSorting(Protocol):
     """Protocol for sorting transactions."""
 
-    def sort(self, transactions: list["Transaction"]) -> list["Transaction"]:
+    def sort(self, transactions: list[Transaction]) -> list[Transaction]:
         """Sort transactions using configured strategy."""
         ...
 

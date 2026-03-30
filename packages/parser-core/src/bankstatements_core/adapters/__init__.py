@@ -7,7 +7,7 @@ from bankstatements_core.adapters.pdfplumber_adapter import (
 )
 
 __all__ = [
-    "PDFPlumberReaderAdapter",
     "PDFPlumberDocumentAdapter",
     "PDFPlumberPageAdapter",
+    "PDFPlumberReaderAdapter",
 ]

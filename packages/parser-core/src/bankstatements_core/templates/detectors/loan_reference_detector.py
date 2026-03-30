@@ -26,7 +26,7 @@ class LoanReferenceDetector(BaseDetector):
     def name(self) -> str:
         return "LoanReference"
 
-    def detect(
+    def detect(  # noqa: C901
         self, pdf_path: Path, first_page: Page, templates: list[BankTemplate]
     ) -> list[DetectionResult]:
         """Detect templates by searching for loan reference patterns in header area.

@@ -32,7 +32,6 @@ dependencies = [
 dev = [
     "black>=23.0.0,<27.0.0",
     "isort>=5.12.0,<9.0.0",
-    "flake8>=6.0.0,<8.0.0",
     "mypy>=1.8.0,<2.0.0",
     "pyright>=1.1.350",
     "types-python-dateutil>=2.8.0.0",
@@ -41,7 +40,7 @@ dev = [
     "ipython>=8.0.0,<10.0.0",
     "ipdb>=0.13.0",
     "pre-commit>=3.0.0,<5.0.0",
-    "ruff>=0.0.265,<1.0.0",
+    "ruff>=0.8.0,<1.0.0",
     "bandit[toml]>=1.7.0,<2.0.0",
     "safety>=2.0.0,<4.0.0",
     "detect-secrets>=1.4.0,<2.0.0",
@@ -145,3 +144,34 @@ profile = "black"
 multi_line_output = 3
 line_length = 88
 known_first_party = ["bankstatements_core"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "B",      # flake8-bugbear
+    "C901",   # mccabe complexity
+    "G",      # flake8-logging-format
+    "PLC",    # pylint convention
+    "PLR",    # pylint refactoring
+    "T201",   # flake8-print
+    "BLE001", # flake8-blind-except
+    "UP",     # pyupgrade
+    "RUF",    # ruff-specific rules
+]
+ignore = [
+    "E501",    # line too long — handled by black
+    "PLR2004", # magic value comparison — acceptable in tests and config
+    "G004",    # logging f-string — 214 violations, deferred, see GitHub issue #90
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/**/*.py" = ["F401", "PLC0415", "PLR0913", "C901", "RUF043", "RUF059", "RUF005", "RUF003"]
+"tests/integration/*.py" = ["T201"]
+"src/bankstatements_core/pdf_table_extractor.py" = ["E402"]

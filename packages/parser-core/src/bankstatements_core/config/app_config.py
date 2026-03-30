@@ -102,7 +102,7 @@ class AppConfig:
                 )
 
     @classmethod
-    def from_env(cls) -> "AppConfig":
+    def from_env(cls) -> AppConfig:
         """
         Load configuration from environment variables with validation.
 
@@ -113,7 +113,9 @@ class AppConfig:
             ConfigurationError: If configuration is invalid
         """
         # Import here to avoid circular dependency during module load
-        from bankstatements_core.config.totals_config import parse_totals_columns
+        from bankstatements_core.config.totals_config import (  # noqa: PLC0415
+            parse_totals_columns,
+        )
 
         try:
             # Parse integer values with validation
@@ -121,7 +123,7 @@ class AppConfig:
                 table_top_y = EnvironmentParser.parse_int("TABLE_TOP_Y", 300)
                 table_bottom_y = EnvironmentParser.parse_int("TABLE_BOTTOM_Y", 720)
             except ValueError as e:
-                raise ConfigurationError(str(e))
+                raise ConfigurationError(str(e)) from e
 
             # Parse boolean values
             enable_dynamic_boundary = EnvironmentParser.parse_bool(

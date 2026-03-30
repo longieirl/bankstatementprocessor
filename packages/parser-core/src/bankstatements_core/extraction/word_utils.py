@@ -86,10 +86,9 @@ def assign_words_to_columns(
                 if xmin <= x0 and x1 <= xmax:
                     row[col] += text + " "
                     break
-            else:
-                if xmin <= x0 < xmax:
-                    row[col] += text + " "
-                    break
+            elif xmin <= x0 < xmax:
+                row[col] += text + " "
+                break
 
     return {k: v.strip() for k, v in row.items()}
 
@@ -115,7 +114,7 @@ def calculate_column_coverage(
 
     Note:
         Canonical source: ``PageValidationService.calculate_column_coverage``
-        in ``services/page_validation.py`` (L116–L133).
+        in ``services/page_validation.py`` (L116-L133).
     """
     if not rows or not columns:
         return 0.0

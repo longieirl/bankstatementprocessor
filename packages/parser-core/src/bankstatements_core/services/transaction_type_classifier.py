@@ -32,8 +32,8 @@ class TransactionTypeClassifier(ABC):
         self._next_classifier: TransactionTypeClassifier | None = None
 
     def set_next(
-        self, classifier: "TransactionTypeClassifier"
-    ) -> "TransactionTypeClassifier":
+        self, classifier: TransactionTypeClassifier
+    ) -> TransactionTypeClassifier:
         """Set the next classifier in the chain.
 
         Args:
@@ -46,7 +46,7 @@ class TransactionTypeClassifier(ABC):
         return classifier
 
     def classify(
-        self, transaction: "Transaction", template: "BankTemplate | None" = None
+        self, transaction: Transaction, template: BankTemplate | None = None
     ) -> str:
         """Classify transaction type, delegating to next classifier if needed.
 
@@ -69,7 +69,7 @@ class TransactionTypeClassifier(ABC):
 
     @abstractmethod
     def _do_classify(
-        self, transaction: "Transaction", template: "BankTemplate | None"
+        self, transaction: Transaction, template: BankTemplate | None
     ) -> str | None:
         """Attempt to classify the transaction.
 
@@ -88,7 +88,7 @@ class TemplateKeywordClassifier(TransactionTypeClassifier):
     """
 
     def _do_classify(
-        self, transaction: "Transaction", template: "BankTemplate | None"
+        self, transaction: Transaction, template: BankTemplate | None
     ) -> str | None:
         """Classify using template transaction_types keyword mappings."""
         if not template or not template.processing.transaction_types:
@@ -115,7 +115,7 @@ class CreditCardPatternClassifier(TransactionTypeClassifier):
     """
 
     # Credit card transaction patterns
-    PURCHASE_PATTERNS = [
+    PURCHASE_PATTERNS = [  # noqa: RUF012
         "PURCHASE",
         "SALE",
         "POS",
@@ -126,7 +126,7 @@ class CreditCardPatternClassifier(TransactionTypeClassifier):
         "E-COMMERCE",
     ]
 
-    PAYMENT_PATTERNS = [
+    PAYMENT_PATTERNS = [  # noqa: RUF012
         "PAYMENT",
         "PAYMENT RECEIVED",
         "DIRECT DEBIT",
@@ -134,7 +134,7 @@ class CreditCardPatternClassifier(TransactionTypeClassifier):
         "AUTOPAY",
     ]
 
-    FEE_PATTERNS = [
+    FEE_PATTERNS = [  # noqa: RUF012
         "FEE",
         "CHARGE",
         "INTEREST",
@@ -145,15 +145,15 @@ class CreditCardPatternClassifier(TransactionTypeClassifier):
         "OVERLIMIT FEE",
     ]
 
-    REFUND_PATTERNS = [
+    REFUND_PATTERNS = [  # noqa: RUF012
         "REFUND",
         "REVERSAL",
         "CREDIT",
         "CHARGEBACK",
     ]
 
-    def _do_classify(
-        self, transaction: "Transaction", template: "BankTemplate | None"
+    def _do_classify(  # noqa: PLR0911
+        self, transaction: Transaction, template: BankTemplate | None
     ) -> str | None:
         """Classify credit card transactions."""
         if transaction.document_type != "credit_card_statement":
@@ -186,7 +186,7 @@ class BankStatementPatternClassifier(TransactionTypeClassifier):
     """
 
     # Bank statement transaction patterns
-    TRANSFER_PATTERNS = [
+    TRANSFER_PATTERNS = [  # noqa: RUF012
         "TRANSFER",
         "TRF",
         "SEPA",
@@ -197,7 +197,7 @@ class BankStatementPatternClassifier(TransactionTypeClassifier):
         "MOBILE TRANSFER",
     ]
 
-    PAYMENT_PATTERNS = [
+    PAYMENT_PATTERNS = [  # noqa: RUF012
         "STANDING ORDER",
         "DIRECT DEBIT",
         "DD",
@@ -205,14 +205,14 @@ class BankStatementPatternClassifier(TransactionTypeClassifier):
         "BILL PAYMENT",
     ]
 
-    INTEREST_PATTERNS = [
+    INTEREST_PATTERNS = [  # noqa: RUF012
         "INTEREST",
         "INT CREDIT",
         "INTEREST CREDIT",
         "INTEREST PAID",
     ]
 
-    FEE_PATTERNS = [
+    FEE_PATTERNS = [  # noqa: RUF012
         "CHARGE",
         "FEE",
         "MAINTENANCE FEE",
@@ -221,8 +221,8 @@ class BankStatementPatternClassifier(TransactionTypeClassifier):
         "OVERDRAFT FEE",
     ]
 
-    def _do_classify(
-        self, transaction: "Transaction", template: "BankTemplate | None"
+    def _do_classify(  # noqa: PLR0911
+        self, transaction: Transaction, template: BankTemplate | None
     ) -> str | None:
         """Classify bank statement transactions."""
         if transaction.document_type != "bank_statement":
@@ -256,7 +256,7 @@ class AmountBasedClassifier(TransactionTypeClassifier):
     """
 
     def _do_classify(
-        self, transaction: "Transaction", template: "BankTemplate | None"
+        self, transaction: Transaction, template: BankTemplate | None
     ) -> str | None:
         """Classify based on amount patterns."""
         debit_amount = to_float(str(transaction.debit)) if transaction.debit else None
@@ -292,7 +292,7 @@ class DefaultClassifier(TransactionTypeClassifier):
     """
 
     def _do_classify(
-        self, transaction: "Transaction", template: "BankTemplate | None"
+        self, transaction: Transaction, template: BankTemplate | None
     ) -> str | None:
         """Always return 'other' as default classification."""
         return "other"

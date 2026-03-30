@@ -6,7 +6,7 @@ using pdfplumber's table detection capabilities.
 
 import logging
 from dataclasses import dataclass
-from typing import Any, List, Optional
+from typing import Any
 
 from bankstatements_core.analysis.bbox_utils import BBox, expand_bbox
 
@@ -24,7 +24,7 @@ class TableDetectionResult:
         page_width: Width of the page in points
     """
 
-    tables: List[BBox]
+    tables: list[BBox]
     page_number: int
     page_height: float
     page_width: float
@@ -109,7 +109,7 @@ class TableDetector:
 
     def get_expanded_table_regions(
         self, detection: TableDetectionResult, margin: float = 20.0
-    ) -> List[BBox]:
+    ) -> list[BBox]:
         """Get expanded table regions for overlap detection.
 
         Creates a buffer zone around each table to catch IBANs that are
@@ -130,7 +130,7 @@ class TableDetector:
 
         return expanded
 
-    def get_largest_table(self, detection: TableDetectionResult) -> Optional[BBox]:
+    def get_largest_table(self, detection: TableDetectionResult) -> BBox | None:
         """Get the largest table by area from detection results.
 
         Args:
@@ -146,7 +146,9 @@ class TableDetector:
         logger.debug(f"Largest table: {largest} (area={largest.area:.0f}px²)")
         return largest
 
-    def _detect_text_based_table(self, page: Any) -> Optional[BBox]:
+    def _detect_text_based_table(  # noqa: C901, PLR0912, PLR0915
+        self, page: Any
+    ) -> BBox | None:
         """Detect table region from text patterns (fallback method).
 
         For PDFs without explicit table borders, this method:
@@ -160,7 +162,7 @@ class TableDetector:
         Returns:
             BBox of detected table, or None if no table found
         """
-        from collections import defaultdict
+        from collections import defaultdict  # noqa: PLC0415
 
         # Stricter keywords that are more likely to be column headers
         # Avoid words that commonly appear in transaction descriptions
@@ -301,7 +303,7 @@ class TableDetector:
                     bottom_margin = avg_row_spacing * 1.5
                     logger.debug(
                         f"Calculated bottom margin: {bottom_margin:.1f}px "
-                        f"(avg row spacing: {avg_row_spacing:.1f}px × 1.5)"
+                        f"(avg row spacing: {avg_row_spacing:.1f}px × 1.5)"  # noqa: RUF001
                     )
                 else:
                     bottom_margin = 20

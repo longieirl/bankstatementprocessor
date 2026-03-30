@@ -53,7 +53,7 @@ class BankStatementProcessorBuilder:
         self._activity_log: Any | None = None
         self._entitlements: Any | None = None
 
-    def with_input_dir(self, path: Path) -> "BankStatementProcessorBuilder":
+    def with_input_dir(self, path: Path) -> BankStatementProcessorBuilder:
         """
         Set input directory (required).
 
@@ -66,7 +66,7 @@ class BankStatementProcessorBuilder:
         self._input_dir = path
         return self
 
-    def with_output_dir(self, path: Path) -> "BankStatementProcessorBuilder":
+    def with_output_dir(self, path: Path) -> BankStatementProcessorBuilder:
         """
         Set output directory (required).
 
@@ -81,7 +81,7 @@ class BankStatementProcessorBuilder:
 
     def with_table_bounds(
         self, top_y: int, bottom_y: int
-    ) -> "BankStatementProcessorBuilder":
+    ) -> BankStatementProcessorBuilder:
         """
         Set table boundary coordinates.
 
@@ -98,7 +98,7 @@ class BankStatementProcessorBuilder:
 
     def with_columns(
         self, columns: dict[str, tuple[int | float, int | float]]
-    ) -> "BankStatementProcessorBuilder":
+    ) -> BankStatementProcessorBuilder:
         """
         Set column definitions.
 
@@ -113,7 +113,7 @@ class BankStatementProcessorBuilder:
 
     def with_dynamic_boundary(
         self, enabled: bool = True
-    ) -> "BankStatementProcessorBuilder":
+    ) -> BankStatementProcessorBuilder:
         """
         Enable or disable dynamic boundary detection.
 
@@ -126,9 +126,7 @@ class BankStatementProcessorBuilder:
         self._enable_dynamic_boundary = enabled
         return self
 
-    def with_date_sorting(
-        self, enabled: bool = True
-    ) -> "BankStatementProcessorBuilder":
+    def with_date_sorting(self, enabled: bool = True) -> BankStatementProcessorBuilder:
         """
         Enable or disable chronological date sorting.
 
@@ -143,7 +141,7 @@ class BankStatementProcessorBuilder:
 
     def with_recursive_scan(
         self, enabled: bool = False
-    ) -> "BankStatementProcessorBuilder":
+    ) -> BankStatementProcessorBuilder:
         """
         Enable or disable recursive directory scanning for PDFs.
 
@@ -158,9 +156,7 @@ class BankStatementProcessorBuilder:
         self._recursive_scan = enabled
         return self
 
-    def with_totals(
-        self, column_patterns: list[str]
-    ) -> "BankStatementProcessorBuilder":
+    def with_totals(self, column_patterns: list[str]) -> BankStatementProcessorBuilder:
         """
         Set column patterns for totals calculation.
 
@@ -175,7 +171,7 @@ class BankStatementProcessorBuilder:
 
     def with_monthly_summary(
         self, enabled: bool = True
-    ) -> "BankStatementProcessorBuilder":
+    ) -> BankStatementProcessorBuilder:
         """
         Enable or disable monthly summary generation.
 
@@ -190,7 +186,7 @@ class BankStatementProcessorBuilder:
 
     def with_expense_analysis(
         self, enabled: bool = True
-    ) -> "BankStatementProcessorBuilder":
+    ) -> BankStatementProcessorBuilder:
         """
         Enable or disable expense analysis generation.
 
@@ -205,7 +201,7 @@ class BankStatementProcessorBuilder:
 
     def with_output_strategies(
         self, strategies: dict[str, Any]
-    ) -> "BankStatementProcessorBuilder":
+    ) -> BankStatementProcessorBuilder:
         """
         Set output format strategies.
 
@@ -218,7 +214,7 @@ class BankStatementProcessorBuilder:
         self._output_strategies = strategies
         return self
 
-    def with_duplicate_strategy(self, strategy: Any) -> "BankStatementProcessorBuilder":
+    def with_duplicate_strategy(self, strategy: Any) -> BankStatementProcessorBuilder:
         """
         Set duplicate detection strategy.
 
@@ -231,7 +227,7 @@ class BankStatementProcessorBuilder:
         self._duplicate_strategy = strategy
         return self
 
-    def with_repository(self, repository: Any) -> "BankStatementProcessorBuilder":
+    def with_repository(self, repository: Any) -> BankStatementProcessorBuilder:
         """
         Set transaction repository.
 
@@ -244,7 +240,7 @@ class BankStatementProcessorBuilder:
         self._repository = repository
         return self
 
-    def with_activity_log(self, activity_log: Any) -> "BankStatementProcessorBuilder":
+    def with_activity_log(self, activity_log: Any) -> BankStatementProcessorBuilder:
         """
         Set processing activity log for GDPR audit trail.
 
@@ -257,7 +253,7 @@ class BankStatementProcessorBuilder:
         self._activity_log = activity_log
         return self
 
-    def with_entitlements(self, entitlements: Any) -> "BankStatementProcessorBuilder":
+    def with_entitlements(self, entitlements: Any) -> BankStatementProcessorBuilder:
         """
         Set entitlements for tier-based feature access control.
 
@@ -272,7 +268,7 @@ class BankStatementProcessorBuilder:
 
     def with_processor_config(
         self, config: ProcessorConfig
-    ) -> "BankStatementProcessorBuilder":
+    ) -> BankStatementProcessorBuilder:
         """
         Set all config fields at once from a ProcessorConfig.
 
@@ -344,7 +340,7 @@ class BankStatementProcessorBuilder:
             ),
         )
 
-    def build(self) -> "BankStatementProcessor":
+    def build(self) -> BankStatementProcessor:
         """
         Build and return BankStatementProcessor instance.
 
@@ -355,7 +351,9 @@ class BankStatementProcessorBuilder:
             ValueError: If required parameters are missing
         """
         # Import here to avoid circular dependencies
-        from bankstatements_core.processor import BankStatementProcessor
+        from bankstatements_core.processor import (  # noqa: PLC0415
+            BankStatementProcessor,
+        )
 
         # Build configuration object
         config = self.build_config()
@@ -367,12 +365,16 @@ class BankStatementProcessorBuilder:
             config.extraction.enable_dynamic_boundary,
         )
 
-        from bankstatements_core.patterns.strategies import AllFieldsDuplicateStrategy
-        from bankstatements_core.services.duplicate_detector import (
+        from bankstatements_core.patterns.strategies import (  # noqa: PLC0415
+            AllFieldsDuplicateStrategy,
+        )
+        from bankstatements_core.services.duplicate_detector import (  # noqa: PLC0415
             DuplicateDetectionService,
         )
-        from bankstatements_core.services.service_registry import ServiceRegistry
-        from bankstatements_core.services.sorting_service import (
+        from bankstatements_core.services.service_registry import (  # noqa: PLC0415
+            ServiceRegistry,
+        )
+        from bankstatements_core.services.sorting_service import (  # noqa: PLC0415
             ChronologicalSortingStrategy,
             NoSortingStrategy,
             TransactionSortingService,

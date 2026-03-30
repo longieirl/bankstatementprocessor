@@ -49,7 +49,7 @@ class TableBoundaryDetector:
     5. Administrative content density analysis
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         columns: dict[str, tuple[int | float, int | float]],
         fallback_bottom_y: int = 720,
@@ -85,7 +85,7 @@ class TableBoundaryDetector:
         self.structure_breakdown_threshold = structure_breakdown_threshold
         self.consecutive_threshold = dynamic_boundary_threshold
 
-    def detect_boundary(self, words: list[dict]) -> int:
+    def detect_boundary(self, words: list[dict]) -> int:  # noqa: PLR0911
         """
         Main template method for detecting table end boundary.
 

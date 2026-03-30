@@ -46,9 +46,9 @@ class IBANGroupingService:
 
     def group_by_iban(
         self,
-        rows: list["Transaction"],
+        rows: list[Transaction],
         pdf_ibans: dict[str, str],
-    ) -> dict[str, list["Transaction"]]:
+    ) -> dict[str, list[Transaction]]:
         """Group transactions by their source IBAN.
 
         Transactions are grouped by the last N characters of their IBAN,
@@ -62,7 +62,7 @@ class IBANGroupingService:
         Returns:
             Dictionary mapping IBAN suffix (or "unknown") to list of transactions
         """
-        grouped: dict[str, list["Transaction"]] = {}
+        grouped: dict[str, list[Transaction]] = {}
 
         for tx in rows:
             filename = tx.filename
@@ -103,7 +103,7 @@ class IBANGroupingService:
         else:
             return iban_clean
 
-    def _log_grouping_summary(self, grouped: dict[str, list["Transaction"]]) -> None:
+    def _log_grouping_summary(self, grouped: dict[str, list[Transaction]]) -> None:
         """Log summary of grouping results.
 
         Args:

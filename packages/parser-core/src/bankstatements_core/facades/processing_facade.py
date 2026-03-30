@@ -45,12 +45,12 @@ class BankStatementProcessingFacade:
         """
         self.config = config
         self.entitlements = entitlements or Entitlements.free_tier()
-        self._processor: "BankStatementProcessor" | None = None
+        self._processor: BankStatementProcessor | None = None
 
     @classmethod
     def from_environment(
         cls, entitlements: Entitlements | None = None
-    ) -> "BankStatementProcessingFacade":
+    ) -> BankStatementProcessingFacade:
         """
         Create facade from environment variables.
 
@@ -65,7 +65,9 @@ class BankStatementProcessingFacade:
         """
         # Load configuration using singleton
         # ConfigurationError will propagate to caller
-        from bankstatements_core.patterns.repositories import get_config_singleton
+        from bankstatements_core.patterns.repositories import (  # noqa: PLC0415
+            get_config_singleton,
+        )
 
         try:
             config = get_config_singleton()
@@ -146,14 +148,16 @@ class BankStatementProcessingFacade:
         # Let unexpected errors bubble up
 
         # Create processing activity log for GDPR audit trail
-        from bankstatements_core.services.processing_activity_log import (
+        from bankstatements_core.services.processing_activity_log import (  # noqa: PLC0415
             ProcessingActivityLog,
         )
 
         activity_log = ProcessingActivityLog(self.config.logs_dir)
 
         # Create processor using factory
-        from bankstatements_core.patterns.factories import ProcessorFactory
+        from bankstatements_core.patterns.factories import (  # noqa: PLC0415
+            ProcessorFactory,
+        )
 
         self._processor = ProcessorFactory.create_from_config(
             self.config, activity_log=activity_log, entitlements=self.entitlements
@@ -167,7 +171,9 @@ class BankStatementProcessingFacade:
         # Auto cleanup if enabled
         if self.config.auto_cleanup_on_exit:
             logger.info("Auto cleanup enabled, deleting output files...")
-            from bankstatements_core.services.data_retention import DataRetentionService
+            from bankstatements_core.services.data_retention import (  # noqa: PLC0415
+                DataRetentionService,
+            )
 
             service = DataRetentionService(0, self.config.output_dir)
             deleted_count = service.cleanup_all_files(audit_log=activity_log)
@@ -175,7 +181,7 @@ class BankStatementProcessingFacade:
 
         return summary
 
-    def process_with_error_handling(self) -> int:
+    def process_with_error_handling(self) -> int:  # noqa: PLR0911
         """
         Process all files with comprehensive error handling.
 
@@ -192,7 +198,7 @@ class BankStatementProcessingFacade:
         """
         try:
             summary = self.process_all()
-            from bankstatements_core.utils import log_summary
+            from bankstatements_core.utils import log_summary  # noqa: PLC0415
 
             log_summary(summary)
             return 0

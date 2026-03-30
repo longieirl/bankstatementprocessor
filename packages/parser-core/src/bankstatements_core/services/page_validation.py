@@ -183,7 +183,7 @@ class PageValidationService:
         Returns:
             String classification: 'transaction', etc.
         """
-        from bankstatements_core.extraction.row_classifiers import (
+        from bankstatements_core.extraction.row_classifiers import (  # noqa: PLC0415
             create_row_classifier_chain,
         )
 

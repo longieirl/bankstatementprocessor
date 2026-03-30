@@ -15,15 +15,13 @@ from bankstatements_core.domain.models.transaction import Transaction
 
 class TestExtractionResultImports:
     def test_importable_from_module(self):
-        from bankstatements_core.domain.models.extraction_result import (  # noqa: F401
-            ExtractionResult,
-        )
+        from bankstatements_core.domain.models.extraction_result import ExtractionResult
 
     def test_importable_from_models_package(self):
-        from bankstatements_core.domain.models import ExtractionResult  # noqa: F401
+        from bankstatements_core.domain.models import ExtractionResult
 
     def test_importable_from_domain_package(self):
-        from bankstatements_core.domain import ExtractionResult  # noqa: F401
+        from bankstatements_core.domain import ExtractionResult
 
 
 class TestExtractionResultConstruction:

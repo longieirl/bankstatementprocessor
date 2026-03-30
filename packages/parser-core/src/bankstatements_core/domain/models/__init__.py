@@ -10,8 +10,8 @@ from bankstatements_core.domain.models.extraction_warning import ExtractionWarni
 from bankstatements_core.domain.models.transaction import Transaction
 
 __all__ = [
-    "Transaction",
     "ExtractionResult",
-    "ExtractionWarning",
     "ExtractionScoringConfig",
+    "ExtractionWarning",
+    "Transaction",
 ]

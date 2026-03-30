@@ -12,7 +12,7 @@ from __future__ import annotations
 import logging
 import warnings
 
-import pdfplumber  # noqa: F401 - used by extraction module
+import pdfplumber  # noqa: F401 — re-exported for backward-compat test patching
 
 warnings.warn(
     "bankstatements_core.pdf_table_extractor is a backward-compatibility shim "
@@ -26,7 +26,7 @@ warnings.warn(
 logger = logging.getLogger(__name__)
 
 # Re-export column configuration (backward compatibility)
-from bankstatements_core.config.column_config import (  # noqa: E402, F401
+from bankstatements_core.config.column_config import (
     DEFAULT_COLUMNS,
     get_column_names,
     get_columns_config,
@@ -34,13 +34,13 @@ from bankstatements_core.config.column_config import (  # noqa: E402, F401
 )
 
 # Re-export extraction functions (backward compatibility)
-from bankstatements_core.extraction.extraction_facade import (  # noqa: E402, F401
+from bankstatements_core.extraction.extraction_facade import (
     detect_table_end_boundary_smart,
     extract_tables_from_pdf,
 )
 
 # Re-export extraction parameters (backward compatibility)
-from bankstatements_core.extraction.extraction_params import (  # noqa: E402, F401
+from bankstatements_core.extraction.extraction_params import (
     ADMINISTRATIVE_PATTERNS,
     CONTENT_DENSITY_THRESHOLD,
     ENABLE_PAGE_VALIDATION,
@@ -55,19 +55,11 @@ from bankstatements_core.extraction.extraction_params import (  # noqa: E402, F4
     TABLE_BOTTOM_Y,
     TABLE_TOP_Y,
 )
-from bankstatements_core.extraction.row_classifiers import (  # noqa: E402, F401
-    create_row_classifier_chain,
-)
-from bankstatements_core.services.content_density import (  # noqa: E402, F401
-    ContentDensityService,
-)
-from bankstatements_core.services.header_detection import (  # noqa: E402, F401
-    HeaderDetectionService,
-)
-from bankstatements_core.services.page_validation import (  # noqa: E402, F401
-    PageValidationService,
-)
-from bankstatements_core.services.row_merger import RowMergerService  # noqa: E402, F401
+from bankstatements_core.extraction.row_classifiers import create_row_classifier_chain
+from bankstatements_core.services.content_density import ContentDensityService
+from bankstatements_core.services.header_detection import HeaderDetectionService
+from bankstatements_core.services.page_validation import PageValidationService
+from bankstatements_core.services.row_merger import RowMergerService
 
 # Module-level singletons (instantiated once, not per-call)
 _PAGE_VALIDATION_SERVICE = PageValidationService(
@@ -136,7 +128,9 @@ def analyze_content_density(
 # from the explicit public list.
 def _looks_like_date(text: str) -> bool:
     """Check if text looks like a valid date (backward compatibility wrapper)."""
-    from bankstatements_core.services.row_analysis import RowAnalysisService
+    from bankstatements_core.services.row_analysis import (  # noqa: PLC0415
+        RowAnalysisService,
+    )
 
     service = RowAnalysisService()
     return service.looks_like_date(text)
@@ -144,7 +138,9 @@ def _looks_like_date(text: str) -> bool:
 
 def calculate_row_completeness_score(row: dict, columns: dict) -> float:
     """Score row completeness (backward compatibility wrapper)."""
-    from bankstatements_core.services.row_analysis import RowAnalysisService
+    from bankstatements_core.services.row_analysis import (  # noqa: PLC0415
+        RowAnalysisService,
+    )
 
     service = RowAnalysisService()
     return service.calculate_row_completeness_score(row, columns)
@@ -152,36 +148,36 @@ def calculate_row_completeness_score(row: dict, columns: dict) -> float:
 
 # Explicitly list all public exports for backward compatibility
 __all__ = [
+    "ADMINISTRATIVE_PATTERNS",
+    "CONTENT_DENSITY_THRESHOLD",
     # Column configuration
     "DEFAULT_COLUMNS",
-    "get_column_names",
-    "get_columns_config",
-    "parse_columns_from_env",
+    "ENABLE_PAGE_VALIDATION",
+    "MIN_COLUMN_COVERAGE",
+    "MIN_HEADER_KEYWORDS",
+    "MIN_TABLE_ROWS",
+    "MIN_TRANSACTION_RATIO",
+    "MIN_TRANSACTION_SCORE",
+    "REQUIRE_AMOUNT_COLUMN",
+    "REQUIRE_DATE_COLUMN",
+    "SLIDING_WINDOW_SIZE",
+    "TABLE_BOTTOM_Y",
     # Extraction parameters
     "TABLE_TOP_Y",
-    "TABLE_BOTTOM_Y",
-    "CONTENT_DENSITY_THRESHOLD",
-    "SLIDING_WINDOW_SIZE",
-    "MIN_TRANSACTION_SCORE",
-    "ENABLE_PAGE_VALIDATION",
-    "MIN_TABLE_ROWS",
-    "MIN_COLUMN_COVERAGE",
-    "MIN_TRANSACTION_RATIO",
-    "REQUIRE_DATE_COLUMN",
-    "REQUIRE_AMOUNT_COLUMN",
-    "MIN_HEADER_KEYWORDS",
-    "ADMINISTRATIVE_PATTERNS",
-    # Extraction functions
-    "extract_tables_from_pdf",
-    "detect_table_end_boundary_smart",
-    # Row classification
-    "classify_row_type",
     # Content analysis
     "analyze_content_density",
+    "calculate_column_coverage",
+    # Row classification
+    "classify_row_type",
+    "detect_table_end_boundary_smart",
+    "detect_table_headers",
+    # Extraction functions
+    "extract_tables_from_pdf",
+    "get_column_names",
+    "get_columns_config",
+    "has_column_type",
+    "merge_continuation_lines",
+    "parse_columns_from_env",
     # Validation
     "validate_page_structure",
-    "calculate_column_coverage",
-    "has_column_type",
-    "detect_table_headers",
-    "merge_continuation_lines",
 ]

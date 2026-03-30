@@ -37,17 +37,17 @@ class OutputOrchestrator:
     - Building summary result dictionary
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         output_dir: Path,
         output_strategies: dict[str, Any],
-        monthly_summary_service: "IMonthlySummary",
+        monthly_summary_service: IMonthlySummary,
         column_names: list[str],
         totals_columns: list[str] | None,
         generate_monthly_summary: bool,
-        totals_service: "IColumnTotals | None" = None,
-        file_writer: "IJsonWriter | None" = None,
-        expense_analysis_service: "IExpenseAnalysis | None" = None,
+        totals_service: IColumnTotals | None = None,
+        file_writer: IJsonWriter | None = None,
+        expense_analysis_service: IExpenseAnalysis | None = None,
         generate_expense_analysis: bool = False,
     ):
         """Initialize output orchestrator.
@@ -64,7 +64,9 @@ class OutputOrchestrator:
             expense_analysis_service: Optional service for generating expense analysis
             generate_expense_analysis: Whether to generate expense analysis (default: False)
         """
-        from bankstatements_core.services.totals_calculator import ColumnTotalsService
+        from bankstatements_core.services.totals_calculator import (  # noqa: PLC0415
+            ColumnTotalsService,
+        )
 
         self.output_dir = output_dir
         self.output_strategies = output_strategies
@@ -180,7 +182,7 @@ class OutputOrchestrator:
 
         return output_paths
 
-    def build_summary_result(
+    def build_summary_result(  # noqa: PLR0913
         self,
         pdf_count: int,
         pdfs_extracted: int,
