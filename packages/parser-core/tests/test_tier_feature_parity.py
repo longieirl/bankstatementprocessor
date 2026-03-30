@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pytest
 
-from bankstatements_core.entitlements import EntitlementError, Entitlements
+from bankstatements_core.entitlements import Entitlements
 
 
 class TestTierFeatureParity:

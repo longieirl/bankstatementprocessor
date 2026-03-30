@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from bankstatements_core.extraction.column_identifier import (
     ColumnType,
     ColumnTypeIdentifier,

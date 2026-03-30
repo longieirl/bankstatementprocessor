@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pandas as pd
-import pytest
 
 from bankstatements_core.services.totals_calculator import ColumnTotalsService
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from bankstatements_core.entitlements import EntitlementError, Entitlements
+from bankstatements_core.entitlements import Entitlements
 from bankstatements_core.services.monthly_summary import MonthlySummaryService
 
 

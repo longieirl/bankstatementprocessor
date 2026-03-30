@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-import json
 import tempfile
 import unittest
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import patch
 
 import pandas as pd
-import pytest
 
 from bankstatements_core.config.processor_config import (
     ExtractionConfig,

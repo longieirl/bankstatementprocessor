@@ -2,9 +2,6 @@
 
 from __future__ import annotations
 
-import json
-import os
-
 import pytest
 
 from bankstatements_core.config.environment_parser import EnvironmentParser

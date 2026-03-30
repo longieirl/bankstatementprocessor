@@ -2,10 +2,6 @@
 
 from __future__ import annotations
 
-import os
-
-import pytest
-
 from bankstatements_core.config.app_config import AppConfig
 from bankstatements_core.patterns.repositories import (
     get_config_singleton,

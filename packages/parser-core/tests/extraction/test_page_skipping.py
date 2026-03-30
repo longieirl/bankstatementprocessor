@@ -11,9 +11,6 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.extraction.pdf_extractor import PDFTableExtractor
 
 # Test columns configuration

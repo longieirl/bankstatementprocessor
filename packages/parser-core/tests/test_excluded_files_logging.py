@@ -7,12 +7,9 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from bankstatements_core.config.processor_config import ProcessorConfig
 from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.domain.converters import dicts_to_transactions
-from bankstatements_core.extraction.pdf_extractor import PDFTableExtractor
 
 
 def create_test_processor(input_dir, output_dir):

@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, Mock
-
-import pytest
+from unittest.mock import Mock
 
 from bankstatements_core.extraction.page_header_analyser import PageHeaderAnalyser
 

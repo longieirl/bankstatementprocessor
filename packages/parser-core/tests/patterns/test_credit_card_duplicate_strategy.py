@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from bankstatements_core.domain.models.transaction import Transaction
 from bankstatements_core.patterns.strategies import CreditCardDuplicateStrategy
 
