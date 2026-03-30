@@ -6,7 +6,7 @@
 
 # Security scanning
 bandit==1.9.4
-safety==3.7.0
+pip-audit>=2.7.0
 
 # License compliance
 pip-licenses>=5.0.0
