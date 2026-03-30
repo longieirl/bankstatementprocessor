@@ -42,7 +42,7 @@ pip install -e "packages/parser-free[test]"
 
 ```bash
 # Core tests with coverage
-pytest packages/parser-core/tests/ --cov=bankstatements_core --cov-fail-under=91
+pytest packages/parser-core/tests/ --cov=bankstatements_core --cov-fail-under=92
 
 # Free CLI smoke test
 bankstatements --version
@@ -63,15 +63,14 @@ bankstatements --init
 
 1. Fork the repository and create a branch
 2. Make changes following the code standards below
-3. **Write tests** — 91% coverage on `bankstatements-core` is enforced by CI
+3. **Write tests** — 92% coverage on `bankstatements-core` is enforced by CI
 4. Run quality checks:
    ```bash
    # From packages/parser-core/
-   black src tests
-   isort src tests
-   flake8 src tests --max-line-length=88 --extend-ignore=E203,W503
+   ruff format src tests
+   ruff check src tests
    mypy src --ignore-missing-imports
-   pytest tests/ --cov=bankstatements_core --cov-fail-under=91
+   pytest tests/ --cov=bankstatements_core --cov-fail-under=92
    ```
 5. Submit a PR — CI must pass (lint, boundary check, tests)
 
@@ -81,8 +80,8 @@ bankstatements --init
 
 ### Formatting
 
-- **Line length:** 88 characters (Black default)
-- **Imports:** organised by isort (stdlib → third-party → local)
+- **Line length:** 88 characters (ruff default)
+- **Imports:** organised by ruff (stdlib → third-party → local)
 
 ### Type Hints
 
@@ -110,13 +109,13 @@ def process_transaction(amount: Decimal, date: datetime) -> Transaction:
 
 ### Coverage Requirement
 
-**91% minimum on `bankstatements-core`** — enforced by CI. PRs that drop below this threshold will not be merged.
+**92% minimum on `bankstatements-core`** — enforced by CI. PRs that drop below this threshold will not be merged.
 
 ### Running Tests
 
 ```bash
-# All tests with coverage
-pytest packages/parser-core/tests/ --cov=bankstatements_core --cov-fail-under=91 -v
+# All tests with coverage (integration tests excluded by default)
+pytest packages/parser-core/tests/ --cov=bankstatements_core --cov-fail-under=92 -v
 
 # Specific file or test
 pytest packages/parser-core/tests/services/test_my_service.py -v
@@ -129,12 +128,29 @@ pytest packages/parser-core/tests/ -n auto
 pytest packages/parser-free/tests/ -v
 ```
 
+### Integration Tests
+
+Integration tests run the full processing pipeline against real PDFs on your local machine. They are excluded from the standard test run and never run in CI.
+
+```bash
+# First run — create your local snapshot baseline (requires PDFs in input/)
+cd packages/parser-core
+pytest tests/integration/ -m integration --snapshot-update -v
+
+# Subsequent runs — validate output against your baseline
+pytest tests/integration/ -m integration -v
+```
+
+The snapshot file (`tests/integration/snapshots/output_snapshot.json`) is gitignored — it is personal to your machine and input files.
+
 ### Test Organisation
 
 ```
 packages/parser-core/tests/
 ├── test_processor.py
 ├── test_app.py
+├── integration/          # local-only, requires real PDFs
+│   └── test_output_snapshot.py
 ├── services/
 ├── extraction/
 ├── domain/
@@ -158,9 +174,9 @@ Quick summary:
 
 ### Before Submitting
 
-- [ ] All tests pass with 91%+ coverage
-- [ ] Code is formatted (Black + isort)
-- [ ] Linting passes (Flake8, MyPy)
+- [ ] All tests pass with 92%+ coverage
+- [ ] Code is formatted (`ruff format`)
+- [ ] Linting passes (`ruff check`, MyPy)
 - [ ] New functionality has tests
 - [ ] No regressions in existing tests
 
@@ -168,9 +184,9 @@ Quick summary:
 
 Your PR must pass:
 
-- **lint-core** — Black, isort, Flake8, MyPy on `parser-core`
-- **lint-free** — Black, isort, Flake8 on `parser-free`
-- **test-core** — pytest with 91%+ coverage on `bankstatements-core`
+- **lint-core** — ruff, MyPy on `parser-core`
+- **lint-free** — ruff on `parser-free`
+- **test-core** — pytest with 92%+ coverage on `bankstatements-core`
 - **test-free** — pytest on `parser-free`
 - **boundary-check** — CI fails if `parser-free` imports `bankstatements_premium` or `src.licensing`
 - **security** — Bandit on both packages
