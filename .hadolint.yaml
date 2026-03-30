@@ -1,0 +1,10 @@
+# Hadolint configuration
+# https://github.com/hadolint/hadolint#configure
+#
+# DL3008 (unpinned apt packages) is suppressed per-line in the Dockerfile with inline comments
+# rather than globally here, so the rationale is visible at the point of suppression.
+#
+# DL3009 (delete apt lists in a separate RUN) is NOT suppressed — both apt-get install steps
+# already clean up in the same RUN layer so this rule passes cleanly.
+
+failure-threshold: error

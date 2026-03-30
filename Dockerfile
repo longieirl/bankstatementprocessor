@@ -14,9 +14,11 @@ ARG VCS_REF
 # ============================================================================
 FROM base AS builder
 
+# hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
+# gcc is builder-stage only — never reaches the production image; DL3008 suppressed.
 
 RUN pip install --no-cache-dir --upgrade pip wheel setuptools build
 
@@ -34,9 +36,11 @@ RUN python -c "import sysconfig; print(sysconfig.get_path('purelib'))" | xargs -
 # ============================================================================
 FROM base AS production
 
+# hadolint ignore=DL3008
 RUN apt-get update && apt-get install -y --no-install-recommends \
     poppler-utils \
     && rm -rf /var/lib/apt/lists/*
+# poppler-utils is runtime-critical; pinning not practical. Mitigated by Trivy CI gate.
 
 RUN groupadd -r appuser && useradd -r -g appuser -u 1000 appuser
 
