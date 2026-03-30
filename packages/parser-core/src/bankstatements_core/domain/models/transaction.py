@@ -10,7 +10,10 @@ from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 
 from bankstatements_core.domain.currency import strip_currency_symbols
-from bankstatements_core.domain.models.extraction_warning import ExtractionWarning
+from bankstatements_core.domain.models.extraction_warning import (
+    CODE_DATE_PROPAGATED,
+    ExtractionWarning,
+)
 
 
 @dataclass
@@ -336,7 +339,11 @@ class Transaction:
         )
         result["confidence_score"] = str(self.confidence_score)
         result["extraction_warnings"] = json.dumps(
-            [w.to_dict() for w in self.extraction_warnings]
+            [
+                w.to_dict()
+                for w in self.extraction_warnings
+                if w.code != CODE_DATE_PROPAGATED
+            ]
         )
         result["document_type"] = self.document_type
         result["transaction_type"] = self.transaction_type

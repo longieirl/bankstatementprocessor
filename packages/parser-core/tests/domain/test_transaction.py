@@ -646,7 +646,37 @@ class TestTransactionEnrichmentFields:
         assert tx2.extraction_warnings == []
 
     def test_to_dict_extraction_warnings_serialises_as_json_string(self):
-        """TXEN-02: to_dict() with an ExtractionWarning → JSON string of list of dicts."""
+        """TXEN-02: to_dict() with a non-suppressed ExtractionWarning → JSON string of list of dicts."""
+        from bankstatements_core.domain.models.extraction_warning import (
+            CODE_MISSING_BALANCE,
+        )
+
+        w = ExtractionWarning(
+            code=CODE_MISSING_BALANCE,
+            message="balance field is missing or empty",
+        )
+        tx = Transaction(
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
+            extraction_warnings=[w],
+        )
+        import json
+
+        serialised = json.loads(tx.to_dict()["extraction_warnings"])
+        assert serialised == [
+            {
+                "code": CODE_MISSING_BALANCE,
+                "message": "balance field is missing or empty",
+                "page": None,
+            }
+        ]
+
+    def test_to_dict_date_propagated_warning_suppressed(self):
+        """TXEN-02: to_dict() suppresses DATE_PROPAGATED warnings from output (#78)."""
         w = ExtractionWarning(
             code=CODE_DATE_PROPAGATED,
             message="date propagated from previous row ('01 Jan 2024')",
@@ -663,13 +693,32 @@ class TestTransactionEnrichmentFields:
         import json
 
         serialised = json.loads(tx.to_dict()["extraction_warnings"])
-        assert serialised == [
-            {
-                "code": CODE_DATE_PROPAGATED,
-                "message": "date propagated from previous row ('01 Jan 2024')",
-                "page": None,
-            }
-        ]
+        assert serialised == []
+
+    def test_to_dict_mixed_warnings_only_suppresses_date_propagated(self):
+        """TXEN-02: to_dict() suppresses only DATE_PROPAGATED; other warnings are emitted (#78)."""
+        import json
+
+        from bankstatements_core.domain.models.extraction_warning import (
+            CODE_MISSING_BALANCE,
+        )
+
+        w_date = ExtractionWarning(code=CODE_DATE_PROPAGATED, message="date propagated")
+        w_balance = ExtractionWarning(
+            code=CODE_MISSING_BALANCE, message="balance missing"
+        )
+        tx = Transaction(
+            date="01/01/2024",
+            details="Test",
+            debit=None,
+            credit="10.00",
+            balance="100.00",
+            filename="test.pdf",
+            extraction_warnings=[w_date, w_balance],
+        )
+        serialised = json.loads(tx.to_dict()["extraction_warnings"])
+        assert len(serialised) == 1
+        assert serialised[0]["code"] == CODE_MISSING_BALANCE
 
     def test_to_dict_extraction_warnings_empty_serialises_as_json_array(self):
         """TXEN-02: to_dict() with extraction_warnings=[] → '[]'."""
@@ -715,7 +764,7 @@ class TestTransactionEnrichmentFields:
         assert tx.extraction_warnings == []
 
     def test_extraction_warnings_roundtrip(self):
-        """TXEN-02: from_dict(tx.to_dict()) preserves extraction_warnings."""
+        """TXEN-02: from_dict(tx.to_dict()) suppresses DATE_PROPAGATED warnings (#78)."""
         w = ExtractionWarning(
             code=CODE_DATE_PROPAGATED,
             message="date propagated from previous row ('01 Jan 2024')",
@@ -730,9 +779,7 @@ class TestTransactionEnrichmentFields:
             extraction_warnings=[w],
         )
         restored = Transaction.from_dict(original.to_dict())
-        assert len(restored.extraction_warnings) == 1
-        assert restored.extraction_warnings[0].code == CODE_DATE_PROPAGATED
-        assert restored.extraction_warnings[0].message == w.message
+        assert restored.extraction_warnings == []
 
     def test_extraction_warnings_not_in_additional_fields(self):
         """TXEN-02: extraction_warnings JSON key is gated by standard_keys — not absorbed into additional_fields."""
@@ -853,7 +900,7 @@ class TestTransactionEnrichmentFields:
         assert "confidence_score" not in tx.additional_fields
 
     def test_full_roundtrip_all_three_enrichment_fields(self):
-        """TXEN-04: Full round-trip preserves source_page, confidence_score, and extraction_warnings."""
+        """TXEN-04: Full round-trip preserves source_page and confidence_score; DATE_PROPAGATED warnings suppressed (#78)."""
         original = Transaction(
             date="01/01/2024",
             details="Test roundtrip",
@@ -870,8 +917,7 @@ class TestTransactionEnrichmentFields:
         restored = Transaction.from_dict(original.to_dict())
         assert restored.source_page == 3
         assert restored.confidence_score == 0.8
-        assert len(restored.extraction_warnings) == 1
-        assert restored.extraction_warnings[0].code == CODE_DATE_PROPAGATED
+        assert restored.extraction_warnings == []
 
     def test_backward_compat_old_dict_without_new_keys(self):
         """TXEN-04: Old dict without new keys → from_dict() succeeds with defaults."""
