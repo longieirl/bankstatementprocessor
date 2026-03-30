@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 from bankstatements_core.patterns.repositories import (
     get_config_singleton,
     reset_config_singleton,
