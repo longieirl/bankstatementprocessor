@@ -697,11 +697,11 @@ class TestTransactionEnrichmentFields:
 
     def test_to_dict_mixed_warnings_only_suppresses_date_propagated(self):
         """TXEN-02: to_dict() suppresses only DATE_PROPAGATED; other warnings are emitted (#78)."""
+        import json
+
         from bankstatements_core.domain.models.extraction_warning import (
             CODE_MISSING_BALANCE,
         )
-
-        import json
 
         w_date = ExtractionWarning(code=CODE_DATE_PROPAGATED, message="date propagated")
         w_balance = ExtractionWarning(
