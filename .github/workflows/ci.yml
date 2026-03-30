@@ -4,7 +4,7 @@
 #   changes     — detect which paths changed (skips heavy jobs on workflow-only PRs)
 #   lint-core   — black, isort, ruff, mypy on packages/parser-core
 #   lint-free   — black, isort, ruff on packages/parser-free
-#   security    — bandit + safety on both packages
+#   security    — bandit + pip-audit on both packages
 #   test-core   — pytest with 91% coverage gate (Python matrix), needs lint-core
 #   test-free   — pytest on packages/parser-free, needs lint-free
 
@@ -174,7 +174,7 @@ jobs:
       run: ruff check src tests
 
   security:
-    name: Security — bandit + safety
+    name: Security — bandit + pip-audit
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: changes
@@ -194,7 +194,7 @@ jobs:
 
     - name: Install security tools + packages
       run: |
-        pip install --upgrade pip bandit[toml] safety
+        pip install --upgrade pip bandit[toml] pip-audit
         pip install -e packages/parser-core
         pip install -e packages/parser-free
 
@@ -204,8 +204,8 @@ jobs:
     - name: Bandit — parser-free
       run: bandit -r packages/parser-free/src -f json -o bandit-free.json || true
 
-    - name: Safety scan
-      run: safety scan --json > safety-report.json || true
+    - name: pip-audit — dependency vulnerability scan
+      run: pip-audit -r requirements/base.txt --progress-spinner off -f json -o pip-audit-report.json
 
     - name: Upload security reports
       uses: actions/upload-artifact@v7
@@ -215,7 +215,7 @@ jobs:
         path: |
           bandit-core.json
           bandit-free.json
-          safety-report.json
+          pip-audit-report.json
 
   # ---------------------------------------------------------------------------
   # Test jobs (serial after their respective lint job)
