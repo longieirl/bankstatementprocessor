@@ -15,5 +15,4 @@ pip-licenses>=5.0.0
 PyYAML>=6.0
 
 # Complexity analysis
-radon==6.0.1
-mccabe==0.7.0
+xenon>=0.9.0

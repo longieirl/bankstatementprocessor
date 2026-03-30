@@ -4,7 +4,7 @@
 #   changes     — detect which paths changed (skips heavy jobs on workflow-only PRs)
 #   lint-core   — black, isort, ruff, mypy on packages/parser-core
 #   lint-free   — black, isort, ruff on packages/parser-free
-#   security    — bandit + pip-audit on both packages
+#   security    — bandit + pip-audit + xenon complexity gate
 #   test-core   — pytest with 91% coverage gate (Python matrix), needs lint-core
 #   test-free   — pytest on packages/parser-free, needs lint-free
 
@@ -206,6 +206,19 @@ jobs:
 
     - name: pip-audit — dependency vulnerability scan
       run: pip-audit -r requirements/base.txt --progress-spinner off -f json -o pip-audit-report.json
+
+    - name: Complexity gate (Xenon)
+      run: |
+        # table_detector.py: _detect_text_based_table grade E (score 32) — PDF heuristic hotspot,
+        #   pdfplumber word-coordinate coupling blocks safe decomposition without characterisation tests.
+        #   Temporary exclusion — remove once refactored. Tracked: https://github.com/longieirl/bankstatementprocessor/issues/98
+        # template_detector.py: get_detection_explanation grade D (score 22) — diagnostic method;
+        #   exhaustive path coverage of all scoring outcomes is inherent to its purpose. Stable exemption.
+        # commands/init.py: init_directories grade D (score 26) — CLI entrypoint orchestration;
+        #   complexity is setup sequencing (mkdir + sample file creation), not extractable decision logic. Stable exemption.
+        xenon --max-average A --max-modules B --max-absolute C \
+          --exclude "packages/parser-core/src/bankstatements_core/analysis/table_detector.py,packages/parser-core/src/bankstatements_core/templates/template_detector.py,packages/parser-core/src/bankstatements_core/commands/init.py" \
+          packages/parser-core/src
 
     - name: Upload security reports
       uses: actions/upload-artifact@v7
