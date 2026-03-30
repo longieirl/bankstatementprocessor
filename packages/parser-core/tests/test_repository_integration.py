@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from unittest.mock import MagicMock, call
-
-import pytest
+from unittest.mock import MagicMock
 
 from bankstatements_core.config.processor_config import ProcessorConfig
 from bankstatements_core.patterns.repositories import (

@@ -9,11 +9,6 @@ from unittest.mock import patch
 
 import pytest
 
-from bankstatements_core.templates.template_model import (
-    BankTemplate,
-    TemplateDetectionConfig,
-    TemplateExtractionConfig,
-)
 from bankstatements_core.templates.template_registry import TemplateRegistry
 
 

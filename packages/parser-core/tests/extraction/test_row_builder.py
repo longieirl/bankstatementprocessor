@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from unittest.mock import Mock
 
-import pytest
-
 from bankstatements_core.extraction.row_builder import RowBuilder
 
 TEST_COLUMNS = {

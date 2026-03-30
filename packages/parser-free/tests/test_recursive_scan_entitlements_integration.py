@@ -14,7 +14,7 @@ import pytest
 
 from bankstatements_core.entitlements import Entitlements
 from bankstatements_core.facades.processing_facade import BankStatementProcessingFacade
-from bankstatements_free.app import AppConfig, ConfigurationError
+from bankstatements_free.app import AppConfig
 
 
 class TestRecursiveScanEntitlementEnforcement:

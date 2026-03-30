@@ -13,8 +13,6 @@ import tempfile
 from pathlib import Path
 from unittest.mock import Mock
 
-import pytest
-
 from bankstatements_core.config.processor_config import (
     ExtractionConfig,
     OutputConfig,

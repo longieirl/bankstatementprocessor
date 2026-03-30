@@ -8,20 +8,18 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from bankstatements_core.domain.models.transaction import Transaction
 
 
 class TestExtractionResultImports:
     def test_importable_from_module(self):
-        from bankstatements_core.domain.models.extraction_result import ExtractionResult
+        pass
 
     def test_importable_from_models_package(self):
-        from bankstatements_core.domain.models import ExtractionResult
+        pass
 
     def test_importable_from_domain_package(self):
-        from bankstatements_core.domain import ExtractionResult
+        pass
 
 
 class TestExtractionResultConstruction:

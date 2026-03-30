@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-import pytest
-
 from bankstatements_core.domain.models.extraction_warning import (
     CODE_DATE_PROPAGATED,
     ExtractionWarning,

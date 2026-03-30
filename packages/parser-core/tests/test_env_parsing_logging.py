@@ -1,5 +1,3 @@
-import os
-
 from bankstatements_core.pdf_table_extractor import (
     DEFAULT_COLUMNS,
     parse_columns_from_env,
