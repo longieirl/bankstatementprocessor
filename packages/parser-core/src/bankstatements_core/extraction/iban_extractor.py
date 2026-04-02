@@ -153,7 +153,7 @@ class IBANExtractor:
 
                 # Validate the IBAN
                 if self.is_valid_iban(cleaned_iban):
-                    logger.info(f"Found valid IBAN: {self._mask_iban(cleaned_iban)}")
+                    logger.info("Found valid IBAN: %s", self._mask_iban(cleaned_iban))
                     return cleaned_iban
 
         return None
@@ -183,21 +183,23 @@ class IBANExtractor:
 
         # Check if country code is valid
         if country_code not in self.IBAN_LENGTHS:
-            logger.debug(f"Unknown country code: {country_code}")
+            logger.debug("Unknown country code: %s", country_code)
             return False
 
         # Check if length matches expected length for country
         expected_length = self.IBAN_LENGTHS[country_code]
         if len(iban) != expected_length:
             logger.debug(
-                f"Invalid length for {country_code}: "
-                f"expected {expected_length}, got {len(iban)}"
+                "Invalid length for %s: expected %s, got %s",
+                country_code,
+                expected_length,
+                len(iban),
             )
             return False
 
         # Check digits must be numeric
         if not check_digits.isdigit():
-            logger.debug(f"Check digits not numeric: {check_digits}")
+            logger.debug("Check digits not numeric: %s", check_digits)
             return False
 
         # Verify only alphanumeric characters

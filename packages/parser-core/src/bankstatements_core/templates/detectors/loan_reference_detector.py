@@ -78,8 +78,10 @@ class LoanReferenceDetector(BaseDetector):
                         break
                 except re.error as e:
                     logger.error(
-                        f"Invalid loan reference regex pattern '{pattern}' "
-                        f"in template '{template.id}': {e}"
+                        "Invalid loan reference regex pattern '%s' in template '%s': %s",
+                        pattern,
+                        template.id,
+                        e,
                     )
 
                 if matched_ref:
@@ -93,8 +95,11 @@ class LoanReferenceDetector(BaseDetector):
                     confidence = 0.95
 
                 logger.info(
-                    f"Loan reference '{matched_ref}' matched template '{template.name}' "
-                    f"(pattern: {matched_pattern}, confidence: {confidence})"
+                    "Loan reference '%s' matched template '%s' (pattern: %s, confidence: %s)",
+                    matched_ref,
+                    template.name,
+                    matched_pattern,
+                    confidence,
                 )
 
                 results.append(

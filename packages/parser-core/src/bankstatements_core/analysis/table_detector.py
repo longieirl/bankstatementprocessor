@@ -56,7 +56,10 @@ class TableDetector:
         page_width = page.width
 
         logger.debug(
-            f"Detecting tables on page {page_num} (size: {page_width}x{page_height})"
+            "Detecting tables on page %s (size: %sx%s)",
+            page_num,
+            page_width,
+            page_height,
         )
 
         # Use pdfplumber's find_tables
@@ -70,18 +73,27 @@ class TableDetector:
             )
 
             logger.debug(
-                f"  Table {i+1}: {bbox} (height={bbox.height:.1f}px, area={bbox.area:.0f}px²)"
+                "  Table %s: %s (height=%.1fpx, area=%.0fpx²)",
+                i + 1,
+                bbox,
+                bbox.height,
+                bbox.area,
             )
 
             # Filter by minimum height
             if bbox.height >= self.min_table_height:
                 detected_bboxes.append(bbox)
                 logger.debug(
-                    f"    ✓ Table {i+1} accepted (height >= {self.min_table_height})"
+                    "    ✓ Table %s accepted (height >= %s)",
+                    i + 1,
+                    self.min_table_height,
                 )
             else:
                 logger.debug(
-                    f"    ✗ Table {i+1} rejected (height {bbox.height:.1f} < {self.min_table_height})"
+                    "    ✗ Table %s rejected (height %.1f < %s)",
+                    i + 1,
+                    bbox.height,
+                    self.min_table_height,
                 )
 
         # Fallback: If no tables detected with find_tables, try text-based detection
@@ -91,13 +103,16 @@ class TableDetector:
             if text_table:
                 detected_bboxes.append(text_table)
                 logger.info(
-                    f"✓ Found table using text-based fallback: {text_table} "
-                    f"(height={text_table.height:.1f}px)"
+                    "✓ Found table using text-based fallback: %s (height=%.1fpx)",
+                    text_table,
+                    text_table.height,
                 )
 
         logger.info(
-            f"Page {page_num}: {len(detected_bboxes)} tables detected "
-            f"({len(tables) - len(detected_bboxes)} filtered)"
+            "Page %s: %s tables detected (%s filtered)",
+            page_num,
+            len(detected_bboxes),
+            len(tables) - len(detected_bboxes),
         )
 
         return TableDetectionResult(
@@ -126,7 +141,9 @@ class TableDetector:
         for bbox in detection.tables:
             expanded_bbox = expand_bbox(bbox, margin=margin)
             expanded.append(expanded_bbox)
-            logger.debug(f"Expanded table {bbox} -> {expanded_bbox} (margin={margin})")
+            logger.debug(
+                "Expanded table %s -> %s (margin=%s)", bbox, expanded_bbox, margin
+            )
 
         return expanded
 
@@ -143,7 +160,7 @@ class TableDetector:
             return None
 
         largest = max(detection.tables, key=lambda bbox: bbox.area)
-        logger.debug(f"Largest table: {largest} (area={largest.area:.0f}px²)")
+        logger.debug("Largest table: %s (area=%.0fpx²)", largest, largest.area)
         return largest
 
     def _detect_text_based_table(  # noqa: C901, PLR0912, PLR0915
@@ -207,8 +224,10 @@ class TableDetector:
             if keyword_count >= 3 and len(words_at_y) >= 4 and len(words_at_y) <= 10:
                 header_y = y_pos
                 logger.debug(
-                    f"Found header row at Y={y_pos} with {keyword_count} keywords: "
-                    f"{text_at_y[:60]}..."
+                    "Found header row at Y=%s with %s keywords: %s...",
+                    y_pos,
+                    keyword_count,
+                    text_at_y[:60],
                 )
                 break
 
@@ -251,7 +270,7 @@ class TableDetector:
             if is_footer:
                 # Found footer - mark where it starts
                 footer_start_y = y_pos
-                logger.debug(f"Footer detected at Y={y_pos}: {text_at_y[:50]}...")
+                logger.debug("Footer detected at Y=%s: %s...", y_pos, text_at_y[:50])
                 break
 
             # Check for large gap from last transaction (likely footer section)
@@ -260,8 +279,9 @@ class TableDetector:
                 # Large gap + sparse content = likely footer section
                 footer_start_y = y_pos
                 logger.debug(
-                    f"Large gap ({gap_from_last:.1f}px) detected at Y={y_pos}, "
-                    f"footer section likely starts here"
+                    "Large gap (%.1fpx) detected at Y=%s, footer section likely starts here",
+                    gap_from_last,
+                    y_pos,
                 )
                 break
 
@@ -284,8 +304,9 @@ class TableDetector:
             # Footer found - extend table to just before footer (leave 10px margin)
             table_bottom_y = footer_start_y - 10
             logger.debug(
-                f"Table extended to footer boundary: Y={table_bottom_y:.1f} "
-                f"(footer starts at Y={footer_start_y:.1f})"
+                "Table extended to footer boundary: Y=%.1f (footer starts at Y=%.1f)",
+                table_bottom_y,
+                footer_start_y,
             )
         else:
             # No footer found - use last transaction + margin (single page case)
@@ -302,8 +323,9 @@ class TableDetector:
                     avg_row_spacing = sum(row_spacings) / len(row_spacings)
                     bottom_margin = avg_row_spacing * 1.5
                     logger.debug(
-                        f"Calculated bottom margin: {bottom_margin:.1f}px "
-                        f"(avg row spacing: {avg_row_spacing:.1f}px × 1.5)"  # noqa: RUF001
+                        "Calculated bottom margin: %.1fpx (avg row spacing: %.1fpx × 1.5)",  # noqa: RUF001
+                        bottom_margin,
+                        avg_row_spacing,
                     )
                 else:
                     bottom_margin = 20
@@ -314,11 +336,15 @@ class TableDetector:
 
             table_bottom_y = max(table_y_positions) + bottom_margin
             logger.debug(
-                f"No footer found, using last transaction + margin: Y={table_bottom_y:.1f}"
+                "No footer found, using last transaction + margin: Y=%.1f",
+                table_bottom_y,
             )
         logger.debug(
-            f"Table boundary: Y={table_top_y:.1f} to Y={table_bottom_y:.1f} "
-            f"(height={table_bottom_y - table_top_y:.1f}px, {len(table_y_positions)} rows)"
+            "Table boundary: Y=%.1f to Y=%.1f (height=%.1fpx, %s rows)",
+            table_top_y,
+            table_bottom_y,
+            table_bottom_y - table_top_y,
+            len(table_y_positions),
         )
 
         # Get X boundaries from all table words (including header)
@@ -337,13 +363,16 @@ class TableDetector:
         # Validate minimum height
         if bbox.height < self.min_table_height:
             logger.debug(
-                f"Text-based table too small: height={bbox.height:.1f}px "
-                f"< {self.min_table_height}px"
+                "Text-based table too small: height=%.1fpx < %spx",
+                bbox.height,
+                self.min_table_height,
             )
             return None
 
         logger.debug(
-            f"Text-based table detected: {bbox} (height={bbox.height:.1f}px, "
-            f"header at Y={header_y})"
+            "Text-based table detected: %s (height=%.1fpx, header at Y=%s)",
+            bbox,
+            bbox.height,
+            header_y,
         )
         return bbox

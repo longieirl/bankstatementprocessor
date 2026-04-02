@@ -122,7 +122,9 @@ class TableBoundaryDetector:
         )
         if result:
             logger.debug(
-                f"Strong end indicator found by {result.method} at Y={result.boundary_y}"
+                "Strong end indicator found by %s at Y=%s",
+                result.method,
+                result.boundary_y,
             )
             return result.boundary_y
 
@@ -132,8 +134,9 @@ class TableBoundaryDetector:
         )
         if result:
             logger.debug(
-                f"Spatial gap detected at Y={result.boundary_y} "
-                f"(gap={result.confidence}px)"
+                "Spatial gap detected at Y=%s (gap=%spx)",
+                result.boundary_y,
+                result.confidence,
             )
             return result.boundary_y
 
@@ -143,7 +146,8 @@ class TableBoundaryDetector:
         )
         if result:
             logger.debug(
-                f"Column structure breakdown detected - ending at Y={result.boundary_y}"
+                "Column structure breakdown detected - ending at Y=%s",
+                result.boundary_y,
             )
             return result.boundary_y
 
@@ -153,8 +157,9 @@ class TableBoundaryDetector:
         )
         if result:
             logger.debug(
-                f"Ultra-conservative: {result.confidence} consecutive "
-                f"non-transaction rows - ending at Y={result.boundary_y}"
+                "Ultra-conservative: %s consecutive non-transaction rows - ending at Y=%s",
+                result.confidence,
+                result.boundary_y,
             )
             return result.boundary_y
 

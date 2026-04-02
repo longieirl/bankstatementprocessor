@@ -114,8 +114,8 @@ class PDFTableExtractor:
                     page, self.table_top_y
                 ):
                     logger.warning(
-                        f"Credit card statement detected in {pdf_path.name}. "
-                        f"Credit card statements are not currently supported. Skipping file."
+                        "Credit card statement detected in %s. Credit card statements are not currently supported. Skipping file.",
+                        pdf_path.name,
                     )
                     return ExtractionResult(
                         transactions=[],
@@ -134,7 +134,10 @@ class PDFTableExtractor:
                     iban = self._header_analyser.extract_iban(page)
                     if iban:
                         logger.info(
-                            f"IBAN found on page {page_num}: {iban[:4]}****{iban[-4:]}"
+                            "IBAN found on page %s: %s****%s",
+                            page_num,
+                            iban[:4],
+                            iban[-4:],
                         )
 
                 page_rows = self._extract_page(page, page_num)
@@ -142,8 +145,9 @@ class PDFTableExtractor:
                     continue
 
                 logger.info(
-                    f"Page {page_num}: Valid table structure found, "
-                    f"processing {len(page_rows)} rows"
+                    "Page %s: Valid table structure found, processing %s rows",
+                    page_num,
+                    len(page_rows),
                 )
 
                 rows.extend(page_processor.process_page(page_rows))
@@ -180,8 +184,9 @@ class PDFTableExtractor:
                 page_rows, self.columns
             ):
                 logger.info(
-                    f"Page {page_num}: Invalid table structure detected, "
-                    f"skipping {len(page_rows)} rows"
+                    "Page %s: Invalid table structure detected, skipping %s rows",
+                    page_num,
+                    len(page_rows),
                 )
                 return None
 
@@ -236,7 +241,9 @@ class PDFTableExtractor:
                 if not HeaderDetectionService().detect_headers(
                     header_words, self.columns, min_keywords=MIN_HEADER_KEYWORDS
                 ):
-                    logger.info(f"Page {page_num}: No table headers detected, skipping")
+                    logger.info(
+                        "Page %s: No table headers detected, skipping", page_num
+                    )
                     return None
 
             from bankstatements_core.extraction.extraction_facade import (  # noqa: PLC0415
@@ -253,8 +260,10 @@ class PDFTableExtractor:
 
             if dynamic_bottom_y > table_bottom_y:
                 logger.warning(
-                    f"Page {page_num}: Dynamic boundary ({dynamic_bottom_y}) exceeds "
-                    f"static boundary ({table_bottom_y}), using static boundary"
+                    "Page %s: Dynamic boundary (%s) exceeds static boundary (%s), using static boundary",
+                    page_num,
+                    dynamic_bottom_y,
+                    table_bottom_y,
                 )
                 dynamic_bottom_y = table_bottom_y
 
@@ -284,7 +293,7 @@ class PDFTableExtractor:
             if not HeaderDetectionService().detect_headers(
                 header_words, self.columns, min_keywords=MIN_HEADER_KEYWORDS
             ):
-                logger.info(f"Page {page_num}: No table headers detected, skipping")
+                logger.info("Page %s: No table headers detected, skipping", page_num)
                 return None
 
         return words  # type: ignore[no-any-return]

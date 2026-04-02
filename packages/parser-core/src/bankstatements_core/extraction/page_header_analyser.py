@@ -49,11 +49,12 @@ class PageHeaderAnalyser:
                 for pattern in _CREDIT_CARD_PATTERNS:
                     if re.search(pattern, header_text, re.IGNORECASE):
                         logger.debug(
-                            f"Credit card indicator found in header: pattern '{pattern}' matched"
+                            "Credit card indicator found in header: pattern '%s' matched",
+                            pattern,
                         )
                         return True
         except (AttributeError, ValueError, TypeError) as e:
-            logger.warning(f"Error checking for credit card statement: {e}")
+            logger.warning("Error checking for credit card statement: %s", e)
         return False
 
     def extract_iban(self, page: Any) -> str | None:
@@ -79,6 +80,6 @@ class PageHeaderAnalyser:
                 if iban:
                     return iban
         except (AttributeError, ValueError, KeyError, TypeError) as e:
-            logger.warning(f"Error extracting IBAN from page: {e}")
+            logger.warning("Error extracting IBAN from page: %s", e)
 
         return None

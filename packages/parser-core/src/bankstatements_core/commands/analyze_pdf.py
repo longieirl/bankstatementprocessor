@@ -71,7 +71,7 @@ class PDFAnalyzer:
         if not self.pdf_path.exists():
             raise FileNotFoundError(f"PDF file not found: {self.pdf_path}")
 
-        logger.info(f"🔍 Analyzing PDF: {self.pdf_path}")
+        logger.info("🔍 Analyzing PDF: %s", self.pdf_path)
         logger.info(
             "⚠️  Analysis utility operates outside entitlement system (no paid features)"
         )
@@ -84,7 +84,10 @@ class PDFAnalyzer:
                 page_width = first_page.width
 
                 logger.info(
-                    f"PDF: {len(pdf.pages)} pages, size: {page_width:.1f}x{page_height:.1f}"
+                    "PDF: %s pages, size: %.1fx%.1f",
+                    len(pdf.pages),
+                    page_width,
+                    page_height,
                 )
 
                 # Step 1-2: Detect tables
@@ -98,7 +101,7 @@ class PDFAnalyzer:
                 # Log table detections
                 for i, table_bbox in enumerate(table_detection.tables, 1):
                     logger.info(
-                        f"  Table {i}: {table_bbox}, " f"area={table_bbox.area:.0f}px²"
+                        "  Table %s: %s, area=%.0fpx²", i, table_bbox, table_bbox.area
                     )
 
                 # Use largest table for analysis
@@ -110,9 +113,9 @@ class PDFAnalyzer:
                 logger.info("Step 3-4: Extracting IBAN candidates (first page only)...")
                 iban_candidates = self.iban_filter.extract_iban_candidates(first_page)
 
-                logger.info(f"  Found {len(iban_candidates)} IBAN candidates")
+                logger.info("  Found %s IBAN candidates", len(iban_candidates))
                 for candidate in iban_candidates:
-                    logger.info(f"    - {candidate.masked} at {candidate.bbox}")
+                    logger.info("    - %s at %s", candidate.masked, candidate.bbox)
 
                 # Step 5: Filter by table overlap
                 logger.info("Step 5: Filtering IBANs by table overlap...")
@@ -124,8 +127,9 @@ class PDFAnalyzer:
                 )
 
                 logger.info(
-                    f"  {len(filtered_candidates)} IBANs after filtering "
-                    f"({len(iban_candidates) - len(filtered_candidates)} rejected)"
+                    "  %s IBANs after filtering (%s rejected)",
+                    len(filtered_candidates),
+                    len(iban_candidates) - len(filtered_candidates),
                 )
 
                 # Step 6: Score and select best IBAN
@@ -138,18 +142,18 @@ class PDFAnalyzer:
 
                     if best_iban:
                         logger.info(
-                            f"  ✓ Selected IBAN: {best_iban.masked} "
-                            f"(score: {best_iban.confidence_score:.1f})"
+                            "  ✓ Selected IBAN: %s (score: %.1f)",
+                            best_iban.masked,
+                            best_iban.confidence_score,
                         )
-                        logger.info(f"    Location: {best_iban.bbox}")
+                        logger.info("    Location: %s", best_iban.bbox)
                         logger.info("    Reason: Header area bonus, Y-position score")
                 # Fallback: If spatial filtering removed all IBANs,
                 # use unfiltered candidates (for template generation,
                 # any valid IBAN is better than none)
                 elif iban_candidates:
                     logger.warning(
-                        "  ⚠️  All IBANs filtered by spatial overlap, "
-                        "using best unfiltered candidate for template"
+                        "  ⚠️  All IBANs filtered by spatial overlap, using best unfiltered candidate for template"
                     )
                     scored_candidates = self.iban_filter.score_candidates(
                         iban_candidates, page_height
@@ -157,8 +161,9 @@ class PDFAnalyzer:
                     best_iban = self.iban_filter.select_best_iban(scored_candidates)
                     if best_iban:
                         logger.info(
-                            f"  ✓ Using unfiltered IBAN: {best_iban.masked} "
-                            f"(score: {best_iban.confidence_score:.1f})"
+                            "  ✓ Using unfiltered IBAN: %s (score: %.1f)",
+                            best_iban.masked,
+                            best_iban.confidence_score,
                         )
                 else:
                     best_iban = None
@@ -170,9 +175,9 @@ class PDFAnalyzer:
                     first_page, largest_table
                 )
 
-                logger.info(f"  Detected {len(columns)} columns:")
+                logger.info("  Detected %s columns:", len(columns))
                 for name, (x_min, x_max) in columns.items():
-                    logger.info(f"    {name}: ({x_min:.1f}, {x_max:.1f})")
+                    logger.info("    %s: (%.1f, %.1f)", name, x_min, x_max)
 
                 # Generate template
                 logger.info("  Generating template JSON...")
@@ -188,7 +193,7 @@ class PDFAnalyzer:
                 # Save template if output path specified
                 if self.output_path:
                     self.template_generator.save_template(template, self.output_path)
-                    logger.info(f"✓ Template saved to: {self.output_path}")
+                    logger.info("✓ Template saved to: %s", self.output_path)
                 else:
                     # Show sample of generated template
                     logger.info("Generated template JSON (sample):")
@@ -221,7 +226,8 @@ class PDFAnalyzer:
                 # Step 8: Optional validation with provided template
                 if self.template_path:
                     logger.info(
-                        f"Step 8: Validating extraction with template {self.template_path}"
+                        "Step 8: Validating extraction with template %s",
+                        self.template_path,
                     )
                     self._validate_extraction(pdf, self.template_path)
 
@@ -230,11 +236,13 @@ class PDFAnalyzer:
                 total_transactions = self._log_transaction_stats(pdf, table_detection)
 
                 logger.info(
-                    f"✓ Analysis complete. Template generated with {len(columns)} columns."
+                    "✓ Analysis complete. Template generated with %s columns.",
+                    len(columns),
                 )
                 if self.output_path:
                     logger.info(
-                        f"  Next step: Run with --template {self.output_path} to test extraction"
+                        "  Next step: Run with --template %s to test extraction",
+                        self.output_path,
                     )
 
                 return {
@@ -248,7 +256,7 @@ class PDFAnalyzer:
 
         except (OSError, ValueError, AttributeError, TypeError) as e:
             # Expected errors: file I/O, invalid PDF structure, missing attributes, type errors
-            logger.exception(f"❌ Analysis failed: {e}")
+            logger.exception("❌ Analysis failed: %s", e)
             raise ValueError(f"PDF analysis failed: {e}") from e
         # Let unexpected errors bubble up
 
@@ -263,7 +271,7 @@ class PDFAnalyzer:
         """
         import json  # noqa: PLC0415
 
-        logger.info(f"  Loading template: {template_path.stem}")
+        logger.info("  Loading template: %s", template_path.stem)
 
         try:
             # Load template manually (no TemplateRegistry to avoid entitlement checks)
@@ -291,9 +299,9 @@ class PDFAnalyzer:
             if rows is None:
                 rows = []
 
-            logger.info(f"  ✓ Validation: Extracted {len(rows)} rows from page 1")
+            logger.info("  ✓ Validation: Extracted %s rows from page 1", len(rows))
             logger.info(
-                f"  ✓ Validation: Columns detected: {', '.join(columns.keys())}"
+                "  ✓ Validation: Columns detected: %s", ", ".join(columns.keys())
             )
 
             # Try to find IBAN using IBANExtractor
@@ -308,18 +316,18 @@ class PDFAnalyzer:
 
             if iban_found:
                 masked = iban_extractor._mask_iban(iban_found)
-                logger.info(f"  ✓ Validation: IBAN = {masked}")
+                logger.info("  ✓ Validation: IBAN = %s", masked)
             else:
                 logger.warning("  ⚠️  Validation: No IBAN detected")
 
             logger.info("  ✓ Validation complete. Template is working correctly.")
             logger.info(
-                f"  If extraction incorrect, edit {template_path.name} and re-run."
+                "  If extraction incorrect, edit %s and re-run.", template_path.name
             )
 
         except (OSError, ValueError, AttributeError, KeyError) as e:
             # Expected errors: file I/O, extraction errors, missing attributes/keys
-            logger.error(f"  ❌ Validation failed: {e}")
+            logger.error("  ❌ Validation failed: %s", e)
         # Let unexpected errors bubble up
 
     def _log_transaction_stats(self, pdf: Any, table_detection: Any) -> int:
@@ -344,12 +352,12 @@ class PDFAnalyzer:
                 largest = self.table_detector.get_largest_table(page_detection)
                 estimated_rows = int(largest.height / 15) if largest else 0
 
-                logger.info(f"  Page {i}: ~{estimated_rows} potential transactions")
+                logger.info("  Page %s: ~%s potential transactions", i, estimated_rows)
                 total_transactions += estimated_rows
             else:
-                logger.info(f"  Page {i}: No tables detected")
+                logger.info("  Page %s: No tables detected", i)
 
-        logger.info(f"  Total transactions across all pages: ~{total_transactions}")
+        logger.info("  Total transactions across all pages: ~%s", total_transactions)
         return total_transactions
 
 
@@ -426,7 +434,7 @@ Examples:
 
     except (ValueError, OSError, KeyError) as e:
         # Expected errors: invalid PDFs, file I/O errors (including FileNotFoundError), configuration errors
-        logger.error(f"❌ Error: {e}")
+        logger.error("❌ Error: %s", e)
         sys.exit(1)
     # Let unexpected errors bubble up (will be caught by Python and show stack trace)
 

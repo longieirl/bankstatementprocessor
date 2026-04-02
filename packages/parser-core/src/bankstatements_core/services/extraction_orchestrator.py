@@ -83,10 +83,10 @@ class ExtractionOrchestrator:
                         t.name for t in all_templates if not t.detection.iban_patterns
                     )
                     logger.warning(
-                        f"{self._entitlements.tier} tier requires IBAN "
-                        f"patterns for PDF processing. "
-                        f"Ignoring {skipped} template(s) "
-                        f"without IBAN patterns: {skipped_names}"
+                        "%s tier requires IBAN patterns for PDF processing. Ignoring %s template(s) without IBAN patterns: %s",
+                        self._entitlements.tier,
+                        skipped,
+                        skipped_names,
                     )
                     template_registry = template_registry.filtered_by_ids(iban_only_ids)
 
@@ -96,9 +96,9 @@ class ExtractionOrchestrator:
             enabled_templates = template_registry.list_enabled()
             enabled_names = ", ".join(t.name for t in enabled_templates)
             logger.info(
-                f"Template detection system initialized with "
-                f"{len(enabled_templates)} enabled template(s): "
-                f"{enabled_names}"
+                "Template detection system initialized with %s enabled template(s): %s",
+                len(enabled_templates),
+                enabled_names,
             )
 
             # Check for forced template override from environment
@@ -108,19 +108,19 @@ class ExtractionOrchestrator:
                 self._forced_template = forced
                 if self._forced_template:
                     logger.info(
-                        f"FORCE_TEMPLATE set: Using '{self._forced_template.name}' "
-                        "for all PDFs"
+                        "FORCE_TEMPLATE set: Using '%s' for all PDFs",
+                        self._forced_template.name,
                     )
                 else:
                     logger.error(
-                        f"FORCE_TEMPLATE '{force_template_id}' not found. "
-                        "Using auto-detection."
+                        "FORCE_TEMPLATE '%s' not found. Using auto-detection.",
+                        force_template_id,
                     )
         except (ValueError, FileNotFoundError, KeyError) as e:
             # Expected errors: invalid config, missing files, missing keys
             logger.warning(
-                f"Failed to initialize template system: {e}. "
-                "Using default configuration."
+                "Failed to initialize template system: %s. Using default configuration.",
+                e,
             )
         # Let unexpected errors (AttributeError, TypeError, etc.) bubble up
 
@@ -149,7 +149,7 @@ class ExtractionOrchestrator:
 
         # Log template usage
         if template:
-            logger.info(f"Using template: {template.name} for {pdf_path.name}")
+            logger.info("Using template: %s for %s", template.name, pdf_path.name)
 
         # Extract transactions using template
         result = extract_tables_from_pdf(
@@ -164,7 +164,10 @@ class ExtractionOrchestrator:
         # Log IBAN if found
         if result.iban:
             logger.info(
-                f"IBAN extracted from {pdf_path.name}: {result.iban[:4]}****{result.iban[-4:]}"
+                "IBAN extracted from %s: %s****%s",
+                pdf_path.name,
+                result.iban[:4],
+                result.iban[-4:],
             )
 
         return result
@@ -187,13 +190,16 @@ class ExtractionOrchestrator:
                 # Template detector expects pdfplumber.Page, so unwrap the adapter
                 first_page = first_page_adapter.underlying_page  # type: ignore[attr-defined]
                 template = self._template_detector.detect_template(pdf_path, first_page)
-                logger.info(f"Detected template: {template.name} for {pdf_path.name}")
+                logger.info(
+                    "Detected template: %s for %s", template.name, pdf_path.name
+                )
                 return template
         except (OSError, AttributeError, IndexError, KeyError) as e:
             # Expected errors: file access, page access, missing attributes, missing keys
             logger.warning(
-                f"Template detection failed for {pdf_path.name}: {e}. "
-                "Using defaults."
+                "Template detection failed for %s: %s. Using defaults.",
+                pdf_path.name,
+                e,
             )
             return None
         # Let unexpected errors bubble up

@@ -81,8 +81,10 @@ class CardNumberDetector(BaseDetector):
                         break
                 except re.error as e:
                     logger.error(
-                        f"Invalid card number regex pattern '{pattern}' "
-                        f"in template '{template.id}': {e}"
+                        "Invalid card number regex pattern '%s' in template '%s': %s",
+                        pattern,
+                        template.id,
+                        e,
                     )
 
                 if matched_card:
@@ -96,8 +98,11 @@ class CardNumberDetector(BaseDetector):
                     confidence = 0.95
 
                 logger.info(
-                    f"Card number '{matched_card}' matched template '{template.name}' "
-                    f"(pattern: {matched_pattern}, confidence: {confidence})"
+                    "Card number '%s' matched template '%s' (pattern: %s, confidence: %s)",
+                    matched_card,
+                    template.name,
+                    matched_pattern,
+                    confidence,
                 )
 
                 results.append(

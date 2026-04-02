@@ -73,7 +73,7 @@ def init_directories(  # noqa: C901, PLR0912, PLR0915
                         _echo(f"✓ Created: {dir_path.relative_to(base)}")
                 except OSError as e:
                     # Expected errors: permission issues, disk full
-                    logger.error(f"Failed to create directory {dir_path}: {e}")
+                    logger.error("Failed to create directory %s: %s", dir_path, e)
                     if verbose:
                         _echo(f"✗ Failed to create {dir_path.relative_to(base)}: {e}")
                     return 1
@@ -102,7 +102,7 @@ OUTPUT_FORMATS=csv,json
                     if verbose:
                         _echo("✓ Created: .env")
                 except OSError as e:
-                    logger.warning(f"Failed to create .env file: {e}")
+                    logger.warning("Failed to create .env file: %s", e)
                     if verbose:
                         _echo(f"✗ Failed to create .env: {e}")
             elif verbose:
@@ -139,7 +139,7 @@ For recursive scanning (PAID tier), organize statements in subdirectories.
                     if verbose:
                         _echo("✓ Created: input/README.md")
                 except OSError as e:
-                    logger.warning(f"Failed to create input README: {e}")
+                    logger.warning("Failed to create input README: %s", e)
 
         # Success message
         if verbose:

@@ -113,15 +113,17 @@ class IBANGroupingService:
         total_transactions = sum(len(group) for group in grouped.values())
 
         logger.info(
-            f"Grouped {total_transactions} transaction(s) into "
-            f"{total_groups} IBAN group(s)"
+            "Grouped %s transaction(s) into %s IBAN group(s)",
+            total_transactions,
+            total_groups,
         )
 
         for iban_suffix, transactions in grouped.items():
             if iban_suffix == "unknown":
-                logger.info(f"  No IBAN (unknown): {len(transactions)} transaction(s)")
+                logger.info("  No IBAN (unknown): %s transaction(s)", len(transactions))
             else:
                 logger.info(
-                    f"  IBAN ending in {iban_suffix}: "
-                    f"{len(transactions)} transaction(s)"
+                    "  IBAN ending in %s: %s transaction(s)",
+                    iban_suffix,
+                    len(transactions),
                 )

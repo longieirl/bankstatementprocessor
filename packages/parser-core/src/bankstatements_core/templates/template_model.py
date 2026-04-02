@@ -218,10 +218,14 @@ class TemplateExtractionConfig:
             if current_end > next_start:
                 overlap = current_end - next_start
                 logger.warning(
-                    f"Column overlap detected: '{current_name}' [{current_start}, {current_end}] "
-                    f"overlaps with '{next_name}' [{next_start}, {next_end}]. "
-                    f"Overlap: {overlap:.1f} points. "
-                    f"This may cause data extraction issues."
+                    "Column overlap detected: '%s' [%s, %s] overlaps with '%s' [%s, %s]. Overlap: %.1f points. This may cause data extraction issues.",
+                    current_name,
+                    current_start,
+                    current_end,
+                    next_name,
+                    next_start,
+                    next_end,
+                    overlap,
                 )
 
         # Check #2: Detect extremely narrow columns
@@ -230,8 +234,10 @@ class TemplateExtractionConfig:
             width = x_end - _x_start
             if width < MIN_COLUMN_WIDTH:
                 logger.warning(
-                    f"Column '{col_name}' is very narrow: {width:.1f} points. "
-                    f"May truncate data. Consider widening to at least {MIN_COLUMN_WIDTH} points."
+                    "Column '%s' is very narrow: %.1f points. May truncate data. Consider widening to at least %s points.",
+                    col_name,
+                    width,
+                    MIN_COLUMN_WIDTH,
                 )
 
         # Check #3: Detect columns exceeding typical page width
@@ -239,9 +245,9 @@ class TemplateExtractionConfig:
         for col_name, (_x_start, x_end) in self.columns.items():
             if x_end > MAX_PAGE_WIDTH:
                 logger.warning(
-                    f"Column '{col_name}' extends beyond typical page width: "
-                    f"x_end={x_end:.1f} (A4 width ~595 points). "
-                    f"May be misconfigured."
+                    "Column '%s' extends beyond typical page width: x_end=%.1f (A4 width ~595 points). May be misconfigured.",
+                    col_name,
+                    x_end,
                 )
 
         # Check #4: Ensure Date column exists (critical for sorting)
@@ -258,9 +264,8 @@ class TemplateExtractionConfig:
         )
         if not has_date:
             logger.warning(
-                f"No Date column found. Expected one containing: "
-                f"{', '.join(date_col_candidates)}. "
-                f"Date sorting may fail."
+                "No Date column found. Expected one containing: %s. Date sorting may fail.",
+                ", ".join(date_col_candidates),
             )
 
         # Check #5: Detect large gaps between columns
@@ -272,8 +277,10 @@ class TemplateExtractionConfig:
 
             if gap > MAX_GAP:
                 logger.info(
-                    f"Large gap detected between '{current_name}' and '{next_name}': "
-                    f"{gap:.1f} points. May indicate missing column or misconfiguration."
+                    "Large gap detected between '%s' and '%s': %.1f points. May indicate missing column or misconfiguration.",
+                    current_name,
+                    next_name,
+                    gap,
                 )
 
 

@@ -64,11 +64,11 @@ class IBANSpatialFilter:
         page_num = page.page_number
         if page_num != 1:
             logger.warning(
-                f"⚠️  IBAN extraction called on page {page_num} - "
-                "should only process first page!"
+                "⚠️  IBAN extraction called on page %s - should only process first page!",
+                page_num,
             )
 
-        logger.debug(f"Extracting IBAN candidates from page {page_num}")
+        logger.debug("Extracting IBAN candidates from page %s", page_num)
 
         # Extract all words with coordinates
         words = page.extract_words(x_tolerance=3, y_tolerance=3, keep_blank_chars=False)
@@ -77,7 +77,7 @@ class IBANSpatialFilter:
             logger.debug("No words found on page")
             return []
 
-        logger.debug(f"Extracted {len(words)} words from page")
+        logger.debug("Extracted %s words from page", len(words))
 
         # Group nearby words into potential IBAN sequences
         candidates = []
@@ -129,7 +129,7 @@ class IBANSpatialFilter:
                 )
 
                 candidates.append(candidate)
-                logger.debug(f"Found IBAN candidate: {masked} at {word_bbox}")
+                logger.debug("Found IBAN candidate: %s at %s", masked, word_bbox)
 
         # Fallback: If no candidates found with word-based approach,
         # try text-based extraction with approximate coordinates
@@ -143,7 +143,7 @@ class IBANSpatialFilter:
                 iban = self.iban_extractor.extract_iban(page_text)
                 if iban:
                     masked = self.iban_extractor._mask_iban(iban)
-                    logger.info(f"✓ Found IBAN using text-based fallback: {masked}")
+                    logger.info("✓ Found IBAN using text-based fallback: %s", masked)
 
                     # Create approximate bounding box (page header area)
                     # Most IBANs are in the top 1/3 of the page
@@ -161,10 +161,11 @@ class IBANSpatialFilter:
                     )
                     candidates.append(candidate)
                     logger.debug(
-                        f"Using approximate bounding box for fallback IBAN: {approx_bbox}"
+                        "Using approximate bounding box for fallback IBAN: %s",
+                        approx_bbox,
                     )
 
-        logger.info(f"Found {len(candidates)} IBAN candidates on page {page_num}")
+        logger.info("Found %s IBAN candidates on page %s", len(candidates), page_num)
         return candidates
 
     def filter_by_table_overlap(
@@ -198,7 +199,7 @@ class IBANSpatialFilter:
                     overlaps_table = True
                     candidate.rejection_reason = f"Overlaps with table {table_bbox}"
                     logger.debug(
-                        f"REJECTED: {candidate.masked} overlaps table {table_bbox}"
+                        "REJECTED: %s overlaps table %s", candidate.masked, table_bbox
                     )
                     break
 
@@ -206,11 +207,12 @@ class IBANSpatialFilter:
                 rejected.append(candidate)
             else:
                 filtered.append(candidate)
-                logger.debug(f"ACCEPTED: {candidate.masked} does not overlap tables")
+                logger.debug("ACCEPTED: %s does not overlap tables", candidate.masked)
 
         logger.info(
-            f"Filtered IBANs: {len(filtered)} accepted, {len(rejected)} rejected "
-            f"(table overlap)"
+            "Filtered IBANs: %s accepted, %s rejected (table overlap)",
+            len(filtered),
+            len(rejected),
         )
 
         return filtered
@@ -240,7 +242,7 @@ class IBANSpatialFilter:
             # Score 1: Header area preference (+50 points)
             if candidate.bbox.y0 <= header_boundary:
                 score += 50.0
-                logger.debug(f"{candidate.masked}: +50 (header area)")
+                logger.debug("%s: +50 (header area)", candidate.masked)
 
             # Score 2: Y-position preference (+0 to +30 points, higher = better)
             # Normalize Y position (0 = top, 1 = bottom)
@@ -248,15 +250,18 @@ class IBANSpatialFilter:
             position_score = 30.0 * (1.0 - y_ratio)  # Invert so top gets high score
             score += position_score
             logger.debug(
-                f"{candidate.masked}: +{position_score:.1f} "
-                f"(Y-position {candidate.bbox.y0:.1f}/{page_height:.1f})"
+                "%s: +%.1f (Y-position %.1f/%.1f)",
+                candidate.masked,
+                position_score,
+                candidate.bbox.y0,
+                page_height,
             )
 
             # Score 3: Near "IBAN" label (future enhancement)
             # TODO: Look for "IBAN" text nearby
 
             candidate.confidence_score = score
-            logger.debug(f"{candidate.masked}: Total score = {score:.1f}")
+            logger.debug("%s: Total score = %.1f", candidate.masked, score)
 
         # Sort by score (highest first)
         candidates_sorted = sorted(
@@ -280,8 +285,10 @@ class IBANSpatialFilter:
 
         best = candidates[0]
         logger.info(
-            f"Selected IBAN: {best.masked} (score: {best.confidence_score:.1f}, "
-            f"location: {best.bbox})"
+            "Selected IBAN: %s (score: %.1f, location: %s)",
+            best.masked,
+            best.confidence_score,
+            best.bbox,
         )
 
         return best

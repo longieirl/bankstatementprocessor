@@ -124,7 +124,8 @@ class RowMergerService:
                         if last_date:
                             current_row[date_col] = last_date
                             logger.debug(
-                                f"Carried forward date '{last_date}' to continuation row"
+                                "Carried forward date '%s' to continuation row",
+                                last_date,
                             )
                             # Reclassify - it might be a transaction now
                             row_type = self._classify_row_type(current_row, columns)
@@ -135,7 +136,7 @@ class RowMergerService:
                     merged_rows.append(current_row)
                 else:
                     # Still a continuation - skip orphaned line
-                    logger.warning(f"Orphaned continuation line: {current_row}")
+                    logger.warning("Orphaned continuation line: %s", current_row)
                 i += 1
 
             else:

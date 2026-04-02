@@ -57,7 +57,7 @@ class TransactionFilterService:
 
         removed = len(rows) - len(filtered)
         if removed > 0:
-            logger.info(f"Filtered out {removed} empty row(s)")
+            logger.info("Filtered out %s empty row(s)", removed)
 
         return filtered
 
@@ -77,7 +77,7 @@ class TransactionFilterService:
         removed = len(rows) - len(filtered)
 
         if removed > 0:
-            logger.info(f"Filtered out {removed} header row(s)")
+            logger.info("Filtered out %s header row(s)", removed)
 
         return filtered
 
@@ -101,7 +101,7 @@ class TransactionFilterService:
 
         removed = len(rows) - len(valid)
         if removed > 0:
-            logger.info(f"Filtered out {removed} row(s) with invalid dates")
+            logger.info("Filtered out %s row(s) with invalid dates", removed)
 
         return valid
 
@@ -127,8 +127,10 @@ class TransactionFilterService:
 
         if total_removed > 0:
             logger.info(
-                f"Total filtering: removed {total_removed} row(s) "
-                f"from {original_count} (kept {final_count})"
+                "Total filtering: removed %s row(s) from %s (kept %s)",
+                total_removed,
+                original_count,
+                final_count,
             )
 
         return rows
