@@ -137,7 +137,7 @@ class HeaderDetectionService:
 
         # Check top few rows for header-like content
         top_rows = sorted(rows_by_y.keys())[:max_rows_to_check]
-        logger.debug(f"Checking {len(top_rows)} rows for table headers")
+        logger.debug("Checking %s rows for table headers", len(top_rows))
 
         for y_coord in top_rows:
             row_words = rows_by_y[y_coord]
@@ -149,18 +149,25 @@ class HeaderDetectionService:
             )
 
             logger.debug(
-                f"Row at Y={y_coord}: '{row_text[:60]}...' - {header_matches} header keywords found"
+                "Row at Y=%s: '%s...' - %s header keywords found",
+                y_coord,
+                row_text[:60],
+                header_matches,
             )
 
             # If we find min_keywords+ header indicators in a row, it's likely a table header
             if header_matches >= min_keywords:
                 logger.debug(
-                    f"✓ Table headers detected with {header_matches} keywords (threshold: {min_keywords})"
+                    "✓ Table headers detected with %s keywords (threshold: %s)",
+                    header_matches,
+                    min_keywords,
                 )
                 return True
 
         logger.debug(
-            f"✗ No table headers detected (need {min_keywords}+ header keywords in top {max_rows_to_check} rows)"
+            "✗ No table headers detected (need %s+ header keywords in top %s rows)",
+            min_keywords,
+            max_rows_to_check,
         )
         return False
 

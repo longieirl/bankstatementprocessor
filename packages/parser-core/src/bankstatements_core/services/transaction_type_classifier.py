@@ -102,7 +102,9 @@ class TemplateKeywordClassifier(TransactionTypeClassifier):
         for txn_type, keywords in template.processing.transaction_types.items():
             for keyword in keywords:
                 if keyword.upper() in details:
-                    logger.debug(f"Template keyword match: '{keyword}' -> {txn_type}")
+                    logger.debug(
+                        "Template keyword match: '%s' -> %s", keyword, txn_type
+                    )
                     return txn_type
 
         return None

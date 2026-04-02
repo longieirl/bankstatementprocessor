@@ -28,7 +28,7 @@ class TemplateGenerator:
             )
 
         self.base_template_path = base_template_path
-        logger.debug(f"Using base template: {self.base_template_path}")
+        logger.debug("Using base template: %s", self.base_template_path)
 
     def generate_template(  # noqa: PLR0913
         self,
@@ -62,11 +62,11 @@ class TemplateGenerator:
         try:
             with open(self.base_template_path) as f:
                 template: dict[str, Any] = json.load(f)
-                logger.debug(f"Loaded base template from {self.base_template_path}")
+                logger.debug("Loaded base template from %s", self.base_template_path)
         except (OSError, ValueError, KeyError) as e:
             # Expected errors: file I/O errors, invalid JSON, missing keys
             # Use debug level since minimal template is fully functional
-            logger.debug(f"Could not load base template: {e}, using minimal template")
+            logger.debug("Could not load base template: %s, using minimal template", e)
             template = self._create_minimal_template()
         # Let unexpected errors bubble up
 
@@ -94,7 +94,7 @@ class TemplateGenerator:
             columns_json[name] = [round(x_min), round(x_max)]
         template["extraction"]["columns"] = columns_json
 
-        logger.debug(f"Updated extraction config with {len(columns_json)} columns")
+        logger.debug("Updated extraction config with %s columns", len(columns_json))
 
         # Update detection config
         if "detection" not in template:
@@ -105,8 +105,8 @@ class TemplateGenerator:
             country_code = iban[:2]
             pattern = f"^{country_code}\\d{{2}}.*"
             template["detection"]["iban_patterns"] = [pattern]
-            logger.debug(f"Added IBAN pattern: {pattern}")
-            logger.info(f"  ✓ IBAN pattern added to template: {pattern}")
+            logger.debug("Added IBAN pattern: %s", pattern)
+            logger.info("  ✓ IBAN pattern added to template: %s", pattern)
         else:
             # No IBAN detected - leave patterns empty
             template["detection"]["iban_patterns"] = []
@@ -151,7 +151,9 @@ class TemplateGenerator:
             else:
                 logger.debug("Date grouping not detected, supports_multiline=false")
 
-        logger.info(f"Generated template '{template_name}' with {len(columns)} columns")
+        logger.info(
+            "Generated template '%s' with %s columns", template_name, len(columns)
+        )
 
         return template
 
@@ -167,7 +169,7 @@ class TemplateGenerator:
         Raises:
             IOError: If unable to write file
         """
-        logger.debug(f"Saving template to {output_path}")
+        logger.debug("Saving template to %s", output_path)
 
         # Ensure parent directory exists
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -175,10 +177,10 @@ class TemplateGenerator:
         try:
             with open(output_path, "w") as f:
                 json.dump(template, f, indent=2)
-            logger.info(f"✓ Template saved successfully: {output_path}")
+            logger.info("✓ Template saved successfully: %s", output_path)
         except (OSError, TypeError) as e:
             # Expected errors: file I/O errors, JSON serialization errors
-            logger.error(f"Failed to save template: {e}")
+            logger.error("Failed to save template: %s", e)
             raise OSError(f"Could not save template to {output_path}: {e}") from e
         # Let unexpected errors bubble up
 
@@ -278,14 +280,16 @@ class TemplateGenerator:
         if total_rows >= 3 and rows_with_dates > 0:
             date_ratio = rows_with_dates / total_rows
             logger.debug(
-                f"Date grouping analysis: {rows_with_dates}/{total_rows} rows have dates "
-                f"({date_ratio:.1%})"
+                "Date grouping analysis: %s/%s rows have dates (%.1%s)",
+                rows_with_dates,
+                total_rows,
+                date_ratio,
             )
 
             if date_ratio < 0.6:
                 logger.debug(
-                    f"Detected sparse date pattern ({date_ratio:.1%} < 60%) - "
-                    f"enabling date grouping support"
+                    "Detected sparse date pattern (%.1%s < 60%%) - enabling date grouping support",
+                    date_ratio,
                 )
                 return True
 

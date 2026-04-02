@@ -109,14 +109,14 @@ def to_float(
         # Apply negativity
         if is_negative:
             if not allow_negative:
-                logger.warning(f"Negative value not allowed: {original_value}")
+                logger.warning("Negative value not allowed: %s", original_value)
                 return None
             float_value = -float_value
 
         return float_value
 
     except (ValueError, InvalidOperation) as e:
-        logger.debug(f"Failed to parse currency value '{original_value}': {e}")
+        logger.debug("Failed to parse currency value '%s': %s", original_value, e)
         return None
 
 

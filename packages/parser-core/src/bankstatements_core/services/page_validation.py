@@ -70,8 +70,9 @@ class PageValidationService:
         """
         if len(rows) < self.min_table_rows:
             logger.debug(
-                f"Page rejected: insufficient rows "
-                f"({len(rows)} < {self.min_table_rows})"
+                "Page rejected: insufficient rows (%s < %s)",
+                len(rows),
+                self.min_table_rows,
             )
             return False
 
@@ -79,8 +80,9 @@ class PageValidationService:
         column_coverage = self.calculate_column_coverage(rows, columns)
         if column_coverage < self.min_column_coverage:
             logger.debug(
-                f"Page rejected: low column coverage "
-                f"({column_coverage:.1%} < {self.min_column_coverage:.1%})"
+                "Page rejected: low column coverage (%.1%s < %.1%s)",
+                column_coverage,
+                self.min_column_coverage,
             )
             return False
 
@@ -105,14 +107,14 @@ class PageValidationService:
             transaction_ratio = transaction_rows / len(rows)
             if transaction_ratio < self.min_transaction_ratio:
                 logger.debug(
-                    f"Page rejected: low transaction ratio "
-                    f"({transaction_ratio:.1%} < {self.min_transaction_ratio:.1%})"
+                    "Page rejected: low transaction ratio (%.1%s < %.1%s)",
+                    transaction_ratio,
+                    self.min_transaction_ratio,
                 )
                 return False
 
         logger.debug(
-            f"Page accepted: {transaction_rows} transactions "
-            f"out of {len(rows)} rows"
+            "Page accepted: %s transactions out of %s rows", transaction_rows, len(rows)
         )
         return True
 

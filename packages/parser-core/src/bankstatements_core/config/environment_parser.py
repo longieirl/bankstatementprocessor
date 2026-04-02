@@ -52,7 +52,10 @@ class EnvironmentParser:
             return float(value_str)
         except ValueError:
             logger.warning(
-                f"{var_name} must be a float, got '{value_str}'. Using default: {default}"
+                "%s must be a float, got '%s'. Using default: %s",
+                var_name,
+                value_str,
+                default,
             )
             return default
 
@@ -138,13 +141,18 @@ class EnvironmentParser:
                 return parsed
             else:
                 logger.warning(
-                    f"{var_name} is not a JSON list, got {type(parsed).__name__}. "
-                    f"Using default: {default}"
+                    "%s is not a JSON list, got %s. Using default: %s",
+                    var_name,
+                    type(parsed).__name__,
+                    default,
                 )
                 return default
         except (json.JSONDecodeError, TypeError) as e:
             logger.warning(
-                f"Failed to parse {var_name} as JSON: {e}. Using default: {default}"
+                "Failed to parse %s as JSON: %s. Using default: %s",
+                var_name,
+                e,
+                default,
             )
             return default
 

@@ -69,18 +69,20 @@ class TemplateRegistry:
             try:
                 template = cls._parse_template(template_id, template_data)
                 templates[template_id] = template
-                logger.debug(f"Loaded template: {template_id} ({template.name})")
+                logger.debug("Loaded template: %s (%s)", template_id, template.name)
             except (ValueError, KeyError, TypeError) as e:
                 # Expected errors: invalid values, missing keys, type errors in template config
-                logger.error(f"Failed to parse template '{template_id}': {e}")
+                logger.error("Failed to parse template '%s': %s", template_id, e)
                 raise ValueError(f"Invalid template '{template_id}': {e}") from e
             # Let unexpected errors bubble up
 
         default_template_id = config["default_template"]
 
         logger.info(
-            f"Loaded {len(templates)} templates from {config_path} "
-            f"(default: {default_template_id})"
+            "Loaded %s templates from %s (default: %s)",
+            len(templates),
+            config_path,
+            default_template_id,
         )
 
         return cls(templates, default_template_id)
@@ -157,11 +159,11 @@ class TemplateRegistry:
                 if template:
                     all_templates[template.id] = template
                     logger.info(
-                        f"Loaded template: {template.id} from {template_file.name}"
+                        "Loaded template: %s from %s", template.id, template_file.name
                     )
             except (ValueError, KeyError, TypeError, OSError) as e:
                 # Expected errors: invalid template format, missing keys, file I/O errors
-                logger.warning(f"Failed to load {template_file.name}: {e}")
+                logger.warning("Failed to load %s: %s", template_file.name, e)
                 continue
             # Let unexpected errors bubble up
 
@@ -172,7 +174,7 @@ class TemplateRegistry:
         default_id = os.getenv("DEFAULT_TEMPLATE")
         if default_id and default_id not in all_templates:
             logger.warning(
-                f"DEFAULT_TEMPLATE '{default_id}' not found, using first enabled"
+                "DEFAULT_TEMPLATE '%s' not found, using first enabled", default_id
             )
             default_id = None
 
@@ -186,9 +188,10 @@ class TemplateRegistry:
             )
 
         logger.info(
-            f"Loaded {len(all_templates)} templates: "
-            f"{', '.join(t.name for t in all_templates.values())} "
-            f"(default: {default_id})"
+            "Loaded %s templates: %s (default: %s)",
+            len(all_templates),
+            ", ".join(t.name for t in all_templates.values()),
+            default_id,
         )
 
         return cls(templates=all_templates, default_template_id=default_id)
@@ -227,13 +230,13 @@ class TemplateRegistry:
 
             # Skip if directory doesn't exist (custom dir may be optional)
             if not templates_path.exists():
-                logger.info(f"Skipping non-existent directory: {templates_path}")
+                logger.info("Skipping non-existent directory: %s", templates_path)
                 continue
 
             # Find all JSON files
             template_files = list(templates_path.glob("*.json"))
             if not template_files:
-                logger.info(f"No template files found in {templates_path}")
+                logger.info("No template files found in %s", templates_path)
                 continue
 
             # Load templates from each file
@@ -245,10 +248,10 @@ class TemplateRegistry:
                         # (higher priority dir loaded it first)
                         if template.id in all_templates:
                             logger.info(
-                                f"Template '{template.id}' from "
-                                f"{template_sources[template.id]} "
-                                f"(higher priority) - skipping "
-                                f"{template_file.name}"
+                                "Template '%s' from %s (higher priority) - skipping %s",
+                                template.id,
+                                template_sources[template.id],
+                                template_file.name,
                             )
                             continue  # Skip, keep higher priority one
 
@@ -256,11 +259,13 @@ class TemplateRegistry:
                         all_templates[template.id] = template
                         template_sources[template.id] = template_file.name
                         logger.info(
-                            f"Loaded template: {template.id} from {template_file.name}"
+                            "Loaded template: %s from %s",
+                            template.id,
+                            template_file.name,
                         )
                 except (ValueError, KeyError, TypeError, OSError) as e:
                     # Expected errors: invalid template format, missing keys, file I/O errors
-                    logger.warning(f"Failed to load {template_file.name}: {e}")
+                    logger.warning("Failed to load %s: %s", template_file.name, e)
                     continue
                 # Let unexpected errors bubble up
 
@@ -271,7 +276,7 @@ class TemplateRegistry:
         default_id = os.getenv("DEFAULT_TEMPLATE")
         if default_id and default_id not in all_templates:
             logger.warning(
-                f"DEFAULT_TEMPLATE '{default_id}' not found, using first enabled"
+                "DEFAULT_TEMPLATE '%s' not found, using first enabled", default_id
             )
             default_id = None
 
@@ -289,9 +294,11 @@ class TemplateRegistry:
 
         template_names = ", ".join(t.name for t in all_templates.values())
         logger.info(
-            f"Loaded {len(all_templates)} templates from "
-            f"{len(directories)} directories: "
-            f"{template_names} (default: {default_id})"
+            "Loaded %s templates from %s directories: %s (default: %s)",
+            len(all_templates),
+            len(directories),
+            template_names,
+            default_id,
         )
 
         return cls(templates=all_templates, default_template_id=default_id)
@@ -319,7 +326,7 @@ class TemplateRegistry:
             template_data = data["templates"][template_id]
             return cls._parse_template(template_id, template_data)
 
-        logger.warning(f"Invalid template format in {template_file.name}")
+        logger.warning("Invalid template format in %s", template_file.name)
         return None
 
     @staticmethod
@@ -432,7 +439,7 @@ class TemplateRegistry:
         template = self._templates.get(template_id)
 
         if template and not template.enabled:
-            logger.warning(f"Template '{template_id}' is disabled")
+            logger.warning("Template '%s' is disabled", template_id)
             return None
 
         return template
@@ -478,7 +485,9 @@ class TemplateRegistry:
         ]
 
         logger.debug(
-            f"Found {len(filtered)} enabled templates for document_type='{document_type}'"
+            "Found %s enabled templates for document_type='%s'",
+            len(filtered),
+            document_type,
         )
         return filtered
 
@@ -498,19 +507,21 @@ class TemplateRegistry:
             type_default_id in self._templates
             and self._templates[type_default_id].enabled
         ):
-            logger.debug(f"Using type-specific default: {type_default_id}")
+            logger.debug("Using type-specific default: %s", type_default_id)
             return self._templates[type_default_id]
 
         # Fallback to first enabled template of that type
         type_templates = self.get_templates_by_type(document_type)
         if type_templates:
             logger.debug(
-                f"Using first enabled template for {document_type}: {type_templates[0].id}"
+                "Using first enabled template for %s: %s",
+                document_type,
+                type_templates[0].id,
             )
             return type_templates[0]
 
         # Final fallback to global default
-        logger.debug(f"No templates found for {document_type}, using global default")
+        logger.debug("No templates found for %s, using global default", document_type)
         return self.get_default()
 
     def list_enabled(self) -> list[BankTemplate]:

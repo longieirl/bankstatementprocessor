@@ -124,7 +124,7 @@ class ColumnAnalysisService:
 
         for col_name in columns_to_total:
             if col_name not in df.columns:
-                logger.warning(f"Column '{col_name}' not found in DataFrame")
+                logger.warning("Column '%s' not found in DataFrame", col_name)
                 continue
 
             try:
@@ -132,7 +132,9 @@ class ColumnAnalysisService:
             except (ValueError, TypeError) as e:
                 # Expected errors: non-numeric data, type conversion failures
                 logger.warning(
-                    f"Failed to calculate total for column '{col_name}': {e}. Using 0.0"
+                    "Failed to calculate total for column '%s': %s. Using 0.0",
+                    col_name,
+                    e,
                 )
                 totals[col_name] = 0.0
             # Let unexpected errors bubble up

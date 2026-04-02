@@ -111,7 +111,7 @@ class BankStatementProcessingFacade:
         self.config.log_configuration()
 
         # Enforce entitlements for configured features
-        logger.info(f"Enforcing {self.entitlements.tier} tier entitlements")
+        logger.info("Enforcing %s tier entitlements", self.entitlements.tier)
 
         # Check recursive scan entitlement
         if self.config.recursive_scan:

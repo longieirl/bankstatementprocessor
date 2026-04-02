@@ -65,7 +65,7 @@ class IBANDetector(BaseDetector):
         found_ibans = [match.group(0) for match in matches]
 
         if found_ibans:
-            logger.debug(f"Found IBAN candidates in header area: {found_ibans}")
+            logger.debug("Found IBAN candidates in header area: %s", found_ibans)
 
         # Check each template's IBAN patterns
         for template in templates:
@@ -84,8 +84,10 @@ class IBANDetector(BaseDetector):
                             break
                     except re.error as e:
                         logger.error(
-                            f"Invalid IBAN regex pattern '{pattern}' "
-                            f"in template '{template.id}': {e}"
+                            "Invalid IBAN regex pattern '%s' in template '%s': %s",
+                            pattern,
+                            template.id,
+                            e,
                         )
                 if matched_iban:
                     break
@@ -98,8 +100,11 @@ class IBANDetector(BaseDetector):
                     confidence = 1.0
 
                 logger.info(
-                    f"IBAN '{matched_iban}' matched template '{template.name}' "
-                    f"(pattern: {matched_pattern}, confidence: {confidence})"
+                    "IBAN '%s' matched template '%s' (pattern: %s, confidence: %s)",
+                    matched_iban,
+                    template.name,
+                    matched_pattern,
+                    confidence,
                 )
 
                 results.append(

@@ -88,9 +88,11 @@ class ColumnHeaderDetector(BaseDetector):
                     confidence = 0.60
 
                 logger.info(
-                    f"Column headers matched template '{template.name}' "
-                    f"({found_count}/{expected_count} headers found, "
-                    f"confidence: {confidence})"
+                    "Column headers matched template '%s' (%s/%s headers found, confidence: %s)",
+                    template.name,
+                    found_count,
+                    expected_count,
+                    confidence,
                 )
 
                 results.append(

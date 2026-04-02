@@ -93,7 +93,7 @@ class ExpenseAnalysisService:
                 logger.info("No transactions to analyze")
                 return self._empty_insights()
 
-            logger.info(f"Analyzing {len(transactions)} transactions")
+            logger.info("Analyzing %s transactions", len(transactions))
 
             # Convert to domain objects at boundary for type-safe operations
             tx_objects = dicts_to_transactions(transactions)
@@ -126,7 +126,8 @@ class ExpenseAnalysisService:
         except Exception as e:  # noqa: BLE001 — service-boundary catch
             # Unexpected errors: log warning and return empty insights
             logger.warning(
-                f"Expense analysis failed: {e}. Returning empty insights.",
+                "Expense analysis failed: %s. Returning empty insights.",
+                e,
                 exc_info=True,
             )
             return self._empty_insights(error=str(e))
@@ -165,7 +166,7 @@ class ExpenseAnalysisService:
                     key=lambda t: _date_parser_service.parse_transaction_date(t.date),
                 )
             except (ValueError, TypeError) as e:
-                logger.warning(f"Failed to sort transactions for {description}: {e}")
+                logger.warning("Failed to sort transactions for %s: %s", description, e)
                 continue
 
             # Extract amounts (handle both debit and credit)
@@ -200,7 +201,7 @@ class ExpenseAnalysisService:
                     if delta > 0:  # Only positive intervals
                         intervals.append(delta)
                 except (ValueError, TypeError, AttributeError) as e:
-                    logger.warning(f"Failed to calculate interval: {e}")
+                    logger.warning("Failed to calculate interval: %s", e)
                     continue
 
             if not intervals:
@@ -229,7 +230,7 @@ class ExpenseAnalysisService:
                     }
                 )
 
-        logger.info(f"Detected {len(recurring)} recurring charges")
+        logger.info("Detected %s recurring charges", len(recurring))
         return recurring
 
     def _detect_high_value_transactions(
@@ -279,7 +280,7 @@ class ExpenseAnalysisService:
         # Sort by amount descending
         high_value.sort(key=lambda x: x["amount"], reverse=True)
 
-        logger.info(f"Detected {len(high_value)} high-value outliers")
+        logger.info("Detected %s high-value outliers", len(high_value))
         return high_value
 
     def _detect_repeated_vendors(
@@ -316,7 +317,7 @@ class ExpenseAnalysisService:
                     key=lambda t: _date_parser_service.parse_transaction_date(t.date),
                 )
             except (ValueError, TypeError) as e:
-                logger.warning(f"Failed to sort transactions for {description}: {e}")
+                logger.warning("Failed to sort transactions for %s: %s", description, e)
                 txs_sorted = txs  # Use unsorted if date parsing fails
 
             # Extract all amounts
@@ -354,7 +355,7 @@ class ExpenseAnalysisService:
         # Sort by total spent descending (most expensive vendors first)
         repeated.sort(key=lambda x: cast(float, x["total_spent"]), reverse=True)
 
-        logger.info(f"Detected {len(repeated)} repeated vendors")
+        logger.info("Detected %s repeated vendors", len(repeated))
         return repeated
 
     def _calculate_statistics(self, tx_objects: list[Transaction]) -> dict[str, Any]:

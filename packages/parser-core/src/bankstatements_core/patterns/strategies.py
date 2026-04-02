@@ -516,7 +516,7 @@ def create_output_strategy(
     entitlements.check_output_format(entitlement_format)
 
     logger.info(
-        f"Creating {format_lower.upper()} output strategy ({entitlements.tier} tier)"
+        "Creating %s output strategy (%s tier)", format_lower.upper(), entitlements.tier
     )
 
     # Map format names to strategy classes

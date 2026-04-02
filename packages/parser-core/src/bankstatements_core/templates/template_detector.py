@@ -246,20 +246,20 @@ class TemplateDetector:
         Returns:
             Detected BankTemplate with highest aggregate score or default template
         """
-        logger.debug(f"Starting template detection for: {pdf_path.name}")
+        logger.debug("Starting template detection for: %s", pdf_path.name)
 
         # Phase 2: Try to classify document type first
         document_type = self._classify_document_type(first_page)
 
         # Get templates, optionally filtered by type
         if document_type:
-            logger.info(f"Filtering templates for document_type='{document_type}'")
+            logger.info("Filtering templates for document_type='%s'", document_type)
             templates = self.registry.get_templates_by_type(document_type)
 
             if not templates:
                 logger.warning(
-                    f"No templates found for document_type='{document_type}', "
-                    f"using all templates"
+                    "No templates found for document_type='%s', using all templates",
+                    document_type,
                 )
                 templates = self.registry.get_all_templates()
         else:
@@ -286,19 +286,22 @@ class TemplateDetector:
             if document_type:
                 default = self.registry.get_default_for_type(document_type)
                 logger.info(
-                    f"No templates matched, using default for {document_type}: "
-                    f"{default.name} for {pdf_path.name}"
+                    "No templates matched, using default for %s: %s for %s",
+                    document_type,
+                    default.name,
+                    pdf_path.name,
                 )
             else:
                 default = self.registry.get_default_template()
                 logger.info(
-                    f"No templates matched, using global default: {default.name} "
-                    f"for {pdf_path.name}"
+                    "No templates matched, using global default: %s for %s",
+                    default.name,
+                    pdf_path.name,
                 )
             return default
 
         # Enhanced logging: Show all candidates with detector breakdown
-        logger.info(f"Template detection results for {pdf_path.name}:")
+        logger.info("Template detection results for %s:", pdf_path.name)
         for template_id in sorted(
             valid_scores, key=lambda x: valid_scores[x], reverse=True
         ):
@@ -308,7 +311,7 @@ class TemplateDetector:
                 f"{d.detector_name}={d.confidence:.2f}"
                 for d in sorted(details, key=lambda x: x.confidence, reverse=True)
             )
-            logger.info(f"  {template_id}: {score:.2f} ({detector_breakdown})")
+            logger.info("  %s: %.2f (%s)", template_id, score, detector_breakdown)
 
         # Find best template
         best_template_id = max(valid_scores, key=lambda x: valid_scores[x])
@@ -317,8 +320,10 @@ class TemplateDetector:
         # Phase 2: Check minimum confidence threshold
         if best_score < self._scoring.min_confidence_threshold:
             logger.warning(
-                f"Best match '{best_template_id}' has confidence {best_score:.2f}, "
-                f"below threshold {self._scoring.min_confidence_threshold}. Using default template."
+                "Best match '%s' has confidence %.2f, below threshold %s. Using default template.",
+                best_template_id,
+                best_score,
+                self._scoring.min_confidence_threshold,
             )
             if document_type:
                 return self.registry.get_default_for_type(document_type)
@@ -330,24 +335,26 @@ class TemplateDetector:
         ]
 
         if len(tied_templates) > 1:
-            logger.info(f"Tie detected between: {', '.join(tied_templates)}")
+            logger.info("Tie detected between: %s", ", ".join(tied_templates))
             best_template_id = self._break_tie(tied_templates, template_details)
-            logger.info(f"Tie-breaker selected: {best_template_id}")
+            logger.info("Tie-breaker selected: %s", best_template_id)
 
         # Get the selected template
         best_template = self.registry.get_template(best_template_id)
         if not best_template:
             # Shouldn't happen, but handle gracefully
             logger.error(
-                f"Selected template '{best_template_id}' not found in registry"
+                "Selected template '%s' not found in registry", best_template_id
             )
             if document_type:
                 return self.registry.get_default_for_type(document_type)
             return self.registry.get_default_template()
 
         logger.info(
-            f"Selected template: {best_template.name} "
-            f"(aggregate confidence={best_score:.2f}) for {pdf_path.name}"
+            "Selected template: %s (aggregate confidence=%.2f) for %s",
+            best_template.name,
+            best_score,
+            pdf_path.name,
         )
         return best_template
 
@@ -378,8 +385,9 @@ class TemplateDetector:
                     for result in results:
                         if result.confidence == 0.0:
                             logger.debug(
-                                f"Template '{result.template.id}' excluded by "
-                                f"{result.detector_name}"
+                                "Template '%s' excluded by %s",
+                                result.template.id,
+                                result.detector_name,
                             )
                             excluded_templates.add(result.template.id)
                             continue
@@ -394,7 +402,7 @@ class TemplateDetector:
 
             except (AttributeError, ValueError, TypeError, OSError) as e:
                 logger.error(
-                    f"Error in {detector.name} detector for {pdf_path.name}: {e}"
+                    "Error in %s detector for %s: %s", detector.name, pdf_path.name, e
                 )
 
         return dict(template_scores), dict(template_details), excluded_templates
@@ -422,7 +430,7 @@ class TemplateDetector:
         for template_id in tied_templates:
             details = template_details[template_id]
             if any(d.detector_name == "IBAN" for d in details):
-                logger.debug(f"Tie-breaker: {template_id} has IBAN match")
+                logger.debug("Tie-breaker: %s has IBAN match", template_id)
                 return template_id
 
         # Rule 2: Prefer template with highest max confidence
@@ -435,14 +443,15 @@ class TemplateDetector:
             c for tid, c in max_confidences.items() if tid != best_by_max_conf
         ):
             logger.debug(
-                f"Tie-breaker: {best_by_max_conf} has highest max confidence "
-                f"({max_confidences[best_by_max_conf]:.2f})"
+                "Tie-breaker: %s has highest max confidence (%.2f)",
+                best_by_max_conf,
+                max_confidences[best_by_max_conf],
             )
             return best_by_max_conf
 
         # Rule 3: Alphabetical fallback (deterministic)
         alphabetical_first = sorted(tied_templates)[0]
-        logger.debug(f"Tie-breaker: {alphabetical_first} (alphabetically first)")
+        logger.debug("Tie-breaker: %s (alphabetically first)", alphabetical_first)
         return alphabetical_first
 
     def get_detection_explanation(
@@ -594,8 +603,8 @@ class TemplateDetector:
         template = self.registry.get_template(template_id)
 
         if template:
-            logger.info(f"Forced template: {template.name}")
+            logger.info("Forced template: %s", template.name)
         else:
-            logger.warning(f"Forced template '{template_id}' not found or disabled")
+            logger.warning("Forced template '%s' not found or disabled", template_id)
 
         return template

@@ -73,7 +73,7 @@ class ExclusionDetector(BaseDetector):
             if not template.detection.exclude_keywords:
                 # No exclusion rules - skip this template (don't add to results)
                 logger.debug(
-                    f"Template '{template.name}' has no exclusion rules, skipping"
+                    "Template '%s' has no exclusion rules, skipping", template.name
                 )
                 continue
 
@@ -89,8 +89,9 @@ class ExclusionDetector(BaseDetector):
             if excluded:
                 # Only add result if template is EXCLUDED
                 logger.info(
-                    f"Template '{template.name}' EXCLUDED due to keywords: "
-                    f"{', '.join(matched_keywords)}"
+                    "Template '%s' EXCLUDED due to keywords: %s",
+                    template.name,
+                    ", ".join(matched_keywords),
                 )
                 results.append(
                     DetectionResult(
@@ -107,7 +108,7 @@ class ExclusionDetector(BaseDetector):
             else:
                 # Template is allowed - don't add to results
                 logger.debug(
-                    f"Template '{template.name}' allowed (no exclude keywords matched)"
+                    "Template '%s' allowed (no exclude keywords matched)", template.name
                 )
 
         return results

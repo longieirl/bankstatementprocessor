@@ -75,8 +75,10 @@ class HeaderDetector(BaseDetector):
                 confidence = 0.70 + min(len(matched_keywords) - 1, 1) * 0.05
 
                 logger.info(
-                    f"Header keywords {matched_keywords} found for template '{template.name}' "
-                    f"(confidence: {confidence})"
+                    "Header keywords %s found for template '%s' (confidence: %s)",
+                    matched_keywords,
+                    template.name,
+                    confidence,
                 )
 
                 results.append(

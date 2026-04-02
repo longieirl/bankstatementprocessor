@@ -44,7 +44,7 @@ class ColumnAnalyzer:
         Returns:
             Dictionary mapping column names to (x_min, x_max) tuples
         """
-        logger.debug(f"Analyzing columns in table {table_bbox}")
+        logger.debug("Analyzing columns in table %s", table_bbox)
 
         # Extract words within table bbox
         words = page.extract_words(
@@ -65,14 +65,14 @@ class ColumnAnalyzer:
             logger.warning("No words found in table region")
             return {}
 
-        logger.debug(f"Found {len(table_words)} words in table region")
+        logger.debug("Found %s words in table region", len(table_words))
 
         # Find header row first
         header_words = self._find_header_words(table_words, table_bbox)
 
         if header_words:
             # Strategy: Use header words to define columns
-            logger.debug(f"Using {len(header_words)} header words to define columns")
+            logger.debug("Using %s header words to define columns", len(header_words))
             boundaries, column_names = self._create_columns_from_headers(
                 header_words, table_bbox
             )
@@ -83,16 +83,16 @@ class ColumnAnalyzer:
             boundaries = self._detect_boundaries_from_clusters(clusters)
             column_names = [f"Column{i+1}" for i in range(len(boundaries))]
 
-        logger.debug(f"Detected {len(boundaries)} column boundaries")
+        logger.debug("Detected %s column boundaries", len(boundaries))
 
         # Build result dictionary
         columns = {}
         for i, (x_min, x_max) in enumerate(boundaries):
             column_name = column_names[i] if i < len(column_names) else f"Column{i+1}"
             columns[column_name] = (x_min, x_max)
-            logger.debug(f"  {column_name}: ({x_min:.1f}, {x_max:.1f})")
+            logger.debug("  %s: (%.1f, %.1f)", column_name, x_min, x_max)
 
-        logger.info(f"Detected {len(columns)} columns")
+        logger.info("Detected %s columns", len(columns))
         return columns
 
     def _cluster_x_coordinates(self, words: list[dict]) -> list[float]:
@@ -130,7 +130,7 @@ class ColumnAnalyzer:
             clusters.append(cluster_center)
 
         logger.debug(
-            f"Clustered {len(x_coords)} X-coords into {len(clusters)} clusters"
+            "Clustered %s X-coords into %s clusters", len(x_coords), len(clusters)
         )
         return sorted(clusters)
 
@@ -201,8 +201,10 @@ class ColumnAnalyzer:
         header_words = [word for word in table_words if word["top"] <= header_threshold]
 
         logger.debug(
-            f"Found {len(header_words)} words in header row "
-            f"(Y={min_y:.1f}, threshold={header_threshold:.1f})"
+            "Found %s words in header row (Y=%.1f, threshold=%.1f)",
+            len(header_words),
+            min_y,
+            header_threshold,
         )
         return header_words
 
@@ -272,8 +274,11 @@ class ColumnAnalyzer:
                 column_names[best_col_idx] = name
 
                 logger.debug(
-                    f"Column {best_col_idx} [{boundaries[best_col_idx][0]:.1f}, "
-                    f"{boundaries[best_col_idx][1]:.1f}]: '{name}'"
+                    "Column %s [%.1f, %.1f]: '%s'",
+                    best_col_idx,
+                    boundaries[best_col_idx][0],
+                    boundaries[best_col_idx][1],
+                    name,
                 )
 
         # Fill in any unassigned columns with generic names
@@ -284,8 +289,11 @@ class ColumnAnalyzer:
                 name = f"Column{i+1}"
                 result_names.append(name)
                 logger.debug(
-                    f"Column {i} [{boundaries[i][0]:.1f}, {boundaries[i][1]:.1f}]: "
-                    f"'{name}' (no match)"
+                    "Column %s [%.1f, %.1f]: '%s' (no match)",
+                    i,
+                    boundaries[i][0],
+                    boundaries[i][1],
+                    name,
                 )
             else:
                 result_names.append(name_val)
@@ -323,11 +331,16 @@ class ColumnAnalyzer:
                     # Leave 1px gap to avoid extraction ambiguity
                     new_x_max = next_x_min - 1
                     logger.debug(
-                        f"Overlap detected: Column {i} [{x_min:.1f}, {x_max:.1f}] "
-                        f"overlaps Column {i+1} [{next_x_min:.1f}, {next_x_max:.1f}]"
+                        "Overlap detected: Column %s [%.1f, %.1f] overlaps Column %s [%.1f, %.1f]",
+                        i,
+                        x_min,
+                        x_max,
+                        i + 1,
+                        next_x_min,
+                        next_x_max,
                     )
                     logger.debug(
-                        f"  Adjusting Column {i} x_max: {x_max:.1f} -> {new_x_max:.1f}"
+                        "  Adjusting Column %s x_max: %.1f -> %.1f", i, x_max, new_x_max
                     )
                     x_max = new_x_max
 
@@ -364,7 +377,9 @@ class ColumnAnalyzer:
         word_groups.append(current_group)
 
         logger.debug(
-            f"Grouped {len(header_words)} header words into {len(word_groups)} columns"
+            "Grouped %s header words into %s columns",
+            len(header_words),
+            len(word_groups),
         )
 
         # Create boundaries and names from word groups
@@ -390,7 +405,7 @@ class ColumnAnalyzer:
             name = " ".join(w["text"] for w in group)
             column_names.append(name)
 
-            logger.debug(f"  Column: '{name}' at [{x_min:.1f}, {x_max:.1f}]")
+            logger.debug("  Column: '%s' at [%.1f, %.1f]", name, x_min, x_max)
 
         # Resolve overlaps by adjusting boundaries
         boundaries = self._resolve_overlapping_boundaries(boundaries)
@@ -399,7 +414,7 @@ class ColumnAnalyzer:
         for i, (x_min, x_max) in enumerate(boundaries):
             if i < len(column_names):
                 logger.debug(
-                    f"  Adjusted '{column_names[i]}': [{x_min:.1f}, {x_max:.1f}]"
+                    "  Adjusted '%s': [%.1f, %.1f]", column_names[i], x_min, x_max
                 )
 
         return boundaries, column_names

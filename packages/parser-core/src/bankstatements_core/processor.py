@@ -335,7 +335,9 @@ class BankStatementProcessor:
         # Step 2: Group transactions by IBAN (delegated to registry)
         txns_by_iban = self._registry.group_by_iban(all_transactions, pdf_ibans)
         logger.debug(
-            f"Grouped {len(all_transactions)} transactions into {len(txns_by_iban)} IBAN groups"
+            "Grouped %s transactions into %s IBAN groups",
+            len(all_transactions),
+            len(txns_by_iban),
         )
 
         # Step 3: Process each IBAN group
@@ -347,13 +349,17 @@ class BankStatementProcessor:
             result = self._process_transaction_group(iban_suffix, iban_txns)
 
             logger.debug(
-                f"IBAN {iban_suffix}: Adding {result['unique_count']} unique, "
-                f"{result['duplicate_count']} duplicates to totals"
+                "IBAN %s: Adding %s unique, %s duplicates to totals",
+                iban_suffix,
+                result["unique_count"],
+                result["duplicate_count"],
             )
             total_unique += result["unique_count"]
             total_duplicates += result["duplicate_count"]
             logger.debug(
-                f"Running totals: {total_unique} unique, {total_duplicates} duplicates"
+                "Running totals: %s unique, %s duplicates",
+                total_unique,
+                total_duplicates,
             )
 
             # Merge output paths with IBAN prefix
@@ -374,8 +380,11 @@ class BankStatementProcessor:
 
         # Step 5: Build and return summary (delegated to orchestrator)
         logger.debug(
-            f"Building summary: {pdf_count} PDFs, {pages_read} pages, "
-            f"{total_unique} unique, {total_duplicates} duplicates"
+            "Building summary: %s PDFs, %s pages, %s unique, %s duplicates",
+            pdf_count,
+            pages_read,
+            total_unique,
+            total_duplicates,
         )
         return self._output_orchestrator.build_summary_result(
             pdf_count,
@@ -399,7 +408,9 @@ class BankStatementProcessor:
             Dictionary with unique_count, duplicate_count, and output_paths
         """
         logger.info(
-            f"Processing {len(iban_txns)} transactions for IBAN suffix: {iban_suffix}"
+            "Processing %s transactions for IBAN suffix: %s",
+            len(iban_txns),
+            iban_suffix,
         )
 
         # Look up template if registry available and transactions have template_id
@@ -409,7 +420,8 @@ class BankStatementProcessor:
             if template_id:
                 template = self._template_registry.get_template(template_id)
                 logger.debug(
-                    f"Using template '{template_id}' for transaction type classification"
+                    "Using template '%s' for transaction type classification",
+                    template_id,
                 )
 
         # Detect duplicates and sort (delegated to registry)
@@ -422,8 +434,10 @@ class BankStatementProcessor:
         duplicate_txns = self._filter_service.filter_header_rows(duplicate_txns)
 
         logger.info(
-            f"IBAN {iban_suffix}: {len(unique_txns)} unique transactions, "
-            f"{len(duplicate_txns)} duplicates"
+            "IBAN %s: %s unique transactions, %s duplicates",
+            iban_suffix,
+            len(unique_txns),
+            len(duplicate_txns),
         )
 
         # Convert to dicts at the output boundary

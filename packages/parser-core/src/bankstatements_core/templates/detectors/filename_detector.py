@@ -36,7 +36,7 @@ class FilenameDetector(BaseDetector):
             Filename matches have medium-high confidence (0.80-0.90).
         """
         filename = pdf_path.name
-        logger.debug(f"Checking filename: {filename}")
+        logger.debug("Checking filename: %s", filename)
 
         results = []
 
@@ -59,8 +59,11 @@ class FilenameDetector(BaseDetector):
                     confidence = 0.90
 
                 logger.info(
-                    f"Filename '{filename}' matched template '{template.name}' "
-                    f"(patterns: {matched_patterns}, confidence: {confidence})"
+                    "Filename '%s' matched template '%s' (patterns: %s, confidence: %s)",
+                    filename,
+                    template.name,
+                    matched_patterns,
+                    confidence,
                 )
 
                 results.append(
