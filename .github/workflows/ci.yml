@@ -194,7 +194,7 @@ jobs:
 
     - name: Install security tools + packages
       run: |
-        pip install --upgrade pip bandit[toml] pip-audit
+        pip install --upgrade pip bandit[toml] pip-audit xenon
         pip install -e packages/parser-core
         pip install -e packages/parser-free
 
