@@ -469,3 +469,34 @@ class TestDetectTextBasedTable:
         result = detector._detect_text_based_table(page)
         # bbox height will be ~35px (120 + margin - 95), < 200 threshold
         assert result is None
+
+
+class TestGroupWordsByRow:
+    """Unit tests for _group_words_by_row helper."""
+
+    def _make_word(self, text, top, x0=50, x1=None):
+        return {"text": text, "top": top, "x0": x0, "x1": x1 or (x0 + len(text) * 6)}
+
+    def test_groups_words_into_5px_buckets(self):
+        """Words at y=101 and y=102 land in the same 100-bucket."""
+        detector = TableDetector()
+        words = [self._make_word("a", 101), self._make_word("b", 102)]
+        result = detector._group_words_by_row(words)
+        assert len(result) == 1
+        assert 100 in result
+        assert len(result[100]) == 2
+
+    def test_words_in_different_buckets(self):
+        """Words at y=100 and y=110 land in separate buckets."""
+        detector = TableDetector()
+        words = [self._make_word("a", 100), self._make_word("b", 110)]
+        result = detector._group_words_by_row(words)
+        assert len(result) == 2
+        assert 100 in result
+        assert 110 in result
+
+    def test_empty_words_returns_empty(self):
+        """Empty input produces empty dict."""
+        detector = TableDetector()
+        result = detector._group_words_by_row([])
+        assert result == {}

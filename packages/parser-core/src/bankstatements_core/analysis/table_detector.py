@@ -192,6 +192,14 @@ class TableDetector:
         logger.debug("Largest table: %s (area=%.0fpx²)", largest, largest.area)
         return largest
 
+    def _group_words_by_row(self, words: list[dict]) -> dict[int, list[dict]]:
+        """Group pdfplumber word dicts into 5-pixel Y-buckets."""
+        y_groups: dict[int, list[dict]] = defaultdict(list)
+        for word in words:
+            y_key = round(word["top"] / 5) * 5
+            y_groups[y_key].append(word)
+        return dict(y_groups)
+
     def _detect_text_based_table(  # noqa: C901, PLR0912, PLR0915
         self, page: Any
     ) -> BBox | None:
@@ -213,10 +221,7 @@ class TableDetector:
             return None
 
         # Group words by Y-position to find rows
-        y_groups = defaultdict(list)
-        for word in words:
-            y_key = round(word["top"] / 5) * 5  # Group by 5px buckets
-            y_groups[y_key].append(word)
+        y_groups = self._group_words_by_row(words)
 
         # Find row with column headers (stricter matching)
         header_y = None
