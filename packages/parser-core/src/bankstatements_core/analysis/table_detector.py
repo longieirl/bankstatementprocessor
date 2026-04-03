@@ -259,6 +259,48 @@ class TableDetector:
 
         return footer_start_y, data_y_positions
 
+    def _calculate_bottom_y(
+        self, table_y_positions: list[int], footer_start_y: int | None
+    ) -> float:
+        """Calculate the bottom Y coordinate of the table region."""
+        if footer_start_y is not None:
+            table_bottom_y = footer_start_y - 10
+            logger.debug(
+                "Table extended to footer boundary: Y=%.1f (footer starts at Y=%.1f)",
+                table_bottom_y,
+                footer_start_y,
+            )
+            return table_bottom_y
+
+        if len(table_y_positions) >= 3:
+            sorted_positions = sorted(table_y_positions)
+            row_spacings = [
+                sorted_positions[i] - sorted_positions[i - 1]
+                for i in range(1, len(sorted_positions))
+                if sorted_positions[i] - sorted_positions[i - 1] < 50
+            ]
+            if row_spacings:
+                avg_row_spacing = sum(row_spacings) / len(row_spacings)
+                bottom_margin = avg_row_spacing * 1.5
+                logger.debug(
+                    "Calculated bottom margin: %.1fpx (avg row spacing: %.1fpx \u00d7 1.5)",  # noqa: RUF001
+                    bottom_margin,
+                    avg_row_spacing,
+                )
+            else:
+                bottom_margin = 20
+                logger.debug("Using fallback bottom margin: 20px")
+        else:
+            bottom_margin = 20
+            logger.debug("Using default bottom margin for single row: 20px")
+
+        table_bottom_y = max(table_y_positions) + bottom_margin
+        logger.debug(
+            "No footer found, using last transaction + margin: Y=%.1f",
+            table_bottom_y,
+        )
+        return table_bottom_y
+
     def _detect_text_based_table(  # noqa: C901, PLR0912, PLR0915
         self, page: Any
     ) -> BBox | None:
@@ -299,47 +341,7 @@ class TableDetector:
         # Add small margin (5px) above header to catch all header words
         table_top_y = header_y - 5  # Include margin above header
 
-        # Calculate table_bottom_y: extend to just before footer (for multi-page support)
-        # This ensures transactions on subsequent pages are captured
-        if footer_start_y is not None:
-            # Footer found - extend table to just before footer (leave 10px margin)
-            table_bottom_y = footer_start_y - 10
-            logger.debug(
-                "Table extended to footer boundary: Y=%.1f (footer starts at Y=%.1f)",
-                table_bottom_y,
-                footer_start_y,
-            )
-        else:
-            # No footer found - use last transaction + margin (single page case)
-            if len(table_y_positions) >= 3:
-                # Calculate average row spacing
-                row_spacings = []
-                sorted_positions = sorted(table_y_positions)
-                for i in range(1, len(sorted_positions)):
-                    spacing = sorted_positions[i] - sorted_positions[i - 1]
-                    if spacing < 50:
-                        row_spacings.append(spacing)
-
-                if row_spacings:
-                    avg_row_spacing = sum(row_spacings) / len(row_spacings)
-                    bottom_margin = avg_row_spacing * 1.5
-                    logger.debug(
-                        "Calculated bottom margin: %.1fpx (avg row spacing: %.1fpx × 1.5)",  # noqa: RUF001
-                        bottom_margin,
-                        avg_row_spacing,
-                    )
-                else:
-                    bottom_margin = 20
-                    logger.debug("Using fallback bottom margin: 20px")
-            else:
-                bottom_margin = 20
-                logger.debug("Using default bottom margin for single row: 20px")
-
-            table_bottom_y = max(table_y_positions) + bottom_margin
-            logger.debug(
-                "No footer found, using last transaction + margin: Y=%.1f",
-                table_bottom_y,
-            )
+        table_bottom_y = self._calculate_bottom_y(table_y_positions, footer_start_y)
         logger.debug(
             "Table boundary: Y=%.1f to Y=%.1f (height=%.1fpx, %s rows)",
             table_top_y,
