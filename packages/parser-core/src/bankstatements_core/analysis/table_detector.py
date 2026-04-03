@@ -283,7 +283,7 @@ class TableDetector:
                 avg_row_spacing = sum(row_spacings) / len(row_spacings)
                 bottom_margin = avg_row_spacing * 1.5
                 logger.debug(
-                    "Calculated bottom margin: %.1fpx (avg row spacing: %.1fpx \u00d7 1.5)",  # noqa: RUF001
+                    "Calculated bottom margin: %.1fpx (avg row spacing: %.1fpx × 1.5)",  # noqa: RUF001
                     bottom_margin,
                     avg_row_spacing,
                 )
@@ -301,7 +301,7 @@ class TableDetector:
         )
         return table_bottom_y
 
-    def _detect_text_based_table(  # noqa: C901, PLR0912, PLR0915
+    def _detect_text_based_table(
         self, page: Any
     ) -> BBox | None:
         """Detect table region from text patterns (fallback method).
@@ -331,7 +331,7 @@ class TableDetector:
 
         # Find dense text region INCLUDING header and below (transaction rows)
         footer_start_y, data_y_positions = self._find_footer_boundary(y_groups, header_y)
-        table_y_positions = [header_y] + data_y_positions
+        table_y_positions = [header_y, *data_y_positions]
 
         if len(table_y_positions) < 2:  # Need at least header + 1 data row
             logger.debug("No transaction rows found below header")
