@@ -1,5 +1,6 @@
 """Tests for table detection."""
 
+import pytest
 from unittest.mock import MagicMock, Mock
 
 from bankstatements_core.analysis.bbox_utils import BBox
@@ -347,3 +348,124 @@ class TestDetectTextBasedTable:
         page = self._make_page(header_words + row1)
         result = detector.detect_tables(page)
         assert len(result.tables) >= 0  # may or may not find table
+
+    def test_text_based_avg_row_spacing_used_for_bottom(self):
+        """Three+ rows without footer: bottom_y uses average spacing * 1.5."""
+        detector = TableDetector()
+        header_words = [
+            self._make_word("date", 100, x0=50),
+            self._make_word("details", 100, x0=100),
+            self._make_word("debit", 100, x0=200),
+            self._make_word("credit", 100, x0=280),
+            self._make_word("balance", 100, x0=360),
+        ]
+        # Three data rows, 20px apart -> avg spacing = 20, margin = 30, bottom = 160 + 30 = 190
+        rows = []
+        for top in [120, 140, 160]:
+            rows += [
+                self._make_word("01", top, x0=50),
+                self._make_word("text", top, x0=100),
+                self._make_word("10.00", top, x0=200),
+            ]
+        page = self._make_page(header_words + rows)
+        result = detector._detect_text_based_table(page)
+        assert result is not None
+        assert result.y1 == pytest.approx(190.0, abs=5)
+
+    def test_text_based_no_valid_row_spacings_uses_fallback(self):
+        """Three rows with > 50px gaps: row_spacings empty, fallback margin = 20."""
+        detector = TableDetector()
+        header_words = [
+            self._make_word("date", 100, x0=50),
+            self._make_word("details", 100, x0=100),
+            self._make_word("debit", 100, x0=200),
+            self._make_word("credit", 100, x0=280),
+            self._make_word("balance", 100, x0=360),
+        ]
+        rows = []
+        for top in [160, 220, 280]:  # 60px gaps -- all > 50, excluded from row_spacings
+            rows += [
+                self._make_word("01", top, x0=50),
+                self._make_word("text", top, x0=100),
+                self._make_word("10.00", top, x0=200),
+            ]
+        page = self._make_page(header_words + rows)
+        result = detector._detect_text_based_table(page)
+        assert result is not None
+        assert result.y1 == pytest.approx(300.0, abs=2)  # max(280) + 20 fallback
+
+    def test_text_based_large_gap_acts_as_footer(self):
+        """Gap > 100px to sparse row triggers footer heuristic."""
+        detector = TableDetector()
+        header_words = [
+            self._make_word("date", 100, x0=50),
+            self._make_word("details", 100, x0=100),
+            self._make_word("debit", 100, x0=200),
+            self._make_word("credit", 100, x0=280),
+            self._make_word("balance", 100, x0=360),
+        ]
+        row1 = [
+            self._make_word("01", 120, x0=50),
+            self._make_word("payment", 120, x0=100),
+            self._make_word("10.00", 120, x0=200),
+        ]
+        # Sparse row > 100px below last transaction
+        sparse = [self._make_word("Note", 240, x0=50), self._make_word("only", 240, x0=100)]
+        page = self._make_page(header_words + row1 + sparse)
+        result = detector._detect_text_based_table(page)
+        assert result is not None
+        assert result.y1 < 240  # footer heuristic kicked in at y=240
+
+    def test_text_based_transaction_indicator_skips_row(self):
+        """Row with transaction indicator is skipped even if it has enough keywords."""
+        detector = TableDetector()
+        # This row has 4 header keywords but also 'forward' -- should be skipped
+        indicator_row = [
+            self._make_word("date", 80, x0=50),
+            self._make_word("details", 80, x0=100),
+            self._make_word("debit", 80, x0=200),
+            self._make_word("credit", 80, x0=280),
+            self._make_word("forward", 80, x0=360),  # TRANSACTION_INDICATOR
+        ]
+        # Real header below
+        header_words = [
+            self._make_word("date", 100, x0=50),
+            self._make_word("details", 100, x0=100),
+            self._make_word("debit", 100, x0=200),
+            self._make_word("credit", 100, x0=280),
+            self._make_word("balance", 100, x0=360),
+        ]
+        row1 = [
+            self._make_word("01", 120, x0=50),
+            self._make_word("payment", 120, x0=100),
+            self._make_word("10.00", 120, x0=200),
+        ]
+        row2 = [
+            self._make_word("02", 150, x0=50),
+            self._make_word("deposit", 150, x0=100),
+            self._make_word("50.00", 150, x0=200),
+        ]
+        page = self._make_page(indicator_row + header_words + row1 + row2)
+        result = detector._detect_text_based_table(page)
+        assert result is not None
+        assert result.y0 > 80  # anchored at real header (y=100-5=95), not indicator row
+
+    def test_text_based_too_small_bbox_returns_none(self):
+        """Result is None if calculated bbox height is below min_table_height."""
+        detector = TableDetector(min_table_height=200.0)  # very large threshold
+        header_words = [
+            self._make_word("date", 100, x0=50),
+            self._make_word("details", 100, x0=100),
+            self._make_word("debit", 100, x0=200),
+            self._make_word("credit", 100, x0=280),
+            self._make_word("balance", 100, x0=360),
+        ]
+        row1 = [
+            self._make_word("01", 120, x0=50),
+            self._make_word("payment", 120, x0=100),
+            self._make_word("10.00", 120, x0=200),
+        ]
+        page = self._make_page(header_words + row1)
+        result = detector._detect_text_based_table(page)
+        # bbox height will be ~35px (120 + margin - 95), < 200 threshold
+        assert result is None
