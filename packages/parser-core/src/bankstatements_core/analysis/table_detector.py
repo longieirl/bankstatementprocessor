@@ -221,6 +221,44 @@ class TableDetector:
                 return y_pos
         return None
 
+    def _find_footer_boundary(
+        self, y_groups: dict[int, list[dict]], header_y: int
+    ) -> tuple[int | None, list[int]]:
+        """Scan rows below header for footer boundary and accumulate table row positions.
+
+        Returns (footer_start_y, data_y_positions) where data_y_positions contains
+        only rows BELOW the header (the caller prepends header_y before the len < 2 guard).
+        """
+        data_y_positions: list[int] = []
+        footer_start_y = None
+        last_transaction_y = header_y
+
+        for y_pos, words_at_y in sorted(y_groups.items()):
+            if y_pos <= header_y:
+                continue
+
+            text_at_y = " ".join(w["text"].lower() for w in words_at_y)
+            if any(kw in text_at_y for kw in self.FOOTER_KEYWORDS):
+                footer_start_y = y_pos
+                logger.debug("Footer detected at Y=%s: %s...", y_pos, text_at_y[:50])
+                break
+
+            gap_from_last = y_pos - last_transaction_y
+            if gap_from_last > 100 and len(words_at_y) < 10:
+                footer_start_y = y_pos
+                logger.debug(
+                    "Large gap (%.1fpx) detected at Y=%s, footer section likely starts here",
+                    gap_from_last,
+                    y_pos,
+                )
+                break
+
+            if len(words_at_y) >= 3:
+                data_y_positions.append(y_pos)
+                last_transaction_y = y_pos
+
+        return footer_start_y, data_y_positions
+
     def _detect_text_based_table(  # noqa: C901, PLR0912, PLR0915
         self, page: Any
     ) -> BBox | None:
@@ -250,42 +288,8 @@ class TableDetector:
             return None
 
         # Find dense text region INCLUDING header and below (transaction rows)
-        table_y_positions = [header_y]  # Include the header itself
-
-        # Track where footer section begins
-        footer_start_y = None
-        last_transaction_y = header_y
-
-        for y_pos, words_at_y in sorted(y_groups.items()):
-            if y_pos <= header_y:
-                continue
-
-            # Check if this row contains footer keywords
-            text_at_y = " ".join([w["text"].lower() for w in words_at_y])
-            is_footer = any(keyword in text_at_y for keyword in self.FOOTER_KEYWORDS)
-
-            if is_footer:
-                # Found footer - mark where it starts
-                footer_start_y = y_pos
-                logger.debug("Footer detected at Y=%s: %s...", y_pos, text_at_y[:50])
-                break
-
-            # Check for large gap from last transaction (likely footer section)
-            gap_from_last = y_pos - last_transaction_y
-            if gap_from_last > 100 and len(words_at_y) < 10:
-                # Large gap + sparse content = likely footer section
-                footer_start_y = y_pos
-                logger.debug(
-                    "Large gap (%.1fpx) detected at Y=%s, footer section likely starts here",
-                    gap_from_last,
-                    y_pos,
-                )
-                break
-
-            # Consider rows with 3+ words as potential table rows
-            if len(words_at_y) >= 3:
-                table_y_positions.append(y_pos)
-                last_transaction_y = y_pos
+        footer_start_y, data_y_positions = self._find_footer_boundary(y_groups, header_y)
+        table_y_positions = [header_y] + data_y_positions
 
         if len(table_y_positions) < 2:  # Need at least header + 1 data row
             logger.debug("No transaction rows found below header")
