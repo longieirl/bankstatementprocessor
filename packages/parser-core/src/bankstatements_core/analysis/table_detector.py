@@ -200,6 +200,27 @@ class TableDetector:
             y_groups[y_key].append(word)
         return dict(y_groups)
 
+    def _find_header_row(self, y_groups: dict[int, list[dict]]) -> int | None:
+        """Find first Y-position matching column header pattern.
+
+        A row matches if it contains no transaction indicators, matches at least
+        3 header keywords, and has between 4 and 10 words (inclusive).
+        """
+        for y_pos, words_at_y in sorted(y_groups.items()):
+            text_at_y = " ".join(w["text"].lower() for w in words_at_y)
+            if any(ind in text_at_y for ind in self.TRANSACTION_INDICATORS):
+                continue
+            keyword_count = sum(1 for kw in self.HEADER_KEYWORDS if kw in text_at_y)
+            if keyword_count >= 3 and 4 <= len(words_at_y) <= 10:
+                logger.debug(
+                    "Found header row at Y=%s with %s keywords: %s...",
+                    y_pos,
+                    keyword_count,
+                    text_at_y[:60],
+                )
+                return y_pos
+        return None
+
     def _detect_text_based_table(  # noqa: C901, PLR0912, PLR0915
         self, page: Any
     ) -> BBox | None:
@@ -223,29 +244,7 @@ class TableDetector:
         # Group words by Y-position to find rows
         y_groups = self._group_words_by_row(words)
 
-        # Find row with column headers (stricter matching)
-        header_y = None
-        for y_pos, words_at_y in sorted(y_groups.items()):
-            text_at_y = " ".join([w["text"].lower() for w in words_at_y])
-
-            # Check if it looks like transaction data (exclude these rows)
-            if any(indicator in text_at_y for indicator in self.TRANSACTION_INDICATORS):
-                continue
-
-            # Count matching header keywords
-            keyword_count = sum(1 for kw in self.HEADER_KEYWORDS if kw in text_at_y)
-
-            # Require at least 3 keywords AND check word count suggests headers
-            if keyword_count >= 3 and len(words_at_y) >= 4 and len(words_at_y) <= 10:
-                header_y = y_pos
-                logger.debug(
-                    "Found header row at Y=%s with %s keywords: %s...",
-                    y_pos,
-                    keyword_count,
-                    text_at_y[:60],
-                )
-                break
-
+        header_y = self._find_header_row(y_groups)
         if not header_y:
             logger.debug("No header row found in text")
             return None
