@@ -5,8 +5,9 @@ using pdfplumber's table detection capabilities.
 """
 
 import logging
+from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, ClassVar
 
 from bankstatements_core.analysis.bbox_utils import BBox, expand_bbox
 
@@ -32,6 +33,34 @@ class TableDetectionResult:
 
 class TableDetector:
     """Detects transaction tables in PDF pages."""
+
+    HEADER_KEYWORDS: ClassVar[list[str]] = [
+        "date",
+        "details",
+        "description",
+        "debit",
+        "credit",
+        "amount",
+        "transaction",
+        "reference",
+        "particulars",
+    ]
+    TRANSACTION_INDICATORS: ClassVar[list[str]] = ["forward", "interest", "lending", "@"]
+    FOOTER_KEYWORDS: ClassVar[list[str]] = [
+        "continued",
+        "overleaf",
+        "page",
+        "total",
+        "balance brought forward",
+        "balance carried forward",
+        "end of statement",
+        "thank you",
+        "overdrawn",
+        "for important information",
+        "standard conditions",
+        "regulated by",
+        "authorised limit",
+    ]
 
     def __init__(self, min_table_height: float = 50.0):
         """Initialize table detector.
@@ -179,25 +208,6 @@ class TableDetector:
         Returns:
             BBox of detected table, or None if no table found
         """
-        from collections import defaultdict  # noqa: PLC0415
-
-        # Stricter keywords that are more likely to be column headers
-        # Avoid words that commonly appear in transaction descriptions
-        HEADER_KEYWORDS = [
-            "date",
-            "details",
-            "description",
-            "debit",
-            "credit",
-            "amount",
-            "transaction",
-            "reference",
-            "particulars",
-        ]
-
-        # Words that suggest it's a transaction, not a header
-        TRANSACTION_INDICATORS = ["forward", "interest", "lending", "@"]
-
         words = page.extract_words()
         if not words:
             return None
@@ -214,11 +224,11 @@ class TableDetector:
             text_at_y = " ".join([w["text"].lower() for w in words_at_y])
 
             # Check if it looks like transaction data (exclude these rows)
-            if any(indicator in text_at_y for indicator in TRANSACTION_INDICATORS):
+            if any(indicator in text_at_y for indicator in self.TRANSACTION_INDICATORS):
                 continue
 
             # Count matching header keywords
-            keyword_count = sum(1 for kw in HEADER_KEYWORDS if kw in text_at_y)
+            keyword_count = sum(1 for kw in self.HEADER_KEYWORDS if kw in text_at_y)
 
             # Require at least 3 keywords AND check word count suggests headers
             if keyword_count >= 3 and len(words_at_y) >= 4 and len(words_at_y) <= 10:
@@ -238,23 +248,6 @@ class TableDetector:
         # Find dense text region INCLUDING header and below (transaction rows)
         table_y_positions = [header_y]  # Include the header itself
 
-        # Footer keywords that indicate end of transaction table
-        FOOTER_KEYWORDS = [
-            "continued",
-            "overleaf",
-            "page",
-            "total",
-            "balance brought forward",
-            "balance carried forward",
-            "end of statement",
-            "thank you",
-            "overdrawn",
-            "for important information",
-            "standard conditions",
-            "regulated by",
-            "authorised limit",
-        ]
-
         # Track where footer section begins
         footer_start_y = None
         last_transaction_y = header_y
@@ -265,7 +258,7 @@ class TableDetector:
 
             # Check if this row contains footer keywords
             text_at_y = " ".join([w["text"].lower() for w in words_at_y])
-            is_footer = any(keyword in text_at_y for keyword in FOOTER_KEYWORDS)
+            is_footer = any(keyword in text_at_y for keyword in self.FOOTER_KEYWORDS)
 
             if is_footer:
                 # Found footer - mark where it starts
