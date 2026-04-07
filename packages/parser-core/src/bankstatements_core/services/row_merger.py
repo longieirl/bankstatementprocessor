@@ -32,7 +32,12 @@ class RowMergerService:
         self._last_transaction_row: dict | None = None
 
     def merge_continuation_lines(  # noqa: C901, PLR0912, PLR0915
-        self, rows: list[dict], columns: dict[str, tuple[int | float, int | float]]
+        # pylint: disable=too-many-branches
+        # Row merger heuristic — 17 branches reflect the full set of continuation
+        # line detection rules. Complexity is inherent to the domain logic.
+        self,
+        rows: list[dict],
+        columns: dict[str, tuple[int | float, int | float]],
     ) -> list[dict]:
         """Merge continuation lines with their parent transactions.
 

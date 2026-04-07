@@ -523,12 +523,11 @@ def create_output_strategy(
     # Note: both "excel" and "xlsx" map to ExcelOutputStrategy
     if format_lower == "csv":
         return CSVOutputStrategy()
-    elif format_lower == "json":
+    if format_lower == "json":
         return JSONOutputStrategy()
-    elif format_lower in ("excel", "xlsx"):
+    if format_lower in ("excel", "xlsx"):
         return ExcelOutputStrategy()
-    else:
-        raise ValueError(
-            f"Unknown output format: {format_name}. "
-            f"Valid formats: csv, json, excel, xlsx"
-        )
+    raise ValueError(
+        f"Unknown output format: {format_name}. "
+        f"Valid formats: csv, json, excel, xlsx"
+    )

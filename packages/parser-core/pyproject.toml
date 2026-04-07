@@ -41,6 +41,7 @@ dev = [
     "ipdb>=0.13.0",
     "pre-commit>=3.0.0,<5.0.0",
     "ruff>=0.8.0,<1.0.0",
+    "pylint>=3.0.0,<4.0.0",
     "bandit[toml]>=1.7.0,<2.0.0",
     "safety>=2.0.0,<4.0.0",
     "detect-secrets>=1.4.0,<2.0.0",
@@ -174,3 +175,21 @@ ignore = [
 "tests/**/*.py" = ["F401", "PLC0415", "PLR0913", "C901", "RUF043", "RUF059", "RUF005", "RUF003"]
 "tests/integration/*.py" = ["T201"]
 "src/bankstatements_core/pdf_table_extractor.py" = ["E402"]
+
+[tool.pylint.design]
+max-args = 12
+max-positional-arguments = 12
+max-attributes = 28
+max-locals = 25
+max-returns = 8
+max-branches = 14
+max-statements = 55
+max-bool-expr = 5
+max-nested-blocks = 5
+
+[tool.pylint.messages_control]
+disable = [
+    "R0903",  # too-few-public-methods — Protocol/Strategy classes intentionally have 1 method
+    "R0801",  # duplicate-code — false positives across service modules
+    "R0401",  # cyclic-import — handled by architecture tests
+]

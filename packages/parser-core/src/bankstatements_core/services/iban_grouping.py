@@ -100,8 +100,7 @@ class IBANGroupingService:
 
         if len(iban_clean) >= self._suffix_length:
             return iban_clean[-self._suffix_length :]
-        else:
-            return iban_clean
+        return iban_clean
 
     def _log_grouping_summary(self, grouped: dict[str, list[Transaction]]) -> None:
         """Log summary of grouping results.

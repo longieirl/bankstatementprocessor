@@ -125,8 +125,7 @@ class TemplateRegistry:
         # If custom directory specified, load both custom and default
         if custom_dir_str:
             return cls.from_multiple_directories([Path(custom_dir_str), default_dir])
-        else:
-            return cls.from_directory(default_dir)
+        return cls.from_directory(default_dir)
 
     @classmethod
     def from_directory(cls, templates_dir: Path | str) -> TemplateRegistry:

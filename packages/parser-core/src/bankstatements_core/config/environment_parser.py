@@ -139,14 +139,13 @@ class EnvironmentParser:
             parsed = json.loads(value_str)
             if isinstance(parsed, list):
                 return parsed
-            else:
-                logger.warning(
-                    "%s is not a JSON list, got %s. Using default: %s",
-                    var_name,
-                    type(parsed).__name__,
-                    default,
-                )
-                return default
+            logger.warning(
+                "%s is not a JSON list, got %s. Using default: %s",
+                var_name,
+                type(parsed).__name__,
+                default,
+            )
+            return default
         except (json.JSONDecodeError, TypeError) as e:
             logger.warning(
                 "Failed to parse %s as JSON: %s. Using default: %s",

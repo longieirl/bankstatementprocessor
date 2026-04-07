@@ -121,6 +121,9 @@ jobs:
     - name: MyPy
       run: mypy src --ignore-missing-imports
 
+    - name: Pylint design checks
+      run: pylint src --disable=all --enable=R --rcfile=pyproject.toml --disable=R0903,R0801,R0401
+
     - name: Validate type stubs
       run: |
         mypy --check-untyped-defs stubs/pdfplumber/

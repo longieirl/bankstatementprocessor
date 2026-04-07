@@ -187,31 +187,45 @@ class DataRetentionService:
                 if file_path.is_file():
                     file_mtime = datetime.fromtimestamp(file_path.stat().st_mtime)
                     if start_date <= file_mtime <= end_date:
-                        try:
-                            age_days = (datetime.now() - file_mtime).days
-                            self._secure_delete(file_path)
-                            logger.info(
-                                "Deleted file: %s (date: %s)",
-                                file_path.name,
-                                file_mtime.strftime("%Y-%m-%d"),
-                            )
-
-                            # Log deletion event
-                            if audit_log:
-                                audit_log.log_deletion(
-                                    file_name=file_path.name,
-                                    reason=f"Date range deletion ({start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')})",
-                                    age_days=age_days,
-                                )
-
-                            deleted_count += 1
-                        except OSError as e:
-                            # Expected errors: file system errors, permission issues
-                            logger.error("Failed to delete %s: %s", file_path, e)
-                        # Let unexpected errors bubble up
+                        deleted_count += self._delete_file_in_range(
+                            file_path, file_mtime, start_date, end_date, audit_log
+                        )
 
         logger.info("Date range cleanup completed: %d files deleted", deleted_count)
         return deleted_count
+
+    def _delete_file_in_range(
+        self,
+        file_path: Path,
+        file_mtime: datetime,
+        start_date: datetime,
+        end_date: datetime,
+        audit_log: ProcessingActivityLog | None,
+    ) -> int:
+        """Attempt to delete a single file and log the deletion event. Returns 1 on success, 0 on failure."""
+        try:
+            age_days = (datetime.now() - file_mtime).days
+            self._secure_delete(file_path)
+            logger.info(
+                "Deleted file: %s (date: %s)",
+                file_path.name,
+                file_mtime.strftime("%Y-%m-%d"),
+            )
+
+            # Log deletion event
+            if audit_log:
+                audit_log.log_deletion(
+                    file_name=file_path.name,
+                    reason=f"Date range deletion ({start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')})",
+                    age_days=age_days,
+                )
+
+            return 1
+        except OSError as e:
+            # Expected errors: file system errors, permission issues
+            logger.error("Failed to delete %s: %s", file_path, e)
+            return 0
+        # Let unexpected errors bubble up
 
     def _secure_delete(self, file_path: Path) -> None:
         """

@@ -94,7 +94,7 @@ class Transaction:
                 # Clean amount string (remove currency symbols, spaces)
                 amount_str = self._clean_amount_string(self.debit)  # type: ignore
                 return -Decimal(amount_str)
-            elif self.is_credit():
+            if self.is_credit():
                 amount_str = self._clean_amount_string(self.credit)  # type: ignore
                 return Decimal(amount_str)
         except (InvalidOperation, ValueError, AttributeError):
