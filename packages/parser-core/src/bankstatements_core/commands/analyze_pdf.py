@@ -59,6 +59,9 @@ class PDFAnalyzer:
         )
 
     def analyze(self) -> dict:  # noqa: C901, PLR0912, PLR0915
+        # pylint: disable=too-many-branches,too-many-statements,too-many-locals
+        # CLI analysis command — orchestrates PDF analysis workflow with multiple
+        # conditional paths. Stable exemption (matches Xenon gate rationale).
         """Run full PDF analysis workflow.
 
         Returns:

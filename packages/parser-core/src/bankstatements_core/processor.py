@@ -115,7 +115,11 @@ def parse_transaction_date(date_str: str) -> datetime:
 
 
 class BankStatementProcessor:
+    # pylint: disable=too-many-instance-attributes
+    # Builder/processor class — 27 attributes reflect the full configurable surface
+    # area of the processing pipeline. Not reducible without breaking the public API.
     def __init__(  # noqa: PLR0913, PLR0915
+        # pylint: disable=too-many-statements
         self,
         config: ProcessorConfig,
         output_strategies: dict[str, Any] | None = None,

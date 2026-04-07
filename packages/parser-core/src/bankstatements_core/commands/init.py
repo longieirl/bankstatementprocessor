@@ -15,6 +15,9 @@ def _echo(msg: str = "") -> None:
 
 
 def init_directories(  # noqa: C901, PLR0912, PLR0915
+    # pylint: disable=too-many-branches,too-many-statements
+    # CLI entrypoint orchestration — complexity is setup sequencing (mkdir + sample
+    # file creation), not extractable decision logic. Stable exemption (see Xenon gate).
     base_dir: Path | None = None,
     create_samples: bool = False,
     verbose: bool = True,

@@ -453,7 +453,7 @@ class ExpenseAnalysisService:
             if tx.is_debit() and tx.debit:
                 amount_str = self._clean_amount_string(tx.debit)
                 return abs(Decimal(amount_str))
-            elif tx.is_credit() and tx.credit:
+            if tx.is_credit() and tx.credit:
                 amount_str = self._clean_amount_string(tx.credit)
                 return abs(Decimal(amount_str))
         except (InvalidOperation, ValueError, AttributeError):
