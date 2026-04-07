@@ -5,8 +5,9 @@ using pdfplumber's table detection capabilities.
 """
 
 import logging
+from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, ClassVar
 
 from bankstatements_core.analysis.bbox_utils import BBox, expand_bbox
 
@@ -32,6 +33,39 @@ class TableDetectionResult:
 
 class TableDetector:
     """Detects transaction tables in PDF pages."""
+
+    HEADER_KEYWORDS: ClassVar[list[str]] = [
+        "date",
+        "details",
+        "description",
+        "debit",
+        "credit",
+        "amount",
+        "transaction",
+        "reference",
+        "particulars",
+    ]
+    TRANSACTION_INDICATORS: ClassVar[list[str]] = [
+        "forward",
+        "interest",
+        "lending",
+        "@",
+    ]
+    FOOTER_KEYWORDS: ClassVar[list[str]] = [
+        "continued",
+        "overleaf",
+        "page",
+        "total",
+        "balance brought forward",
+        "balance carried forward",
+        "end of statement",
+        "thank you",
+        "overdrawn",
+        "for important information",
+        "standard conditions",
+        "regulated by",
+        "authorised limit",
+    ]
 
     def __init__(self, min_table_height: float = 50.0):
         """Initialize table detector.
@@ -163,9 +197,116 @@ class TableDetector:
         logger.debug("Largest table: %s (area=%.0fpx²)", largest, largest.area)
         return largest
 
-    def _detect_text_based_table(  # noqa: C901, PLR0912, PLR0915
-        self, page: Any
-    ) -> BBox | None:
+    def _group_words_by_row(self, words: list[dict]) -> dict[int, list[dict]]:
+        """Group pdfplumber word dicts into 5-pixel Y-buckets."""
+        y_groups: dict[int, list[dict]] = defaultdict(list)
+        for word in words:
+            y_key = round(word["top"] / 5) * 5
+            y_groups[y_key].append(word)
+        return dict(y_groups)
+
+    def _find_header_row(self, y_groups: dict[int, list[dict]]) -> int | None:
+        """Find first Y-position matching column header pattern.
+
+        A row matches if it contains no transaction indicators, matches at least
+        3 header keywords, and has between 4 and 10 words (inclusive).
+        """
+        for y_pos, words_at_y in sorted(y_groups.items()):
+            text_at_y = " ".join(w["text"].lower() for w in words_at_y)
+            if any(ind in text_at_y for ind in self.TRANSACTION_INDICATORS):
+                continue
+            keyword_count = sum(1 for kw in self.HEADER_KEYWORDS if kw in text_at_y)
+            if keyword_count >= 3 and 4 <= len(words_at_y) <= 10:
+                logger.debug(
+                    "Found header row at Y=%s with %s keywords: %s...",
+                    y_pos,
+                    keyword_count,
+                    text_at_y[:60],
+                )
+                return y_pos
+        return None
+
+    def _find_footer_boundary(
+        self, y_groups: dict[int, list[dict]], header_y: int
+    ) -> tuple[int | None, list[int]]:
+        """Scan rows below header for footer boundary and accumulate table row positions.
+
+        Returns (footer_start_y, data_y_positions) where data_y_positions contains
+        only rows BELOW the header (the caller prepends header_y before the len < 2 guard).
+        """
+        data_y_positions: list[int] = []
+        footer_start_y = None
+        last_transaction_y = header_y
+
+        for y_pos, words_at_y in sorted(y_groups.items()):
+            if y_pos <= header_y:
+                continue
+
+            text_at_y = " ".join(w["text"].lower() for w in words_at_y)
+            if any(kw in text_at_y for kw in self.FOOTER_KEYWORDS):
+                footer_start_y = y_pos
+                logger.debug("Footer detected at Y=%s: %s...", y_pos, text_at_y[:50])
+                break
+
+            gap_from_last = y_pos - last_transaction_y
+            if gap_from_last > 100 and len(words_at_y) < 10:
+                footer_start_y = y_pos
+                logger.debug(
+                    "Large gap (%.1fpx) detected at Y=%s, footer section likely starts here",
+                    gap_from_last,
+                    y_pos,
+                )
+                break
+
+            if len(words_at_y) >= 3:
+                data_y_positions.append(y_pos)
+                last_transaction_y = y_pos
+
+        return footer_start_y, data_y_positions
+
+    def _calculate_bottom_y(
+        self, table_y_positions: list[int], footer_start_y: int | None
+    ) -> float:
+        """Calculate the bottom Y coordinate of the table region."""
+        if footer_start_y is not None:
+            table_bottom_y: float = footer_start_y - 10
+            logger.debug(
+                "Table extended to footer boundary: Y=%.1f (footer starts at Y=%.1f)",
+                table_bottom_y,
+                footer_start_y,
+            )
+            return table_bottom_y
+
+        if len(table_y_positions) >= 3:
+            sorted_positions = sorted(table_y_positions)
+            row_spacings = [
+                sorted_positions[i] - sorted_positions[i - 1]
+                for i in range(1, len(sorted_positions))
+                if sorted_positions[i] - sorted_positions[i - 1] < 50
+            ]
+            if row_spacings:
+                avg_row_spacing = sum(row_spacings) / len(row_spacings)
+                bottom_margin = avg_row_spacing * 1.5
+                logger.debug(
+                    "Calculated bottom margin: %.1fpx (avg row spacing: %.1fpx × 1.5)",  # noqa: RUF001
+                    bottom_margin,
+                    avg_row_spacing,
+                )
+            else:
+                bottom_margin = 20.0
+                logger.debug("Using fallback bottom margin: 20px")
+        else:
+            bottom_margin = 20.0
+            logger.debug("Using default bottom margin for single row: 20px")
+
+        table_bottom_y = float(max(table_y_positions)) + bottom_margin
+        logger.debug(
+            "No footer found, using last transaction + margin: Y=%.1f",
+            table_bottom_y,
+        )
+        return table_bottom_y
+
+    def _detect_text_based_table(self, page: Any) -> BBox | None:
         """Detect table region from text patterns (fallback method).
 
         For PDFs without explicit table borders, this method:
@@ -179,116 +320,23 @@ class TableDetector:
         Returns:
             BBox of detected table, or None if no table found
         """
-        from collections import defaultdict  # noqa: PLC0415
-
-        # Stricter keywords that are more likely to be column headers
-        # Avoid words that commonly appear in transaction descriptions
-        HEADER_KEYWORDS = [
-            "date",
-            "details",
-            "description",
-            "debit",
-            "credit",
-            "amount",
-            "transaction",
-            "reference",
-            "particulars",
-        ]
-
-        # Words that suggest it's a transaction, not a header
-        TRANSACTION_INDICATORS = ["forward", "interest", "lending", "@"]
-
         words = page.extract_words()
         if not words:
             return None
 
         # Group words by Y-position to find rows
-        y_groups = defaultdict(list)
-        for word in words:
-            y_key = round(word["top"] / 5) * 5  # Group by 5px buckets
-            y_groups[y_key].append(word)
+        y_groups = self._group_words_by_row(words)
 
-        # Find row with column headers (stricter matching)
-        header_y = None
-        for y_pos, words_at_y in sorted(y_groups.items()):
-            text_at_y = " ".join([w["text"].lower() for w in words_at_y])
-
-            # Check if it looks like transaction data (exclude these rows)
-            if any(indicator in text_at_y for indicator in TRANSACTION_INDICATORS):
-                continue
-
-            # Count matching header keywords
-            keyword_count = sum(1 for kw in HEADER_KEYWORDS if kw in text_at_y)
-
-            # Require at least 3 keywords AND check word count suggests headers
-            if keyword_count >= 3 and len(words_at_y) >= 4 and len(words_at_y) <= 10:
-                header_y = y_pos
-                logger.debug(
-                    "Found header row at Y=%s with %s keywords: %s...",
-                    y_pos,
-                    keyword_count,
-                    text_at_y[:60],
-                )
-                break
-
+        header_y = self._find_header_row(y_groups)
         if not header_y:
             logger.debug("No header row found in text")
             return None
 
         # Find dense text region INCLUDING header and below (transaction rows)
-        table_y_positions = [header_y]  # Include the header itself
-
-        # Footer keywords that indicate end of transaction table
-        FOOTER_KEYWORDS = [
-            "continued",
-            "overleaf",
-            "page",
-            "total",
-            "balance brought forward",
-            "balance carried forward",
-            "end of statement",
-            "thank you",
-            "overdrawn",
-            "for important information",
-            "standard conditions",
-            "regulated by",
-            "authorised limit",
-        ]
-
-        # Track where footer section begins
-        footer_start_y = None
-        last_transaction_y = header_y
-
-        for y_pos, words_at_y in sorted(y_groups.items()):
-            if y_pos <= header_y:
-                continue
-
-            # Check if this row contains footer keywords
-            text_at_y = " ".join([w["text"].lower() for w in words_at_y])
-            is_footer = any(keyword in text_at_y for keyword in FOOTER_KEYWORDS)
-
-            if is_footer:
-                # Found footer - mark where it starts
-                footer_start_y = y_pos
-                logger.debug("Footer detected at Y=%s: %s...", y_pos, text_at_y[:50])
-                break
-
-            # Check for large gap from last transaction (likely footer section)
-            gap_from_last = y_pos - last_transaction_y
-            if gap_from_last > 100 and len(words_at_y) < 10:
-                # Large gap + sparse content = likely footer section
-                footer_start_y = y_pos
-                logger.debug(
-                    "Large gap (%.1fpx) detected at Y=%s, footer section likely starts here",
-                    gap_from_last,
-                    y_pos,
-                )
-                break
-
-            # Consider rows with 3+ words as potential table rows
-            if len(words_at_y) >= 3:
-                table_y_positions.append(y_pos)
-                last_transaction_y = y_pos
+        footer_start_y, data_y_positions = self._find_footer_boundary(
+            y_groups, header_y
+        )
+        table_y_positions = [header_y, *data_y_positions]
 
         if len(table_y_positions) < 2:  # Need at least header + 1 data row
             logger.debug("No transaction rows found below header")
@@ -298,47 +346,7 @@ class TableDetector:
         # Add small margin (5px) above header to catch all header words
         table_top_y = header_y - 5  # Include margin above header
 
-        # Calculate table_bottom_y: extend to just before footer (for multi-page support)
-        # This ensures transactions on subsequent pages are captured
-        if footer_start_y is not None:
-            # Footer found - extend table to just before footer (leave 10px margin)
-            table_bottom_y = footer_start_y - 10
-            logger.debug(
-                "Table extended to footer boundary: Y=%.1f (footer starts at Y=%.1f)",
-                table_bottom_y,
-                footer_start_y,
-            )
-        else:
-            # No footer found - use last transaction + margin (single page case)
-            if len(table_y_positions) >= 3:
-                # Calculate average row spacing
-                row_spacings = []
-                sorted_positions = sorted(table_y_positions)
-                for i in range(1, len(sorted_positions)):
-                    spacing = sorted_positions[i] - sorted_positions[i - 1]
-                    if spacing < 50:
-                        row_spacings.append(spacing)
-
-                if row_spacings:
-                    avg_row_spacing = sum(row_spacings) / len(row_spacings)
-                    bottom_margin = avg_row_spacing * 1.5
-                    logger.debug(
-                        "Calculated bottom margin: %.1fpx (avg row spacing: %.1fpx × 1.5)",  # noqa: RUF001
-                        bottom_margin,
-                        avg_row_spacing,
-                    )
-                else:
-                    bottom_margin = 20
-                    logger.debug("Using fallback bottom margin: 20px")
-            else:
-                bottom_margin = 20
-                logger.debug("Using default bottom margin for single row: 20px")
-
-            table_bottom_y = max(table_y_positions) + bottom_margin
-            logger.debug(
-                "No footer found, using last transaction + margin: Y=%.1f",
-                table_bottom_y,
-            )
+        table_bottom_y = self._calculate_bottom_y(table_y_positions, footer_start_y)
         logger.debug(
             "Table boundary: Y=%.1f to Y=%.1f (height=%.1fpx, %s rows)",
             table_top_y,
