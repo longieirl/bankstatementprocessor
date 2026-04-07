@@ -45,7 +45,12 @@ class TableDetector:
         "reference",
         "particulars",
     ]
-    TRANSACTION_INDICATORS: ClassVar[list[str]] = ["forward", "interest", "lending", "@"]
+    TRANSACTION_INDICATORS: ClassVar[list[str]] = [
+        "forward",
+        "interest",
+        "lending",
+        "@",
+    ]
     FOOTER_KEYWORDS: ClassVar[list[str]] = [
         "continued",
         "overleaf",
@@ -301,9 +306,7 @@ class TableDetector:
         )
         return table_bottom_y
 
-    def _detect_text_based_table(
-        self, page: Any
-    ) -> BBox | None:
+    def _detect_text_based_table(self, page: Any) -> BBox | None:
         """Detect table region from text patterns (fallback method).
 
         For PDFs without explicit table borders, this method:
@@ -330,7 +333,9 @@ class TableDetector:
             return None
 
         # Find dense text region INCLUDING header and below (transaction rows)
-        footer_start_y, data_y_positions = self._find_footer_boundary(y_groups, header_y)
+        footer_start_y, data_y_positions = self._find_footer_boundary(
+            y_groups, header_y
+        )
         table_y_positions = [header_y, *data_y_positions]
 
         if len(table_y_positions) < 2:  # Need at least header + 1 data row

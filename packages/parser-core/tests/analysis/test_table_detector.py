@@ -410,7 +410,10 @@ class TestDetectTextBasedTable:
             self._make_word("10.00", 120, x0=200),
         ]
         # Sparse row > 100px below last transaction
-        sparse = [self._make_word("Note", 240, x0=50), self._make_word("only", 240, x0=100)]
+        sparse = [
+            self._make_word("Note", 240, x0=50),
+            self._make_word("only", 240, x0=100),
+        ]
         page = self._make_page(header_words + row1 + sparse)
         result = detector._detect_text_based_table(page)
         assert result is not None
