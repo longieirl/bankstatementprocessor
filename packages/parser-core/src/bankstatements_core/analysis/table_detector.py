@@ -269,7 +269,7 @@ class TableDetector:
     ) -> float:
         """Calculate the bottom Y coordinate of the table region."""
         if footer_start_y is not None:
-            table_bottom_y = footer_start_y - 10
+            table_bottom_y: float = footer_start_y - 10
             logger.debug(
                 "Table extended to footer boundary: Y=%.1f (footer starts at Y=%.1f)",
                 table_bottom_y,
@@ -293,13 +293,13 @@ class TableDetector:
                     avg_row_spacing,
                 )
             else:
-                bottom_margin = 20
+                bottom_margin = 20.0
                 logger.debug("Using fallback bottom margin: 20px")
         else:
-            bottom_margin = 20
+            bottom_margin = 20.0
             logger.debug("Using default bottom margin for single row: 20px")
 
-        table_bottom_y = max(table_y_positions) + bottom_margin
+        table_bottom_y = float(max(table_y_positions)) + bottom_margin
         logger.debug(
             "No footer found, using last transaction + margin: Y=%.1f",
             table_bottom_y,

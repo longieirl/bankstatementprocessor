@@ -1,7 +1,8 @@
 """Tests for table detection."""
 
-import pytest
 from unittest.mock import MagicMock, Mock
+
+import pytest
 
 from bankstatements_core.analysis.bbox_utils import BBox
 from bankstatements_core.analysis.table_detector import (
