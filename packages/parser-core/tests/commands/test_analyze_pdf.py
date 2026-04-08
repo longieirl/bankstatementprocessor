@@ -149,14 +149,14 @@ class TestPDFAnalyzer:
         instantiation_check = "ProcessorFactory.create" in source
 
         assert not import_check, "analyze_pdf must NOT import ProcessorFactory"
-        assert not instantiation_check, (
-            "analyze_pdf must NOT call ProcessorFactory.create"
-        )
+        assert (
+            not instantiation_check
+        ), "analyze_pdf must NOT call ProcessorFactory.create"
 
         # Verify it DOES use direct instantiation
-        assert "PDFTableExtractor(" in source, (
-            "analyze_pdf should use direct PDFTableExtractor instantiation"
-        )
+        assert (
+            "PDFTableExtractor(" in source
+        ), "analyze_pdf should use direct PDFTableExtractor instantiation"
 
     def test_entitlement_constraint_no_entitlements_import(self):
         """Test that analyze_pdf does NOT import Entitlements."""
@@ -167,9 +167,9 @@ class TestPDFAnalyzer:
         source = inspect.getsource(analyze_pdf)
 
         # Verify no Entitlements import
-        assert "from bankstatements_core.entitlements import" not in source, (
-            "analyze_pdf must NOT import Entitlements module"
-        )
+        assert (
+            "from bankstatements_core.entitlements import" not in source
+        ), "analyze_pdf must NOT import Entitlements module"
         assert "Entitlements" not in source or "entitlement" in source.lower()
 
     @patch("bankstatements_core.commands.analyze_pdf.pdfplumber")
@@ -248,12 +248,12 @@ class TestPDFAnalyzer:
                 analyzer.analyze()
 
             # Verify IBAN extraction only called on first page
-            assert call_count["count"] == 1, (
-                "IBAN extraction should only be called once"
-            )
-            assert call_count["pages"] == [1], (
-                "IBAN extraction should only process page 1"
-            )
+            assert (
+                call_count["count"] == 1
+            ), "IBAN extraction should only be called once"
+            assert call_count["pages"] == [
+                1
+            ], "IBAN extraction should only process page 1"
 
         finally:
             pdf_path.unlink()

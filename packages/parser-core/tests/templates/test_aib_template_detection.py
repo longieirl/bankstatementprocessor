@@ -40,9 +40,9 @@ class TestAIBTemplateDetection:
         keywords = aib_cc.detection.header_keywords
 
         # Should have specific keywords, not just "Allied Irish Banks"
-        assert any("Credit Card" in kw for kw in keywords), (
-            "AIB credit card template should have 'Credit Card' keyword"
-        )
+        assert any(
+            "Credit Card" in kw for kw in keywords
+        ), "AIB credit card template should have 'Credit Card' keyword"
 
     def test_aib_ireland_has_bank_specific_keywords(self):
         """Test AIB Ireland template has bank-specific keywords."""
@@ -58,9 +58,9 @@ class TestAIBTemplateDetection:
             "Statement of Account",
             "Allied Irish Banks",
         ]
-        assert any(kw in keywords for kw in bank_keywords), (
-            "AIB Ireland template should have bank-specific keywords"
-        )
+        assert any(
+            kw in keywords for kw in bank_keywords
+        ), "AIB Ireland template should have bank-specific keywords"
 
     def test_aib_credit_card_has_exclude_keywords(self):
         """Test AIB credit card template has exclude keywords to avoid bank statements."""
@@ -82,9 +82,9 @@ class TestAIBTemplateDetection:
                 "Statement of Account",
             ]
             for exclusion in expected_exclusions:
-                assert exclusion in exclude_keywords, (
-                    f"AIB credit card should exclude '{exclusion}' to avoid bank statements"
-                )
+                assert (
+                    exclusion in exclude_keywords
+                ), f"AIB credit card should exclude '{exclusion}' to avoid bank statements"
 
 
 class TestAIBTemplateDetectionScenarios:
@@ -148,9 +148,9 @@ class TestAIBTemplateDetectionScenarios:
         detected = detector.detect_template(Path("test.pdf"), mock_pdf)
 
         assert detected is not None
-        assert detected.id == "aib_ireland", (
-            "PDF with IBAN should be detected as AIB Ireland bank statement"
-        )
+        assert (
+            detected.id == "aib_ireland"
+        ), "PDF with IBAN should be detected as AIB Ireland bank statement"
 
     @patch(
         "bankstatements_core.templates.detectors.exclusion_detector.ExclusionDetector.detect"
@@ -211,9 +211,9 @@ class TestAIBTemplateDetectionScenarios:
         detected = detector.detect_template(Path("test.pdf"), mock_pdf)
 
         assert detected is not None
-        assert detected.id == "aib_credit_card", (
-            "PDF with 'Credit Card Statement' and no IBAN should be credit card"
-        )
+        assert (
+            detected.id == "aib_credit_card"
+        ), "PDF with 'Credit Card Statement' and no IBAN should be credit card"
 
 
 class TestAIBColumnBoundaries:
@@ -253,9 +253,9 @@ class TestAIBColumnBoundaries:
 
         # Bank statements should have balance column
         balance_cols = [col for col in columns if "balance" in col.lower()]
-        assert len(balance_cols) > 0, (
-            "AIB Ireland bank template should have Balance column"
-        )
+        assert (
+            len(balance_cols) > 0
+        ), "AIB Ireland bank template should have Balance column"
 
     def test_aib_ireland_date_column_reasonable(self):
         """Test AIB Ireland date column can fit dates like '22 Apr 2025'."""
@@ -270,9 +270,9 @@ class TestAIBColumnBoundaries:
         date_width = date_col[1] - date_col[0]
 
         # Date like "22 Apr 2025" needs roughly 50-80 pixels
-        assert date_width >= 40, (
-            f"Date column width {date_width} too narrow for '22 Apr 2025'"
-        )
+        assert (
+            date_width >= 40
+        ), f"Date column width {date_width} too narrow for '22 Apr 2025'"
 
 
 class TestAIBDocumentTypes:

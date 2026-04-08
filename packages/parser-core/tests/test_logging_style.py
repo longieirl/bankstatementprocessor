@@ -36,6 +36,6 @@ def test_no_prints_and_no_logger_fstring_in_src():
         if fstring_logger.search(text):
             violations.append(f"logger f-string found in {p}")
 
-    assert not violations, (
-        "Found logging/style violations in refactored files:\n" + "\n".join(violations)
-    )
+    assert (
+        not violations
+    ), "Found logging/style violations in refactored files:\n" + "\n".join(violations)
