@@ -15,9 +15,6 @@ if TYPE_CHECKING:
 
 from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.domain.converters import dicts_to_transactions
-from bankstatements_core.domain.models.extraction_scoring_config import (
-    ExtractionScoringConfig,
-)
 from bankstatements_core.domain.models.extraction_warning import (
     CODE_CREDIT_CARD_SKIPPED,
     ExtractionWarning,
@@ -57,7 +54,6 @@ class PDFTableExtractor:
         pdf_reader: IPDFReader | None = None,
         extraction_config: Any | None = None,
         template: Any | None = None,
-        scoring_config: ExtractionScoringConfig | None = None,
         entitlements: Any | None = None,
     ):
         self.columns = columns
@@ -69,7 +65,6 @@ class PDFTableExtractor:
         self.header_check_top_y = header_check_top_y
         self.extraction_config = extraction_config
         self.template = template
-        self.scoring_config = scoring_config
         self._entitlements = entitlements
 
         self._row_classifier = create_row_classifier_chain()
@@ -106,7 +101,6 @@ class PDFTableExtractor:
                 template=self.template,
                 filename_date=filename_date,
                 filename=pdf_path.name,
-                scoring_config=self.scoring_config,
             )
         )
 
