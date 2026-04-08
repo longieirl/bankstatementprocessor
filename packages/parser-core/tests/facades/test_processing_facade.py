@@ -328,3 +328,45 @@ class TestBankStatementProcessingFacade:
             exit_code = facade.process_with_error_handling()
 
             assert exit_code == 4  # Unexpected error exit code
+
+    @patch("bankstatements_core.facades.processing_facade.get_columns_config")
+    @patch("bankstatements_core.patterns.factories.ProcessorFactory")
+    def test_auto_cleanup_forwards_data_retention_days(
+        self, mock_factory, mock_get_columns
+    ):
+        """DataRetentionService must receive data_retention_days from config, not a hardcoded 0."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            input_dir = Path(tmpdir) / "input"
+            output_dir = Path(tmpdir) / "output"
+            input_dir.mkdir()
+
+            config = AppConfig(
+                input_dir=input_dir,
+                output_dir=output_dir,
+                table_top_y=300,
+                table_bottom_y=720,
+                enable_dynamic_boundary=False,
+                sort_by_date=True,
+                totals_columns=["debit"],
+                generate_monthly_summary=True,
+                output_formats=["csv"],
+                auto_cleanup_on_exit=True,
+                data_retention_days=30,
+            )
+
+            facade = BankStatementProcessingFacade(
+                config, entitlements=Entitlements.paid_tier()
+            )
+
+            mock_get_columns.return_value = {"Date": (0, 100)}
+            mock_processor = MagicMock()
+            mock_processor.run.return_value = {"pdf_count": 0}
+            mock_factory.create_from_config.return_value = mock_processor
+
+            with patch(
+                "bankstatements_core.services.data_retention.DataRetentionService"
+            ) as mock_drs:
+                mock_drs.return_value.cleanup_all_files.return_value = 0
+                facade.process_all()
+
+            mock_drs.assert_called_once_with(30, output_dir)
