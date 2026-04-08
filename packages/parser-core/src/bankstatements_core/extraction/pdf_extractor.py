@@ -45,7 +45,7 @@ class PDFTableExtractor:
     - RowPostProcessor: date propagation and metadata tagging
     """
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         columns: dict[str, tuple[int | float, int | float]],
         table_top_y: int = 300,

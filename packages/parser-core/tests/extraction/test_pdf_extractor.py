@@ -541,6 +541,6 @@ class TestPDFTableExtractor:
         header_crop_calls = [
             call for call in mock_page.crop.call_args_list if call[0][0][1] == 450
         ]
-        assert (
-            len(header_crop_calls) > 0
-        ), "Header check should use header_check_top_y=450 for page 1"
+        assert len(header_crop_calls) > 0, (
+            "Header check should use header_check_top_y=450 for page 1"
+        )

@@ -81,14 +81,14 @@ class ColumnAnalyzer:
             logger.debug("No headers found, using transaction data for columns")
             clusters = self._cluster_x_coordinates(table_words)
             boundaries = self._detect_boundaries_from_clusters(clusters)
-            column_names = [f"Column{i+1}" for i in range(len(boundaries))]
+            column_names = [f"Column{i + 1}" for i in range(len(boundaries))]
 
         logger.debug("Detected %s column boundaries", len(boundaries))
 
         # Build result dictionary
         columns = {}
         for i, (x_min, x_max) in enumerate(boundaries):
-            column_name = column_names[i] if i < len(column_names) else f"Column{i+1}"
+            column_name = column_names[i] if i < len(column_names) else f"Column{i + 1}"
             columns[column_name] = (x_min, x_max)
             logger.debug("  %s: (%.1f, %.1f)", column_name, x_min, x_max)
 
@@ -224,7 +224,7 @@ class ColumnAnalyzer:
             List of column names (same length as boundaries)
         """
         if not header_words:
-            return [f"Column{i+1}" for i in range(len(boundaries))]
+            return [f"Column{i + 1}" for i in range(len(boundaries))]
 
         # Sort header words by X position
         header_words_sorted = sorted(header_words, key=lambda w: w["x0"])
@@ -286,7 +286,7 @@ class ColumnAnalyzer:
         for i in range(len(column_names)):
             name_val = column_names[i]
             if name_val is None:
-                name = f"Column{i+1}"
+                name = f"Column{i + 1}"
                 result_names.append(name)
                 logger.debug(
                     "Column %s [%.1f, %.1f]: '%s' (no match)",

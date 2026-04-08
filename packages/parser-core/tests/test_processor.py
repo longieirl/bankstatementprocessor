@@ -489,22 +489,27 @@ class TestTransactionDateParsing(unittest.TestCase):
     def test_parse_transaction_date_dd_space_mmm_yy(self):
         """Test parsing 'DD MMM YY' format dates (2-digit year)"""
         self.assertEqual(
-            parse_transaction_date("31 Mar 25"), datetime(2025, 3, 31)  # < 50 = 20xx
+            parse_transaction_date("31 Mar 25"),
+            datetime(2025, 3, 31),  # < 50 = 20xx
         )
         self.assertEqual(
-            parse_transaction_date("10 Feb 99"), datetime(1999, 2, 10)  # >= 50 = 19xx
+            parse_transaction_date("10 Feb 99"),
+            datetime(1999, 2, 10),  # >= 50 = 19xx
         )
 
     def test_parse_transaction_date_two_digit_year_logic(self):
         """Test two-digit year interpretation (< 50 = 20xx, >= 50 = 19xx)"""
         self.assertEqual(
-            parse_transaction_date("01/01/49"), datetime(2049, 1, 1)  # < 50 = 20xx
+            parse_transaction_date("01/01/49"),
+            datetime(2049, 1, 1),  # < 50 = 20xx
         )
         self.assertEqual(
-            parse_transaction_date("01/01/50"), datetime(1950, 1, 1)  # >= 50 = 19xx
+            parse_transaction_date("01/01/50"),
+            datetime(1950, 1, 1),  # >= 50 = 19xx
         )
         self.assertEqual(
-            parse_transaction_date("01/01/99"), datetime(1999, 1, 1)  # >= 50 = 19xx
+            parse_transaction_date("01/01/99"),
+            datetime(1999, 1, 1),  # >= 50 = 19xx
         )
 
     def test_parse_transaction_date_empty_or_invalid(self):

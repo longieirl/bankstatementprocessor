@@ -70,8 +70,7 @@ class TestRevolutColumnBoundaries:
 
         actual_order = list(columns.keys())
         assert actual_order == expected_order, (
-            f"Column order mismatch. Expected: {expected_order}, "
-            f"Got: {actual_order}"
+            f"Column order mismatch. Expected: {expected_order}, Got: {actual_order}"
         )
 
     def test_revolut_column_widths_reasonable(self):
@@ -87,9 +86,9 @@ class TestRevolutColumnBoundaries:
 
         # Details column should be widest (transaction descriptions)
         details_width = columns["Details"][1] - columns["Details"][0]
-        assert (
-            details_width >= 150
-        ), f"Details column width {details_width} seems too narrow"
+        assert details_width >= 150, (
+            f"Details column width {details_width} seems too narrow"
+        )
 
         # Amount columns should be similar width
         debit_width = columns["Debit €"][1] - columns["Debit €"][0]
@@ -102,9 +101,9 @@ class TestRevolutColumnBoundaries:
             ("Credit €", credit_width),
             ("Balance €", balance_width),
         ]:
-            assert (
-                20 <= width <= 120
-            ), f"{col_name} width {width} is outside reasonable range (20-120)"
+            assert 20 <= width <= 120, (
+                f"{col_name} width {width} is outside reasonable range (20-120)"
+            )
 
 
 class TestRevolutBalanceExtraction:
@@ -115,9 +114,9 @@ class TestRevolutBalanceExtraction:
         registry = TemplateRegistry.from_default_config()
         revolut = registry.get_template("revolut")
 
-        assert (
-            "Balance €" in revolut.extraction.columns
-        ), "Revolut template must have Balance € column"
+        assert "Balance €" in revolut.extraction.columns, (
+            "Revolut template must have Balance € column"
+        )
 
     def test_revolut_supports_multiline(self):
         """Test Revolut template supports multiline transactions.
@@ -131,9 +130,9 @@ class TestRevolutBalanceExtraction:
         registry = TemplateRegistry.from_default_config()
         revolut = registry.get_template("revolut")
 
-        assert (
-            revolut.processing.supports_multiline is True
-        ), "Revolut template must support multiline transactions"
+        assert revolut.processing.supports_multiline is True, (
+            "Revolut template must support multiline transactions"
+        )
 
 
 if __name__ == "__main__":

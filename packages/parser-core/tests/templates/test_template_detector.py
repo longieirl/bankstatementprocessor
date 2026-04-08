@@ -736,9 +736,7 @@ class TestTemplateDetector:
         mock_cropped.extract_text.return_value = "Credit Card Statement"
         mock_page.crop.return_value = mock_cropped
 
-        mock_registry.get_templates_by_type.return_value = (
-            []
-        )  # No templates for this type
+        mock_registry.get_templates_by_type.return_value = []  # No templates for this type
 
         mock_exclusion_detect.return_value = []
         mock_iban_detect.return_value = []

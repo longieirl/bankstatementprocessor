@@ -178,9 +178,9 @@ class TestCreditCardDetection:
             extractor = PDFTableExtractor(columns=TEST_COLUMNS)
             result = extractor.extract(Path("/tmp/test.pdf"))
 
-            assert (
-                len(result.transactions) == 0
-            ), f"Failed to detect with pattern: {pattern_name}"
+            assert len(result.transactions) == 0, (
+                f"Failed to detect with pattern: {pattern_name}"
+            )
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_does_not_detect_false_positives(self, mock_pdfplumber):
@@ -386,9 +386,9 @@ class TestCreditCardDetection:
         result = extractor.extract(Path("/tmp/credit_card.pdf"))
 
         assert isinstance(result, ExtractionResult)
-        assert not any(
-            w.code == CODE_CREDIT_CARD_SKIPPED for w in result.warnings
-        ), "Paid tier must not produce CODE_CREDIT_CARD_SKIPPED"
+        assert not any(w.code == CODE_CREDIT_CARD_SKIPPED for w in result.warnings), (
+            "Paid tier must not produce CODE_CREDIT_CARD_SKIPPED"
+        )
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_credit_card_skipped_on_free_tier(self, mock_pdfplumber):
