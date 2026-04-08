@@ -19,22 +19,19 @@ class ExtractionConfig:
         table_bottom_y: Y-coordinate for bottom boundary of table extraction area
         columns: Optional dictionary mapping column names to (x_start, x_end) tuples
         enable_dynamic_boundary: Whether to enable dynamic boundary detection
-        enable_page_validation: Whether to validate page structure before extraction
-        enable_header_check: Whether to check for table headers in extracted data
-        min_section_gap: Minimum gap in pixels to consider a section boundary (for dynamic detection)
-        structure_breakdown_threshold: Number of empty columns to consider structure broken
-        dynamic_boundary_threshold: Consecutive non-transaction rows before ending extraction
+
+    Note:
+        enable_page_validation and enable_header_check are template-level settings
+        sourced from BankTemplate.extraction (TemplateExtractionConfig), not from
+        this config object. Boundary-detection thresholds (min_section_gap,
+        structure_breakdown_threshold, dynamic_boundary_threshold) are owned by
+        BoundaryDetector and are not operator-configurable via this config.
     """
 
     table_top_y: int = 300
     table_bottom_y: int = 720
     columns: dict[str, tuple[int | float, int | float]] | None = None
     enable_dynamic_boundary: bool = False
-    enable_page_validation: bool = True
-    enable_header_check: bool = True
-    min_section_gap: int = 50
-    structure_breakdown_threshold: int = 8
-    dynamic_boundary_threshold: int = 15
 
 
 @dataclass
