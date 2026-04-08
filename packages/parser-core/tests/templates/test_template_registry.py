@@ -701,3 +701,80 @@ class TestTemplateRegistryFilteredByIds:
 
         with pytest.raises(ValueError):
             registry.filtered_by_ids({"nonexistent_id"})
+
+
+@pytest.fixture
+def sample_template_data():
+    """Minimal template dict suitable for passing to _parse_template()."""
+    return {
+        "name": "Sample Bank",
+        "enabled": True,
+        "detection": {
+            "iban_patterns": ["IE[0-9]{2}TEST.*"],
+        },
+        "extraction": {
+            "table_top_y": 300,
+            "table_bottom_y": 720,
+            "columns": {
+                "Date": [26, 78],
+                "Details": [78, 255],
+            },
+        },
+    }
+
+
+class TestParseTemplateColumnAliases:
+    """Tests for _parse_template column_aliases parsing (CC-05)."""
+
+    def test_parse_template_with_column_aliases(self, sample_template_data):
+        """_parse_template parses column_aliases from template dict."""
+        data = sample_template_data.copy()
+        data["column_aliases"] = {"Transaction Details": "Details", "Debit €": "Debit"}
+        template = TemplateRegistry._parse_template("test_cc", data)
+        assert template.column_aliases == {"Transaction Details": "Details", "Debit €": "Debit"}
+
+    def test_parse_template_without_column_aliases(self, sample_template_data):
+        """_parse_template defaults column_aliases to {} when key missing."""
+        data = sample_template_data.copy()
+        # Ensure no column_aliases key
+        data.pop("column_aliases", None)
+        template = TemplateRegistry._parse_template("test_bank", data)
+        assert template.column_aliases == {}
+
+    def test_cc_template_roundtrip_from_directory(self, tmp_path):
+        """Full round-trip: write CC JSON with column_aliases, load, verify."""
+        template_data = {
+            "id": "aib_credit_card",
+            "name": "AIB Credit Card Statement",
+            "document_type": "credit_card_statement",
+            "enabled": True,
+            "column_aliases": {
+                "Transaction Details": "Details",
+                "Debit €": "Debit",
+                "Credit €": "Credit",
+            },
+            "detection": {
+                "header_keywords": ["Credit Card Statement"],
+                "column_headers": ["Date", "Transaction Details"],
+            },
+            "extraction": {
+                "table_top_y": 320,
+                "table_bottom_y": 720,
+                "columns": {
+                    "Date": [29, 78],
+                    "Transaction Details": [78, 320],
+                    "Debit €": [320, 400],
+                    "Credit €": [400, 480],
+                },
+            },
+        }
+        (tmp_path / "aib_credit_card.json").write_text(json.dumps(template_data))
+        registry = TemplateRegistry.from_directory(tmp_path)
+        tmpl = registry.get_template("aib_credit_card")
+        assert tmpl is not None
+        assert tmpl.column_aliases == {
+            "Transaction Details": "Details",
+            "Debit €": "Debit",
+            "Credit €": "Credit",
+        }
+        assert tmpl.document_type == "credit_card_statement"

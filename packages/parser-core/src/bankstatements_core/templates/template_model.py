@@ -319,6 +319,8 @@ class BankTemplate:
         extraction: Extraction configuration
         processing: Processing configuration
         document_type: Type of financial document (bank_statement, credit_card_statement, other)
+        column_aliases: Mapping of template-specific column names to canonical names
+            (e.g. "Transaction Details" -> "Details", "Debit €" -> "Debit")
     """
 
     id: str
@@ -330,6 +332,7 @@ class BankTemplate:
         default_factory=TemplateProcessingConfig
     )
     document_type: DocumentType = "bank_statement"
+    column_aliases: dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         """Validate template configuration."""
