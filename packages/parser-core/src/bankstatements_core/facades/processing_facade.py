@@ -175,7 +175,9 @@ class BankStatementProcessingFacade:
                 DataRetentionService,
             )
 
-            service = DataRetentionService(0, self.config.output_dir)
+            service = DataRetentionService(
+                self.config.data_retention_days, self.config.output_dir
+            )
             deleted_count = service.cleanup_all_files(audit_log=activity_log)
             logger.info("Deleted %d files", deleted_count)
 
