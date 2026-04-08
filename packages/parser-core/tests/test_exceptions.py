@@ -238,8 +238,7 @@ class TestExceptionUsagePatterns:
         def validate_table_bounds(top: int, bottom: int):
             if top >= bottom:
                 raise ConfigurationError(
-                    f"TABLE_TOP_Y ({top}) must be less than "
-                    f"TABLE_BOTTOM_Y ({bottom})"
+                    f"TABLE_TOP_Y ({top}) must be less than TABLE_BOTTOM_Y ({bottom})"
                 )
 
         # Valid bounds

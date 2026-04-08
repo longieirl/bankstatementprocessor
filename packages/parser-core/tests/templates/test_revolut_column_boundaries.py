@@ -69,10 +69,9 @@ class TestRevolutColumnBoundaries:
         expected_order = ["Date", "Details", "Debit €", "Credit €", "Balance €"]
 
         actual_order = list(columns.keys())
-        assert actual_order == expected_order, (
-            f"Column order mismatch. Expected: {expected_order}, "
-            f"Got: {actual_order}"
-        )
+        assert (
+            actual_order == expected_order
+        ), f"Column order mismatch. Expected: {expected_order}, Got: {actual_order}"
 
     def test_revolut_column_widths_reasonable(self):
         """Test Revolut column widths are reasonable for content."""

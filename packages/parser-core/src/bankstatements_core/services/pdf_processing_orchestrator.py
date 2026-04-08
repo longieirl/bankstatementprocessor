@@ -141,22 +141,34 @@ class PDFProcessingOrchestrator:
                     and len(result.transactions) == 0
                     and result.page_count > 0
                 ):
+                    require_iban = (
+                        self.entitlements.require_iban
+                        if self.entitlements is not None
+                        else True
+                    )
+                    if require_iban:
+                        reason = (
+                            "Could not be processed - no IBAN found "
+                            "(likely credit card statement)"
+                        )
+                        log_detail = "No IBAN found, no data extracted"
+                    else:
+                        reason = "Could not be processed - no transactions extracted"
+                        log_detail = "No transactions extracted"
                     excluded_files.append(
                         {
                             "filename": pdf.name,
                             "path": str(pdf),
-                            "reason": (
-                                "Could not be processed - no IBAN found "
-                                "(likely credit card statement)"
-                            ),
+                            "reason": reason,
                             "timestamp": datetime.now().isoformat(),
                             "pages": result.page_count,
                         }
                     )
                     logger.warning(
-                        "PDF %d (%s) could not be processed: No IBAN found, no data extracted",
+                        "PDF %d (%s) could not be processed: %s",
                         idx,
                         pdf.name,
+                        log_detail,
                     )
                     continue
 

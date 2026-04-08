@@ -45,7 +45,7 @@ class PDFTableExtractor:
     - RowPostProcessor: date propagation and metadata tagging
     """
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         columns: dict[str, tuple[int | float, int | float]],
         table_top_y: int = 300,
@@ -58,6 +58,7 @@ class PDFTableExtractor:
         extraction_config: Any | None = None,
         template: Any | None = None,
         scoring_config: ExtractionScoringConfig | None = None,
+        entitlements: Any | None = None,
     ):
         self.columns = columns
         self.table_top_y = table_top_y
@@ -69,6 +70,7 @@ class PDFTableExtractor:
         self.extraction_config = extraction_config
         self.template = template
         self.scoring_config = scoring_config
+        self._entitlements = entitlements
 
         self._row_classifier = create_row_classifier_chain()
         self._row_builder = RowBuilder(columns, self._row_classifier)
@@ -113,22 +115,23 @@ class PDFTableExtractor:
                 if page_num == 1 and self._header_analyser.is_credit_card_statement(
                     page, self.table_top_y
                 ):
-                    logger.warning(
-                        "Credit card statement detected in %s. Credit card statements are not currently supported. Skipping file.",
-                        pdf_path.name,
-                    )
-                    return ExtractionResult(
-                        transactions=[],
-                        page_count=len(pdf.pages),
-                        iban=None,
-                        source_file=pdf_path,
-                        warnings=[
-                            ExtractionWarning(
-                                code=CODE_CREDIT_CARD_SKIPPED,
-                                message="credit card statement detected, skipped",
-                            )
-                        ],
-                    )
+                    if self._entitlements is None or self._entitlements.require_iban:
+                        logger.warning(
+                            "Credit card statement detected in %s. Credit card statements are not currently supported. Skipping file.",
+                            pdf_path.name,
+                        )
+                        return ExtractionResult(
+                            transactions=[],
+                            page_count=len(pdf.pages),
+                            iban=None,
+                            source_file=pdf_path,
+                            warnings=[
+                                ExtractionWarning(
+                                    code=CODE_CREDIT_CARD_SKIPPED,
+                                    message="credit card statement detected, skipped",
+                                )
+                            ],
+                        )
 
                 if iban is None and page_num == 1:
                     iban = self._header_analyser.extract_iban(page)

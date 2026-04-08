@@ -972,7 +972,8 @@ class TestPdfTableExtractor(unittest.TestCase):
 
             # Should skip page in static mode too
             result = extract_tables_from_pdf(
-                test_pdf_path, enable_dynamic_boundary=False  # Static mode
+                test_pdf_path,
+                enable_dynamic_boundary=False,  # Static mode
             )
 
             # Should return empty results
