@@ -29,6 +29,7 @@ services:
       - NO_ANALYTICS=1
       - SENTRY_DSN=
       - SEGMENT_WRITE_KEY=
+      # Shell-layer variables (consumed by the container entrypoint, not by AppConfig)
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       # Exit after processing by default for simple one-shot usage
       # Set to false for interactive/development use
