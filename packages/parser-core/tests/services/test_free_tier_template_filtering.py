@@ -245,3 +245,69 @@ class TestFreeTierTemplateFiltering:
         paid_tier = Entitlements.paid_tier()
         assert paid_tier.require_iban is False
         assert paid_tier.tier == "PAID"
+
+    def test_paid_tier_loads_cc_template_with_column_aliases(self, template_with_iban, caplog):
+        """D-10: Paid tier with CC template (no IBAN, has column_aliases) keeps CC template in registry."""
+        import logging
+        caplog.set_level(logging.INFO)
+
+        # Build a CC template: no IBAN patterns, has column_aliases, document_type=credit_card_statement
+        cc_template = BankTemplate(
+            id="aib_credit_card",
+            name="AIB Credit Card Statement",
+            enabled=True,
+            detection=TemplateDetectionConfig(
+                iban_patterns=[],  # No IBAN — would be filtered on free tier
+                column_headers=["Date", "Transaction Details"],
+            ),
+            extraction=TemplateExtractionConfig(
+                table_top_y=320,
+                table_bottom_y=720,
+                columns={"Date": (29, 78), "Transaction Details": (78, 320), "Debit €": (320, 400), "Credit €": (400, 480)},
+            ),
+            processing=TemplateProcessingConfig(
+                supports_multiline=False,
+                date_format="%d/%m/%Y",
+                currency_symbol="€",
+                decimal_separator=".",
+            ),
+            document_type="credit_card_statement",
+            column_aliases={
+                "Transaction Details": "Details",
+                "Debit €": "Debit",
+                "Credit €": "Credit",
+            },
+        )
+
+        registry = TemplateRegistry(
+            templates={
+                "with_iban": template_with_iban,
+                "aib_credit_card": cc_template,
+            },
+            default_template_id="with_iban",
+        )
+
+        with patch.object(
+            TemplateRegistry, "from_default_config", return_value=registry
+        ):
+            # Paid tier: require_iban=False — IBAN filter should NOT run
+            ExtractionOrchestrator(entitlements=Entitlements.paid_tier())
+
+            # No IBAN filtering warning should appear
+            assert "requires IBAN patterns" not in caplog.text
+
+            # Original registry still has both templates (CC not stripped)
+            all_templates = registry.list_all()
+            template_ids = {t.id for t in all_templates}
+            assert "aib_credit_card" in template_ids
+            assert "with_iban" in template_ids
+            assert len(all_templates) == 2
+
+            # Verify the CC template has column_aliases intact
+            cc = next(t for t in all_templates if t.id == "aib_credit_card")
+            assert cc.column_aliases == {
+                "Transaction Details": "Details",
+                "Debit €": "Debit",
+                "Credit €": "Credit",
+            }
+            assert cc.document_type == "credit_card_statement"

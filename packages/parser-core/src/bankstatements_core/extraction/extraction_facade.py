@@ -103,6 +103,9 @@ def extract_tables_from_pdf(  # noqa: PLR0913
         table_top_y = template.extraction.table_top_y
         table_bottom_y = template.extraction.table_bottom_y
         columns = template.extraction.columns
+        # Apply column_aliases to produce canonical column names (per D-02)
+        if template.column_aliases:
+            columns = {template.column_aliases.get(k, k): v for k, v in columns.items()}
         if enable_page_validation is None:
             enable_page_validation = template.extraction.enable_page_validation
         if enable_header_check is None:

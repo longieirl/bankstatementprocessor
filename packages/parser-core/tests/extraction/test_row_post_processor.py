@@ -118,6 +118,7 @@ class TestRowPostProcessor:
         template = Mock()
         template.document_type = "current_account"
         template.id = "aib_current"
+        template.column_aliases = {}
         proc = _make_processor(template=template)
         row = {
             "Date": "01/01",
@@ -256,3 +257,118 @@ class TestStatefulPageRowProcessor:
         wrapper.reset()
         assert wrapper.current_date() == ""
         assert wrapper.last_date_source() == ""
+
+
+class TestColumnAliasesNormalisation:
+    """Tests for column_aliases row dict normalisation (CC-05)."""
+
+    def test_aliases_rename_row_keys(self):
+        """Row keys matching column_aliases are renamed to canonical names."""
+        template = Mock()
+        template.document_type = "credit_card_statement"
+        template.id = "aib_credit_card"
+        template.column_aliases = {
+            "Transaction Details": "Details",
+            "Debit €": "Debit",
+            "Credit €": "Credit",
+        }
+        cc_columns = {
+            "Date": (0, 50),
+            "Transaction Details": (50, 200),
+            "Debit €": (200, 300),
+            "Credit €": (300, 400),
+        }
+        proc = RowPostProcessor(
+            columns=cc_columns,
+            row_classifier=_make_classifier("transaction"),
+            template=template,
+            filename_date="",
+            filename="cc_statement.pdf",
+        )
+        row = {
+            "Date": "01 Jan 2025",
+            "Transaction Details": "TESCO STORE",
+            "Debit €": "42.50",
+            "Credit €": "",
+        }
+        proc.process(row, "")
+        assert row.get("Details") == "TESCO STORE"
+        assert "Transaction Details" not in row
+        assert row.get("Debit") == "42.50"
+        assert "Debit €" not in row
+        assert row.get("Credit") == ""
+        assert "Credit €" not in row
+
+    def test_empty_aliases_no_rename(self):
+        """Empty column_aliases dict is a no-op — row keys unchanged."""
+        template = Mock()
+        template.document_type = "bank_statement"
+        template.id = "aib_bank"
+        template.column_aliases = {}
+        proc = _make_processor(template=template)
+        row = {
+            "Date": "01/01/2024",
+            "Details": "Tesco",
+            "Debit €": "10.00",
+            "Credit €": "",
+            "Balance €": "100.00",
+        }
+        proc.process(row, "")
+        # Keys unchanged — "Details" still "Details", not renamed
+        assert "Details" in row
+        assert row["Details"] == "Tesco"
+
+    def test_no_template_no_alias_attempt(self):
+        """When template is None, no alias normalisation is attempted."""
+        proc = _make_processor(template=None)
+        row = {
+            "Date": "01/01/2024",
+            "Details": "Tesco",
+            "Debit €": "10.00",
+            "Credit €": "",
+            "Balance €": "100.00",
+        }
+        proc.process(row, "")
+        assert "Details" in row
+        assert row["document_type"] == "bank_statement"
+
+    def test_cc_document_type_stamped(self):
+        """CC-06: CC template stamps document_type=credit_card_statement."""
+        template = Mock()
+        template.document_type = "credit_card_statement"
+        template.id = "aib_credit_card"
+        template.column_aliases = {"Transaction Details": "Details"}
+        cc_columns = {
+            "Date": (0, 50),
+            "Transaction Details": (50, 200),
+            "Debit €": (200, 300),
+            "Credit €": (300, 400),
+        }
+        proc = RowPostProcessor(
+            columns=cc_columns,
+            row_classifier=_make_classifier("transaction"),
+            template=template,
+            filename_date="",
+            filename="cc.pdf",
+        )
+        row = {"Date": "01/01/2025", "Transaction Details": "Shop", "Debit €": "", "Credit €": ""}
+        proc.process(row, "")
+        assert row["document_type"] == "credit_card_statement"
+        assert row["template_id"] == "aib_credit_card"
+
+    def test_bank_statement_document_type_unchanged(self):
+        """CC-06 no regression: bank statement template stamps document_type=bank_statement."""
+        template = Mock()
+        template.document_type = "bank_statement"
+        template.id = "aib_bank"
+        template.column_aliases = {}
+        proc = _make_processor(template=template)
+        row = {
+            "Date": "01/01/2024",
+            "Details": "Tesco",
+            "Debit €": "",
+            "Credit €": "",
+            "Balance €": "",
+        }
+        proc.process(row, "")
+        assert row["document_type"] == "bank_statement"
