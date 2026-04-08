@@ -147,7 +147,7 @@ class PDFProcessingOrchestrator:
                             "path": str(pdf),
                             "reason": (
                                 "Could not be processed - no IBAN found "
-                                "(likely credit card statement)"
+                                "and no transactions extracted"
                             ),
                             "timestamp": datetime.now().isoformat(),
                             "pages": result.page_count,

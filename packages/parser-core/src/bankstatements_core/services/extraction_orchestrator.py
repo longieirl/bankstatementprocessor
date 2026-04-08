@@ -159,6 +159,7 @@ class ExtractionOrchestrator:
             self._config.columns,
             self._config.enable_dynamic_boundary,
             template=template,
+            entitlements=self._entitlements,
         )
 
         # Log IBAN if found
