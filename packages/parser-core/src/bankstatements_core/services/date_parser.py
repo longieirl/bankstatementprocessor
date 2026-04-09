@@ -43,7 +43,15 @@ class DateParserService:
         "%d%B%Y",  # 01December2023
     ]
 
-    def parse_transaction_date(self, date_str: str) -> datetime:
+    # Yearless date formats used by CC statements (e.g. AIB CC: "3 Feb")
+    YEARLESS_DATE_FORMATS = [  # noqa: RUF012
+        "%d %b",  # 3 Feb
+        "%d %B",  # 3 February
+    ]
+
+    def parse_transaction_date(
+        self, date_str: str, hint_year: int | None = None
+    ) -> datetime:
         """
         Parse bank statement date string into datetime object.
 
@@ -59,9 +67,13 @@ class DateParserService:
         - DDMMMYY (e.g., "01DEC23")
         - DDMMMYYYY (e.g., "01DEC2023")
         - Partial dates: "DD/MM" (missing year)
+        - Yearless word dates: "3 Feb", "3 February" (requires hint_year)
 
         Args:
             date_str: Date string from bank statement
+            hint_year: Optional year inferred from a document-level field (e.g.
+                "Payment Due Date"). Used to resolve yearless dates like "3 Feb".
+                When None and the date is yearless, epoch is returned.
 
         Returns:
             datetime object, or epoch (1970-01-01) if unparseable
@@ -78,6 +90,8 @@ class DateParserService:
             datetime.datetime(2025, 4, 25, 0, 0)
             >>> service.parse_transaction_date("")
             datetime.datetime(1970, 1, 1, 0, 0)
+            >>> service.parse_transaction_date("3 Feb", hint_year=2026)
+            datetime.datetime(2026, 2, 3, 0, 0)
         """
         # Handle empty or whitespace-only strings
         if not date_str or not date_str.strip():
@@ -89,8 +103,13 @@ class DateParserService:
         # "Sept" -> "Sep" (Python's datetime uses 3-letter abbreviations)
         date_str = date_str.replace("Sept", "Sep")
 
-        # Try common date formats
+        # Try common date formats (all include a year component)
         parsed_date = self._parse_common_date_formats(date_str)
+        if parsed_date is not None:
+            return parsed_date
+
+        # Try yearless formats (e.g. "3 Feb" from CC statements)
+        parsed_date = self._parse_yearless_date(date_str, hint_year)
         if parsed_date is not None:
             return parsed_date
 
@@ -197,6 +216,46 @@ class DateParserService:
             parsed_date = self._try_parse_date_format(date_str, fmt)
             if parsed_date is not None:
                 return parsed_date
+
+        return None
+
+    def _parse_yearless_date(
+        self, date_str: str, hint_year: int | None
+    ) -> datetime | None:
+        """
+        Parse yearless date strings like "3 Feb" or "3 February".
+
+        Uses hint_year (from a document-level field such as "Payment Due Date")
+        to supply the missing year. Returns None when no hint_year is available
+        so the caller can fall through to epoch and log a warning.
+
+        Args:
+            date_str: Date string without a year component
+            hint_year: Year to substitute, or None if unknown
+
+        Returns:
+            Parsed datetime if format matches and hint_year is provided, None otherwise
+
+        Examples:
+            >>> service = DateParserService()
+            >>> service._parse_yearless_date("3 Feb", 2026)
+            datetime.datetime(2026, 2, 3, 0, 0)
+            >>> service._parse_yearless_date("3 February", 2026)
+            datetime.datetime(2026, 2, 3, 0, 0)
+            >>> service._parse_yearless_date("3 Feb", None)
+            None
+        """
+        if hint_year is None:
+            return None
+
+        for fmt in self.YEARLESS_DATE_FORMATS:
+            # Append a fixed year so strptime never parses a year-free date
+            # (avoids Python 3.15 deprecation of yearless strptime).
+            augmented = f"{date_str} 1900"
+            augmented_fmt = f"{fmt} %Y"
+            parsed = self._try_parse_date_format(augmented, augmented_fmt)
+            if parsed is not None:
+                return parsed.replace(year=hint_year)
 
         return None
 

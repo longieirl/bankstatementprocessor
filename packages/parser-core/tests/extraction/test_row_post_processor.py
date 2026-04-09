@@ -377,3 +377,56 @@ class TestColumnAliasesNormalisation:
         }
         proc.process(row, "")
         assert row["document_type"] == "bank_statement"
+
+    def test_statement_year_stamped_on_transaction_row(self):
+        """statement_year is stamped as a string on each transaction row when provided."""
+        proc = RowPostProcessor(
+            columns=TEST_COLUMNS,
+            row_classifier=_make_classifier("transaction"),
+            template=None,
+            filename_date="",
+            filename="statement.pdf",
+            statement_year=2026,
+        )
+        row = {
+            "Date": "3 Feb",
+            "Details": "Purchase",
+            "Debit €": "",
+            "Credit €": "",
+            "Balance €": "",
+        }
+        proc.process(row, "")
+        assert row["statement_year"] == "2026"
+
+    def test_statement_year_not_stamped_when_none(self):
+        """statement_year key absent from row when not provided."""
+        proc = _make_processor()
+        row = {
+            "Date": "3 Feb",
+            "Details": "Purchase",
+            "Debit €": "",
+            "Credit €": "",
+            "Balance €": "",
+        }
+        proc.process(row, "")
+        assert "statement_year" not in row
+
+    def test_statement_year_only_on_transaction_rows(self):
+        """statement_year is not stamped on non-transaction rows."""
+        proc = RowPostProcessor(
+            columns=TEST_COLUMNS,
+            row_classifier=_make_classifier("header"),
+            template=None,
+            filename_date="",
+            filename="statement.pdf",
+            statement_year=2026,
+        )
+        row = {
+            "Date": "",
+            "Details": "Date Details Debit Credit Balance",
+            "Debit €": "",
+            "Credit €": "",
+            "Balance €": "",
+        }
+        proc.process(row, "")
+        assert "statement_year" not in row

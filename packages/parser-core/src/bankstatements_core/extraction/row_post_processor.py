@@ -58,6 +58,7 @@ class RowPostProcessor:
         filename_date: str,
         filename: str,
         scoring_config: ExtractionScoringConfig | None = None,
+        statement_year: int | None = None,
     ) -> None:
         self._columns = columns
         self._row_classifier = row_classifier
@@ -69,6 +70,7 @@ class RowPostProcessor:
             if scoring_config is not None
             else ExtractionScoringConfig.default()
         )
+        self._statement_year = statement_year
         self._date_col = ColumnTypeIdentifier.find_first_column_of_type(columns, "date")
         self._balance_col = ColumnTypeIdentifier.find_first_column_of_type(
             columns, "balance"
@@ -147,6 +149,8 @@ class RowPostProcessor:
 
         # Metadata tagging
         row["Filename"] = self._filename
+        if self._statement_year is not None:
+            row["statement_year"] = str(self._statement_year)
         if self._template:
             row["document_type"] = self._template.document_type
             row["template_id"] = self._template.id

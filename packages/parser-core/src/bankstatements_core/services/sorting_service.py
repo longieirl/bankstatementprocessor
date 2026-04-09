@@ -6,8 +6,10 @@ using different sorting strategies (chronological, original order, etc.).
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from bankstatements_core.services.date_parser import DateParserService
@@ -55,10 +57,17 @@ class ChronologicalSortingStrategy(SortingStrategy):
 
         logger.debug("Sorting %d transactions chronologically", len(transactions))
 
-        return sorted(
-            transactions,
-            key=lambda tx: _date_parser_service.parse_transaction_date(tx.date),
-        )
+        def _sort_key(tx: Transaction) -> datetime:
+            hint_year: int | None = None
+            raw = tx.additional_fields.get("statement_year")
+            if raw is not None:
+                with contextlib.suppress(ValueError):
+                    hint_year = int(raw)
+            return _date_parser_service.parse_transaction_date(
+                tx.date, hint_year=hint_year
+            )
+
+        return sorted(transactions, key=_sort_key)
 
 
 class NoSortingStrategy(SortingStrategy):
