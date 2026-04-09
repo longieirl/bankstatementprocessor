@@ -76,9 +76,12 @@ class RowMergerService:
             if row_type == "transaction":
                 if self._is_date_only_split(current_row, rows, i, date_col, columns):
                     next_row = rows[i + 1].copy()
-                    next_row[date_col] = current_row[date_col]  # type: ignore[index]
+                    next_row[date_col] = current_row[date_col]
                     rows[i + 1] = next_row
-                    logger.debug("Date-only split row: carried date '%s' into next row", current_row[date_col])  # type: ignore[index]
+                    logger.debug(
+                        "Date-only split row: carried date '%s' into next row",
+                        current_row[date_col],
+                    )
                     i += 1
                     continue
 
