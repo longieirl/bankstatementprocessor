@@ -356,3 +356,90 @@ class TestRowMergerServiceIntegration:
         assert len(result) == 2
         assert result[0]["Balance €"] == "500.00"
         assert result[1]["Balance €"] == "400.00"
+
+    def test_aib_cc_ref_continuation_line_merged(self, service):
+        """AIB CC: Ref: <digits> continuation line merges into preceding transaction.
+
+        The AIB Credit Card PDF splits each transaction across two physical lines:
+        - Line 1: Transaction Date | Posting Date | Transaction Details | Amount
+        - Line 2: same Transaction Date | empty | Ref: <number> | empty
+
+        Without the RefContinuationClassifier, Line 2 is classified as 'transaction'
+        (it has a date) and emitted as a phantom empty row. With the fix, it is
+        classified as 'continuation' and merged into Line 1's description.
+        """
+        cc_columns = {
+            "Transaction Date": (29, 80),
+            "Posting Date": (80, 118),
+            "Transaction Details": (118, 370),
+            "Amount": (370, 430),
+        }
+        rows = [
+            {
+                "Transaction Date": "4 Feb",
+                "Posting Date": "5 Feb",
+                "Transaction Details": "PAYPAL *CLEVERBRIDG 35314369001 DE",
+                "Amount": "84.54",
+            },
+            {
+                # AIB CC repeats the transaction date on the Ref line
+                "Transaction Date": "4 Feb",
+                "Posting Date": "",
+                "Transaction Details": "Ref: 9876543210",
+                "Amount": "",
+            },
+        ]
+
+        result = service.merge_continuation_lines(rows, cc_columns)
+
+        # Should collapse to 1 row (the Ref line is merged, not emitted separately)
+        assert len(result) == 1
+        assert result[0]["Transaction Date"] == "4 Feb"
+        assert result[0]["Amount"] == "84.54"
+        # Ref text is appended to the description
+        assert "Ref: 9876543210" in result[0]["Transaction Details"]
+
+    def test_aib_cc_date_only_split_row_merged(self, service):
+        """AIB CC: date-only row caused by Y-split merges into the next transaction.
+
+        Some AIB CC transactions have the Transaction Date at a slightly different
+        Y-coordinate than the Posting Date / Details / Amount, causing RowBuilder
+        to emit a standalone date-only row followed by a dateless transaction row.
+        The merger should carry the date forward and collapse them into one row.
+        """
+        cc_columns = {
+            "Transaction Date": (29, 80),
+            "Posting Date": (80, 118),
+            "Transaction Details": (118, 370),
+            "Amount": (370, 430),
+        }
+        rows = [
+            # Date-only split row (Transaction Date word at different Y)
+            {
+                "Transaction Date": "4 Feb",
+                "Posting Date": "",
+                "Transaction Details": "",
+                "Amount": "",
+            },
+            # Main transaction row (no Transaction Date, rest of fields present)
+            {
+                "Transaction Date": "",
+                "Posting Date": "5 Feb",
+                "Transaction Details": "PAYPAL *STRAVA INC 4029357733 US",
+                "Amount": "59.99",
+            },
+            # Ref continuation
+            {
+                "Transaction Date": "",
+                "Posting Date": "",
+                "Transaction Details": "Ref: 24036036035604120333083",
+                "Amount": "",
+            },
+        ]
+
+        result = service.merge_continuation_lines(rows, cc_columns)
+
+        assert len(result) == 1
+        assert result[0]["Transaction Date"] == "4 Feb"
+        assert result[0]["Amount"] == "59.99"
+        assert "PAYPAL *STRAVA INC" in result[0]["Transaction Details"]

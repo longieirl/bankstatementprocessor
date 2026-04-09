@@ -10,6 +10,7 @@ from bankstatements_core.extraction.row_classifiers import (
     DefaultMetadataClassifier,
     FXContinuationClassifier,
     HeaderMetadataClassifier,
+    RefContinuationClassifier,
     ReferenceCodeClassifier,
     RowClassifier,
     TimestampMetadataClassifier,
@@ -258,6 +259,73 @@ class TestTransactionClassifier:
         assert result is None
 
 
+class TestRefContinuationClassifier:
+    """Tests for RefContinuationClassifier (AIB CC reference continuation lines)."""
+
+    @pytest.fixture
+    def classifier(self):
+        return RefContinuationClassifier()
+
+    @pytest.fixture
+    def cc_columns(self):
+        """CC-style columns (no amount col named 'Debit €')."""
+        return {
+            "Transaction Date": (29, 80),
+            "Posting Date": (80, 118),
+            "Transaction Details": (118, 370),
+            "Amount": (370, 430),
+        }
+
+    def test_ref_colon_digits_classified_as_continuation(self, classifier, cc_columns):
+        """Ref: <digits> with no amount is continuation."""
+        row = {
+            "Transaction Date": "4 Feb",
+            "Posting Date": "",
+            "Transaction Details": "Ref: 1234567890",
+            "Amount": "",
+        }
+        result = classifier._do_classify(row, cc_columns)
+        assert result == "continuation"
+
+    def test_ref_no_space_classified_as_continuation(self, classifier, cc_columns):
+        """Ref:<digits> (no space after colon) is also continuation."""
+        row = {
+            "Transaction Date": "4 Feb",
+            "Transaction Details": "Ref:9876543",
+            "Amount": "",
+        }
+        result = classifier._do_classify(row, cc_columns)
+        assert result == "continuation"
+
+    def test_ref_with_amount_still_continuation(self, classifier, cc_columns):
+        """Ref: pattern always classified as continuation regardless of amount.
+
+        The 'Amount' column on CC templates doesn't map to a typed debit/credit column,
+        so we match purely on the description pattern — Ref: <digits> is always a
+        reference continuation line in practice.
+        """
+        row = {
+            "Transaction Date": "4 Feb",
+            "Transaction Details": "Ref: 1234567890",
+            "Amount": "50.00",
+        }
+        result = classifier._do_classify(row, cc_columns)
+        assert result == "continuation"
+
+    def test_regular_transaction_not_matched(self, classifier):
+        """Normal transaction description not affected."""
+        row = {"Date": "4 Feb", "Details": "PAYPAL *CLEVERBRIDG", "Debit €": "84.54"}
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result is None
+
+    def test_reference_word_in_middle_not_matched(self, classifier):
+        """'Ref:' in the middle of a description is not matched (anchored to start)."""
+        row = {"Date": "", "Details": "Payment Ref: 123 extra", "Debit €": ""}
+        # Pattern requires digits immediately after Ref: with no other text
+        result = classifier._do_classify(row, TEST_COLUMNS)
+        assert result is None
+
+
 class TestDefaultMetadataClassifier:
     """Tests for DefaultMetadataClassifier."""
 
@@ -292,6 +360,20 @@ class TestChainOfResponsibility:
         row = {"Date": "", "Details": "IE123456", "Filename": "test"}
         result = chain.classify(row, TEST_COLUMNS)
         assert result == "reference"
+
+    def test_chain_classifies_ref_continuation(self):
+        """Test chain classifies AIB CC Ref: line as continuation (not transaction)."""
+        chain = create_row_classifier_chain()
+        # AIB CC: date repeats on the Ref line — without this classifier,
+        # TransactionClassifier would see the date and emit a phantom empty row.
+        row = {
+            "Date": "4 Feb",
+            "Details": "Ref: 1234567890",
+            "Debit €": "",
+            "Filename": "test",
+        }
+        result = chain.classify(row, TEST_COLUMNS)
+        assert result == "continuation"
 
     def test_chain_classifies_fx_continuation(self):
         """Test chain correctly classifies FX continuation."""

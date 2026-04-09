@@ -114,3 +114,53 @@ class TestExtractIban:
         analyser = PageHeaderAnalyser(mock_extractor)
         analyser.extract_iban(page)
         page.crop.assert_called_once_with((0, 0, page.width, 350))
+
+
+class TestExtractStatementYear:
+    """Tests for PageHeaderAnalyser.extract_statement_year."""
+
+    def _analyser(self) -> PageHeaderAnalyser:
+        return PageHeaderAnalyser(Mock())
+
+    def _make_full_page(self, full_text: str) -> Mock:
+        """Build a mock page where extract_text() returns full_text (no crop needed)."""
+        page = Mock()
+        page.extract_text.return_value = full_text
+        return page
+
+    def test_payment_due_date_colon(self):
+        page = self._make_full_page("Payment Due Date: 20 Feb 2026\nSome other text")
+        assert self._analyser().extract_statement_year(page) == 2026
+
+    def test_payment_due_no_colon(self):
+        page = self._make_full_page("Payment Due  3 Mar 2026\nBalance: €0.00")
+        assert self._analyser().extract_statement_year(page) == 2026
+
+    def test_payment_due_date_different_year(self):
+        page = self._make_full_page("Payment Due Date: 1 Jan 2025")
+        assert self._analyser().extract_statement_year(page) == 2025
+
+    def test_case_insensitive(self):
+        page = self._make_full_page("PAYMENT DUE DATE: 15 Apr 2026")
+        assert self._analyser().extract_statement_year(page) == 2026
+
+    def test_returns_none_when_no_payment_due(self):
+        page = self._make_full_page("Statement Date: 01 Feb 2026\nBalance: €100.00")
+        assert self._analyser().extract_statement_year(page) is None
+
+    def test_returns_none_for_empty_text(self):
+        page = self._make_full_page("")
+        assert self._analyser().extract_statement_year(page) is None
+
+    def test_returns_none_for_none_text(self):
+        page = self._make_full_page(None)
+        assert self._analyser().extract_statement_year(page) is None
+
+    def test_returns_none_on_page_exception(self):
+        page = Mock()
+        page.extract_text.side_effect = AttributeError("no text")
+        assert self._analyser().extract_statement_year(page) is None
+
+    def test_payment_due_date_with_extra_whitespace(self):
+        page = self._make_full_page("Payment Due Date:  18 Feb 2026")
+        assert self._analyser().extract_statement_year(page) == 2026

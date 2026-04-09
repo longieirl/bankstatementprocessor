@@ -14,6 +14,13 @@ def _tx(date: str, details: str) -> Transaction:
     return Transaction.from_dict({"Date": date, "Details": details})
 
 
+def _tx_with_year(date: str, details: str, statement_year: int) -> Transaction:
+    """Create a transaction with a statement_year in additional_fields (as stamped by RowPostProcessor)."""
+    tx = Transaction.from_dict({"Date": date, "Details": details})
+    tx.additional_fields["statement_year"] = str(statement_year)
+    return tx
+
+
 class TestChronologicalSortingStrategy:
     """Tests for ChronologicalSortingStrategy."""
 
@@ -207,3 +214,50 @@ class TestTransactionSortingService:
 
         # Verify first few are early dates
         assert "01 Jan" in sorted_txns[0].date or "02 Jan" in sorted_txns[0].date
+
+
+class TestChronologicalSortingWithYearlessDates:
+    """Tests for yearless date sorting using statement_year from additional_fields."""
+
+    def test_yearless_dates_sorted_when_year_present(self):
+        strategy = ChronologicalSortingStrategy()
+        transactions = [
+            _tx_with_year("18 Feb", "Later", 2026),
+            _tx_with_year("3 Feb", "Earlier", 2026),
+            _tx_with_year("25 Feb", "Latest", 2026),
+        ]
+        sorted_txns = strategy.sort(transactions)
+        assert sorted_txns[0].details == "Earlier"  # 3 Feb
+        assert sorted_txns[1].details == "Later"  # 18 Feb
+        assert sorted_txns[2].details == "Latest"  # 25 Feb
+
+    def test_yearless_dates_fall_to_epoch_without_year(self):
+        strategy = ChronologicalSortingStrategy()
+        transactions = [
+            _tx("18 Feb", "No year A"),
+            _tx("3 Feb", "No year B"),
+        ]
+        # Without hint_year both parse to epoch — order undefined but no crash
+        sorted_txns = strategy.sort(transactions)
+        assert len(sorted_txns) == 2
+
+    def test_yearless_and_full_dates_mixed(self):
+        strategy = ChronologicalSortingStrategy()
+        transactions = [
+            _tx_with_year("18 Feb", "CC yearless", 2026),
+            _tx("01/01/2026", "Bank full date"),
+            _tx_with_year("3 Feb", "CC earlier", 2026),
+        ]
+        sorted_txns = strategy.sort(transactions)
+        # 01 Jan 2026, 03 Feb 2026, 18 Feb 2026
+        assert sorted_txns[0].details == "Bank full date"
+        assert sorted_txns[1].details == "CC earlier"
+        assert sorted_txns[2].details == "CC yearless"
+
+    def test_invalid_statement_year_in_additional_fields_falls_to_epoch(self):
+        strategy = ChronologicalSortingStrategy()
+        tx = _tx("3 Feb", "Bad year")
+        tx.additional_fields["statement_year"] = "not-an-int"
+        # Should not raise — falls back to epoch
+        sorted_txns = strategy.sort([tx])
+        assert len(sorted_txns) == 1

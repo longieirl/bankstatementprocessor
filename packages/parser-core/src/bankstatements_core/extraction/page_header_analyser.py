@@ -25,6 +25,15 @@ _CREDIT_CARD_PATTERNS = [
 
 _IBAN_HEADER_Y = 350
 
+# Patterns for extracting the statement year from a payment due date field.
+# Matches lines like:
+#   "Payment Due  3 Mar 2026"
+#   "Payment Due Date: 20 Feb 2026"
+_PAYMENT_DUE_PATTERNS = [
+    r"Payment\s+Due\s+Date\s*[:\s]\s*\d{1,2}\s+\w+\s+(\d{4})",
+    r"Payment\s+Due\s+\d{1,2}\s+\w+\s+(\d{4})",
+]
+
 
 class PageHeaderAnalyser:
     """Inspects the page header area for credit card indicators and IBAN."""
@@ -56,6 +65,34 @@ class PageHeaderAnalyser:
         except (AttributeError, ValueError, TypeError) as e:
             logger.warning("Error checking for credit card statement: %s", e)
         return False
+
+    def extract_statement_year(self, page: Any) -> int | None:
+        """Extract the statement year from a 'Payment Due' or 'Payment Due Date' field.
+
+        Scans the full page 1 text for patterns like:
+        - "Payment Due  3 Mar 2026"
+        - "Payment Due Date: 20 Feb 2026"
+
+        Args:
+            page: pdfplumber page object (page 1 only)
+
+        Returns:
+            Four-digit year as int if found, None otherwise
+        """
+        try:
+            page_text = page.extract_text()
+            if page_text:
+                for pattern in _PAYMENT_DUE_PATTERNS:
+                    match = re.search(pattern, page_text, re.IGNORECASE)
+                    if match:
+                        year = int(match.group(1))
+                        logger.debug(
+                            "Statement year %d extracted from 'Payment Due' field", year
+                        )
+                        return year
+        except (AttributeError, ValueError, TypeError) as e:
+            logger.warning("Error extracting statement year from page: %s", e)
+        return None
 
     def extract_iban(self, page: Any) -> str | None:
         """Extract account IBAN from the page header area (y < 350).

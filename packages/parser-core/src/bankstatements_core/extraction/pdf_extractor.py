@@ -94,22 +94,15 @@ class PDFTableExtractor:
         rows: list[dict] = []
         iban = None
         card_number: str | None = None
-
-        filename_date = extract_filename_date(pdf_path.name)
-        page_processor = StatefulPageRowProcessor(
-            RowPostProcessor(
-                columns=self.columns,
-                row_classifier=self._row_classifier,
-                template=self.template,
-                filename_date=filename_date,
-                filename=pdf_path.name,
-            )
-        )
+        statement_year: int | None = None
 
         with self._pdf_reader.open(pdf_path) as pdf:
-            for page_num, page in enumerate(pdf.pages, 1):
-                if page_num == 1 and self._header_analyser.is_credit_card_statement(
-                    page, self.table_top_y
+            # --- Page 1 pre-scan: gather document-level metadata before processing rows ---
+            if pdf.pages:
+                page1 = pdf.pages[0]
+
+                if self._header_analyser.is_credit_card_statement(
+                    page1, self.table_top_y
                 ):
                     if self._entitlements is None or self._entitlements.require_iban:
                         logger.warning(
@@ -129,27 +122,40 @@ class PDFTableExtractor:
                             ],
                         )
 
-                if iban is None and page_num == 1:
-                    iban = self._header_analyser.extract_iban(page)
-                    if iban:
-                        logger.info(
-                            "IBAN found on page %s: %s****%s",
-                            page_num,
-                            iban[:4],
-                            iban[-4:],
+                    # Paid tier CC: extract card number and statement year up front
+                    extracted = self._extract_card_number(page1)
+                    card_number = extracted if extracted is not None else "unknown"
+
+                    statement_year = self._header_analyser.extract_statement_year(page1)
+                    if statement_year is None:
+                        logger.warning(
+                            "Could not determine statement year from '%s'. "
+                            "Yearless dates will not sort correctly.",
+                            pdf_path.name,
                         )
 
-                # Extract card number on page 1 for CC statements (paid tier only)
-                if page_num == 1 and card_number is None:
-                    extracted = self._extract_card_number(page)
-                    if extracted is not None:
-                        card_number = extracted
-                    elif self._header_analyser.is_credit_card_statement(
-                        page, self.table_top_y
-                    ):
-                        # CC PDF detected on paid tier but no card pattern matched
-                        card_number = "unknown"
+                iban = self._header_analyser.extract_iban(page1)
+                if iban:
+                    logger.info(
+                        "IBAN found on page 1: %s****%s",
+                        iban[:4],
+                        iban[-4:],
+                    )
 
+            # Build page processor now that document-level metadata is known
+            filename_date = extract_filename_date(pdf_path.name)
+            page_processor = StatefulPageRowProcessor(
+                RowPostProcessor(
+                    columns=self.columns,
+                    row_classifier=self._row_classifier,
+                    template=self.template,
+                    filename_date=filename_date,
+                    filename=pdf_path.name,
+                    statement_year=statement_year,
+                )
+            )
+
+            for page_num, page in enumerate(pdf.pages, 1):
                 page_rows = self._extract_page(page, page_num)
                 if page_rows is None:
                     continue
@@ -168,6 +174,7 @@ class PDFTableExtractor:
                 iban=iban,
                 source_file=pdf_path,
                 card_number=card_number,
+                statement_year=statement_year,
             )
 
     def _extract_card_number(self, page: Any) -> str | None:
