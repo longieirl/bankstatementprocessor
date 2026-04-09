@@ -153,3 +153,31 @@ class TestEscapeHatches:
         mock_group = Mock()
         registry = ServiceRegistry.from_config(config, grouping_service=mock_group)
         assert registry.get_grouping_service() is mock_group
+
+
+class TestCCGroupingInRegistry:
+    """Tests for CC grouping wiring in ServiceRegistry (CC-07)."""
+
+    def test_from_config_creates_cc_grouping_service(self):
+        """from_config() creates a CCGroupingService by default."""
+        from bankstatements_core.services.card_grouping import CCGroupingService
+
+        config = _minimal_config()
+        registry = ServiceRegistry.from_config(config)
+        cc_service = registry.get_cc_grouping_service()
+        assert cc_service is not None
+        assert isinstance(cc_service, CCGroupingService)
+
+    def test_group_by_card_delegates(self):
+        """group_by_card() delegates to the injected cc_grouping_service."""
+        config = _minimal_config()
+        mock_cc = Mock()
+        mock_cc.group_by_card.return_value = {"1234": []}
+        registry = ServiceRegistry.from_config(config, cc_grouping_service=mock_cc)
+
+        transactions = [Transaction.from_dict({"Date": "01/01/2024"})]
+        card_numbers = {"cc.pdf": "**** **** **** 1234"}
+        result = registry.group_by_card(transactions, card_numbers)
+
+        mock_cc.group_by_card.assert_called_once_with(transactions, card_numbers)
+        assert result == {"1234": []}
