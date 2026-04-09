@@ -254,9 +254,7 @@ class TestExtractionOrchestrator(unittest.TestCase):
             "template file missing"
         )
         # Should not raise — falls back to default (no-template) configuration
-        orchestrator = ExtractionOrchestrator(
-            extraction_config=self.extraction_config
-        )
+        orchestrator = ExtractionOrchestrator(extraction_config=self.extraction_config)
         assert orchestrator is not None
 
 
