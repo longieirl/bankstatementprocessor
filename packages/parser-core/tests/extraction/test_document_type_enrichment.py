@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import pytest
 
+from bankstatements_core.extraction.extraction_params import PDFExtractorOptions
 from bankstatements_core.extraction.pdf_extractor import PDFTableExtractor
 from bankstatements_core.extraction.row_post_processor import RowPostProcessor
 from bankstatements_core.templates.template_model import (
@@ -116,7 +117,8 @@ class TestDocumentTypeEnrichment:
     def test_bank_statement_document_type(self, bank_statement_template, basic_columns):
         """Test that bank statement template adds correct document_type."""
         extractor = PDFTableExtractor(
-            columns=basic_columns, template=bank_statement_template
+            columns=basic_columns,
+            options=PDFExtractorOptions(template=bank_statement_template),
         )
         proc = RowPostProcessor(
             columns=basic_columns,
@@ -134,7 +136,8 @@ class TestDocumentTypeEnrichment:
     def test_credit_card_document_type(self, credit_card_template, basic_columns):
         """Test that credit card template adds correct document_type."""
         extractor = PDFTableExtractor(
-            columns=basic_columns, template=credit_card_template
+            columns=basic_columns,
+            options=PDFExtractorOptions(template=credit_card_template),
         )
         proc = RowPostProcessor(
             columns=basic_columns,
@@ -152,7 +155,8 @@ class TestDocumentTypeEnrichment:
     def test_loan_statement_document_type(self, loan_statement_template, basic_columns):
         """Test that loan statement template adds correct document_type."""
         extractor = PDFTableExtractor(
-            columns=basic_columns, template=loan_statement_template
+            columns=basic_columns,
+            options=PDFExtractorOptions(template=loan_statement_template),
         )
         proc = RowPostProcessor(
             columns=basic_columns,
@@ -169,7 +173,7 @@ class TestDocumentTypeEnrichment:
 
     def test_no_template_defaults_to_bank_statement(self, basic_columns):
         """Test that absence of template defaults to 'bank_statement'."""
-        extractor = PDFTableExtractor(columns=basic_columns, template=None)
+        extractor = PDFTableExtractor(columns=basic_columns)
         proc = RowPostProcessor(
             columns=basic_columns,
             row_classifier=extractor._row_classifier,
@@ -187,7 +191,8 @@ class TestDocumentTypeEnrichment:
     ):
         """Test that document_type is added alongside Filename."""
         extractor = PDFTableExtractor(
-            columns=basic_columns, template=credit_card_template
+            columns=basic_columns,
+            options=PDFExtractorOptions(template=credit_card_template),
         )
         proc = RowPostProcessor(
             columns=basic_columns,
@@ -210,7 +215,8 @@ class TestDocumentTypeIntegration:
     def test_multiple_rows_same_template(self, credit_card_template, basic_columns):
         """Test that multiple rows from same template have same document_type."""
         extractor = PDFTableExtractor(
-            columns=basic_columns, template=credit_card_template
+            columns=basic_columns,
+            options=PDFExtractorOptions(template=credit_card_template),
         )
         proc = RowPostProcessor(
             columns=basic_columns,
@@ -233,7 +239,8 @@ class TestDocumentTypeIntegration:
     ):
         """Test that document_type field is always a string."""
         extractor = PDFTableExtractor(
-            columns=basic_columns, template=bank_statement_template
+            columns=basic_columns,
+            options=PDFExtractorOptions(template=bank_statement_template),
         )
         proc = RowPostProcessor(
             columns=basic_columns,

@@ -20,6 +20,7 @@ from bankstatements_core.domain.models.extraction_warning import (
     CODE_CREDIT_CARD_SKIPPED,
     ExtractionWarning,
 )
+from bankstatements_core.extraction.extraction_params import PDFExtractorOptions
 from bankstatements_core.extraction.iban_extractor import IBANExtractor
 from bankstatements_core.extraction.page_header_analyser import PageHeaderAnalyser
 from bankstatements_core.extraction.row_builder import RowBuilder
@@ -43,30 +44,23 @@ class PDFTableExtractor:
     - RowPostProcessor: date propagation and metadata tagging
     """
 
-    def __init__(  # noqa: PLR0913  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    def __init__(
         self,
         columns: dict[str, tuple[int | float, int | float]],
-        table_top_y: int = 300,
-        table_bottom_y: int = 720,
-        enable_dynamic_boundary: bool = False,
-        enable_page_validation: bool = True,
-        enable_header_check: bool = True,
-        header_check_top_y: int | None = None,
+        options: PDFExtractorOptions | None = None,
         pdf_reader: IPDFReader | None = None,
-        extraction_config: Any | None = None,
-        template: Any | None = None,
-        entitlements: Any | None = None,
     ):
+        opts = options or PDFExtractorOptions()
         self.columns = columns
-        self.table_top_y = table_top_y
-        self.table_bottom_y = table_bottom_y
-        self.enable_dynamic_boundary = enable_dynamic_boundary
-        self.page_validation_enabled = enable_page_validation
-        self.header_check_enabled = enable_header_check
-        self.header_check_top_y = header_check_top_y
-        self.extraction_config = extraction_config
-        self.template = template
-        self._entitlements = entitlements
+        self.table_top_y = opts.table_top_y
+        self.table_bottom_y = opts.table_bottom_y
+        self.enable_dynamic_boundary = opts.enable_dynamic_boundary
+        self.page_validation_enabled = opts.enable_page_validation
+        self.header_check_enabled = opts.enable_header_check
+        self.header_check_top_y = opts.header_check_top_y
+        self.extraction_config = opts.extraction_config
+        self.template = opts.template
+        self._entitlements = opts.entitlements
 
         self._row_classifier = create_row_classifier_chain()
         self._row_builder = RowBuilder(columns, self._row_classifier)

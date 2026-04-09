@@ -12,7 +12,11 @@ from typing import TYPE_CHECKING, Any
 
 from bankstatements_core.config.column_config import DEFAULT_COLUMNS
 from bankstatements_core.domain import ExtractionResult
-from bankstatements_core.extraction.extraction_params import TABLE_BOTTOM_Y, TABLE_TOP_Y
+from bankstatements_core.extraction.extraction_params import (
+    TABLE_BOTTOM_Y,
+    TABLE_TOP_Y,
+    PDFExtractorOptions,
+)
 
 if TYPE_CHECKING:
     from bankstatements_core.extraction.row_classifiers import RowClassifier
@@ -122,15 +126,17 @@ def extract_tables_from_pdf(  # noqa: PLR0913
 
     extractor = PDFTableExtractor(
         columns=columns,
-        table_top_y=table_top_y,
-        table_bottom_y=table_bottom_y,
-        enable_dynamic_boundary=enable_dynamic_boundary,
-        enable_page_validation=enable_page_validation,
-        enable_header_check=enable_header_check,
-        header_check_top_y=header_check_top_y,
-        extraction_config=template.extraction if template is not None else None,
-        template=template,  # NEW: Pass template for document type
-        entitlements=entitlements,
+        options=PDFExtractorOptions(
+            table_top_y=table_top_y,
+            table_bottom_y=table_bottom_y,
+            enable_dynamic_boundary=enable_dynamic_boundary,
+            enable_page_validation=enable_page_validation,
+            enable_header_check=enable_header_check,
+            header_check_top_y=header_check_top_y,
+            extraction_config=template.extraction if template is not None else None,
+            template=template,
+            entitlements=entitlements,
+        ),
     )
 
     return extractor.extract(pdf_path)

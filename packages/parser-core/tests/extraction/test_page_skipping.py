@@ -11,6 +11,7 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from bankstatements_core.extraction.extraction_params import PDFExtractorOptions
 from bankstatements_core.extraction.pdf_extractor import PDFTableExtractor
 
 # Test columns configuration
@@ -90,7 +91,8 @@ class TestPageSkipping:
 
         # Extract with default settings (validation enabled)
         extractor = PDFTableExtractor(
-            columns=TEST_COLUMNS, enable_dynamic_boundary=True
+            columns=TEST_COLUMNS,
+            options=PDFExtractorOptions(enable_dynamic_boundary=True),
         )
         result = extractor.extract(Path("/tmp/test.pdf"))
 
@@ -133,7 +135,8 @@ class TestPageSkipping:
         mock_cropped2.extract_words.return_value = mock_words2
 
         extractor = PDFTableExtractor(
-            columns=TEST_COLUMNS, enable_dynamic_boundary=True
+            columns=TEST_COLUMNS,
+            options=PDFExtractorOptions(enable_dynamic_boundary=True),
         )
         result = extractor.extract(Path("/tmp/test.pdf"))
 
@@ -170,7 +173,8 @@ class TestPageSkipping:
             mock_cropped.extract_words.return_value = mock_words
 
         extractor = PDFTableExtractor(
-            columns=TEST_COLUMNS, enable_dynamic_boundary=True
+            columns=TEST_COLUMNS,
+            options=PDFExtractorOptions(enable_dynamic_boundary=True),
         )
         result = extractor.extract(Path("/tmp/test.pdf"))
 
@@ -230,7 +234,8 @@ class TestPageSkipping:
         mock_cropped3.extract_words.return_value = mock_words3
 
         extractor = PDFTableExtractor(
-            columns=TEST_COLUMNS, enable_dynamic_boundary=True
+            columns=TEST_COLUMNS,
+            options=PDFExtractorOptions(enable_dynamic_boundary=True),
         )
         result = extractor.extract(Path("/tmp/test.pdf"))
 
@@ -258,7 +263,8 @@ class TestPageSkipping:
 
         # With validation disabled
         extractor = PDFTableExtractor(
-            columns=TEST_COLUMNS, enable_page_validation=False
+            columns=TEST_COLUMNS,
+            options=PDFExtractorOptions(enable_page_validation=False),
         )
         result = extractor.extract(Path("/tmp/test.pdf"))
 
@@ -288,7 +294,8 @@ class TestPageSkipping:
 
         # Create extractor with defaults (should have validation enabled)
         extractor = PDFTableExtractor(
-            columns=TEST_COLUMNS, enable_dynamic_boundary=True
+            columns=TEST_COLUMNS,
+            options=PDFExtractorOptions(enable_dynamic_boundary=True),
         )
 
         # Verify both validations are enabled by default
@@ -333,7 +340,10 @@ class TestPageSkipping:
         ]
         mock_cropped.extract_words.return_value = mock_words
 
-        extractor = PDFTableExtractor(columns=TEST_COLUMNS, enable_page_validation=True)
+        extractor = PDFTableExtractor(
+            columns=TEST_COLUMNS,
+            options=PDFExtractorOptions(enable_page_validation=True),
+        )
         result = extractor.extract(Path("/tmp/test.pdf"))
 
         assert result.page_count == 1

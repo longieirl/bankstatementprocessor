@@ -22,6 +22,7 @@ from bankstatements_core.analysis.column_analyzer import ColumnAnalyzer
 from bankstatements_core.analysis.iban_spatial_filter import IBANSpatialFilter
 from bankstatements_core.analysis.table_detector import TableDetector
 from bankstatements_core.analysis.template_generator import TemplateGenerator
+from bankstatements_core.extraction.extraction_params import PDFExtractorOptions
 from bankstatements_core.extraction.pdf_extractor import PDFTableExtractor
 
 logger = logging.getLogger(__name__)
@@ -290,10 +291,14 @@ class PDFAnalyzer:
             # This bypasses entitlement system
             extractor = PDFTableExtractor(
                 columns=columns,
-                table_top_y=table_top_y,
-                table_bottom_y=table_bottom_y,
-                header_check_top_y=extraction_config.get("header_check_top_y", 0),
-                enable_header_check=extraction_config.get("enable_header_check", True),
+                options=PDFExtractorOptions(
+                    table_top_y=table_top_y,
+                    table_bottom_y=table_bottom_y,
+                    header_check_top_y=extraction_config.get("header_check_top_y", 0),
+                    enable_header_check=extraction_config.get(
+                        "enable_header_check", True
+                    ),
+                ),
             )
 
             # Extract from first page only for validation

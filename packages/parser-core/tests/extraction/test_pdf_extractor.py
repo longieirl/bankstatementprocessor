@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from bankstatements_core.domain import ExtractionResult
+from bankstatements_core.extraction.extraction_params import PDFExtractorOptions
 from bankstatements_core.extraction.pdf_extractor import PDFTableExtractor
 from bankstatements_core.extraction.row_post_processor import (
     RowPostProcessor,
@@ -37,10 +38,12 @@ class TestPDFTableExtractor:
         """Test extractor initialization with custom values."""
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
-            table_top_y=250,
-            table_bottom_y=800,
-            enable_dynamic_boundary=True,
-            enable_page_validation=True,
+            options=PDFExtractorOptions(
+                table_top_y=250,
+                table_bottom_y=800,
+                enable_dynamic_boundary=True,
+                enable_page_validation=True,
+            ),
         )
         assert extractor.table_top_y == 250
         assert extractor.table_bottom_y == 800
@@ -185,8 +188,10 @@ class TestPDFTableExtractor:
         # Extract - pass parameters directly instead of using environment variables
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
-            enable_page_validation=False,
-            enable_header_check=False,
+            options=PDFExtractorOptions(
+                enable_page_validation=False,
+                enable_header_check=False,
+            ),
         )
         result = extractor.extract(Path("/tmp/test.pdf"))
 
@@ -220,9 +225,11 @@ class TestPDFTableExtractor:
 
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
-            enable_dynamic_boundary=True,
-            enable_page_validation=False,
-            enable_header_check=False,
+            options=PDFExtractorOptions(
+                enable_dynamic_boundary=True,
+                enable_page_validation=False,
+                enable_header_check=False,
+            ),
         )
         result = extractor.extract(Path("/tmp/test.pdf"))
 
@@ -248,7 +255,10 @@ class TestPDFTableExtractor:
         ]
         mock_cropped.extract_words.return_value = mock_words
 
-        extractor = PDFTableExtractor(columns=TEST_COLUMNS, enable_page_validation=True)
+        extractor = PDFTableExtractor(
+            columns=TEST_COLUMNS,
+            options=PDFExtractorOptions(enable_page_validation=True),
+        )
         result = extractor.extract(Path("/tmp/test.pdf"))
 
         assert result.page_count == 1
@@ -286,8 +296,9 @@ class TestPDFTableExtractor:
 
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
-            enable_page_validation=False,
-            enable_header_check=False,
+            options=PDFExtractorOptions(
+                enable_page_validation=False, enable_header_check=False
+            ),
         )
         result = extractor.extract(Path("/tmp/test.pdf"))
 
@@ -326,8 +337,10 @@ class TestPDFTableExtractor:
 
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
-            enable_page_validation=False,
-            enable_header_check=False,
+            options=PDFExtractorOptions(
+                enable_page_validation=False,
+                enable_header_check=False,
+            ),
         )
         result = extractor.extract(Path("/tmp/test.pdf"))
 
@@ -338,20 +351,28 @@ class TestPDFTableExtractor:
 
     def test_page_validation_constructor_parameter(self):
         """Test page validation setting via constructor parameter."""
-        extractor = PDFTableExtractor(columns=TEST_COLUMNS, enable_page_validation=True)
+        extractor = PDFTableExtractor(
+            columns=TEST_COLUMNS,
+            options=PDFExtractorOptions(enable_page_validation=True),
+        )
         assert extractor.page_validation_enabled is True
 
         extractor = PDFTableExtractor(
-            columns=TEST_COLUMNS, enable_page_validation=False
+            columns=TEST_COLUMNS,
+            options=PDFExtractorOptions(enable_page_validation=False),
         )
         assert extractor.page_validation_enabled is False
 
     def test_header_check_constructor_parameter(self):
         """Test header check setting via constructor parameter."""
-        extractor = PDFTableExtractor(columns=TEST_COLUMNS, enable_header_check=True)
+        extractor = PDFTableExtractor(
+            columns=TEST_COLUMNS, options=PDFExtractorOptions(enable_header_check=True)
+        )
         assert extractor.header_check_enabled is True
 
-        extractor = PDFTableExtractor(columns=TEST_COLUMNS, enable_header_check=False)
+        extractor = PDFTableExtractor(
+            columns=TEST_COLUMNS, options=PDFExtractorOptions(enable_header_check=False)
+        )
         assert extractor.header_check_enabled is False
 
     def test_extraction_config_parameter(self):
@@ -369,7 +390,8 @@ class TestPDFTableExtractor:
         )
 
         extractor = PDFTableExtractor(
-            columns=TEST_COLUMNS, extraction_config=extraction_config
+            columns=TEST_COLUMNS,
+            options=PDFExtractorOptions(extraction_config=extraction_config),
         )
 
         assert extractor.extraction_config is not None
@@ -426,9 +448,11 @@ class TestPDFTableExtractor:
         # Create extractor with extraction_config
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
-            extraction_config=extraction_config,
-            enable_page_validation=False,
-            enable_header_check=False,
+            options=PDFExtractorOptions(
+                extraction_config=extraction_config,
+                enable_page_validation=False,
+                enable_header_check=False,
+            ),
         )
 
         result = extractor.extract(Path("/tmp/test.pdf"))
@@ -474,10 +498,12 @@ class TestPDFTableExtractor:
         # Create extractor WITHOUT extraction_config (should use instance defaults)
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
-            table_top_y=300,
-            table_bottom_y=720,
-            enable_page_validation=False,
-            enable_header_check=False,
+            options=PDFExtractorOptions(
+                table_top_y=300,
+                table_bottom_y=720,
+                enable_page_validation=False,
+                enable_header_check=False,
+            ),
         )
 
         result = extractor.extract(Path("/tmp/test.pdf"))
@@ -530,9 +556,11 @@ class TestPDFTableExtractor:
         # Create extractor with header check enabled
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
-            extraction_config=extraction_config,
-            enable_page_validation=False,
-            enable_header_check=True,  # Enable header check
+            options=PDFExtractorOptions(
+                extraction_config=extraction_config,
+                enable_page_validation=False,
+                enable_header_check=True,
+            ),
         )
 
         extractor.extract(Path("/tmp/test.pdf"))
@@ -589,10 +617,12 @@ class TestPDFTableExtractorCardNumber:
         # Header analyser: IS a CC statement
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
-            enable_page_validation=False,
-            enable_header_check=False,
-            template=mock_template,
-            entitlements=mock_entitlements,
+            options=PDFExtractorOptions(
+                enable_page_validation=False,
+                enable_header_check=False,
+                template=mock_template,
+                entitlements=mock_entitlements,
+            ),
         )
         extractor._header_analyser = MagicMock()
         extractor._header_analyser.is_credit_card_statement.return_value = True
@@ -620,10 +650,12 @@ class TestPDFTableExtractorCardNumber:
 
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
-            enable_page_validation=False,
-            enable_header_check=False,
-            template=None,
-            entitlements=mock_entitlements,
+            options=PDFExtractorOptions(
+                enable_page_validation=False,
+                enable_header_check=False,
+                template=None,
+                entitlements=mock_entitlements,
+            ),
         )
         extractor._header_analyser = MagicMock()
         extractor._header_analyser.is_credit_card_statement.return_value = True
@@ -668,10 +700,12 @@ class TestPDFTableExtractorCardNumber:
 
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
-            enable_page_validation=False,
-            enable_header_check=False,
-            template=mock_template,
-            entitlements=mock_entitlements,
+            options=PDFExtractorOptions(
+                enable_page_validation=False,
+                enable_header_check=False,
+                template=mock_template,
+                entitlements=mock_entitlements,
+            ),
         )
         extractor._header_analyser = MagicMock()
         extractor._header_analyser.is_credit_card_statement.return_value = True
@@ -704,9 +738,11 @@ class TestPDFTableExtractorCardNumber:
 
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
-            enable_page_validation=False,
-            enable_header_check=False,
-            entitlements=mock_entitlements,
+            options=PDFExtractorOptions(
+                enable_page_validation=False,
+                enable_header_check=False,
+                entitlements=mock_entitlements,
+            ),
         )
         extractor._header_analyser = MagicMock()
         extractor._header_analyser.is_credit_card_statement.return_value = True
@@ -752,10 +788,12 @@ class TestPDFTableExtractorCardNumber:
 
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
-            enable_page_validation=False,
-            enable_header_check=False,
-            template=mock_template,
-            entitlements=mock_entitlements,
+            options=PDFExtractorOptions(
+                enable_page_validation=False,
+                enable_header_check=False,
+                template=mock_template,
+                entitlements=mock_entitlements,
+            ),
         )
         extractor._header_analyser = MagicMock()
         extractor._header_analyser.is_credit_card_statement.return_value = True
@@ -796,10 +834,12 @@ class TestPDFTableExtractorCardNumber:
 
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
-            enable_page_validation=False,
-            enable_header_check=False,
-            template=mock_template,
-            entitlements=mock_entitlements,
+            options=PDFExtractorOptions(
+                enable_page_validation=False,
+                enable_header_check=False,
+                template=mock_template,
+                entitlements=mock_entitlements,
+            ),
         )
         extractor._header_analyser = MagicMock()
         extractor._header_analyser.is_credit_card_statement.return_value = True
