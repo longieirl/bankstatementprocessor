@@ -370,9 +370,12 @@ class BankStatementProcessor:
             len(txns_by_iban),
         )
 
-        # Step 2b: Group CC transactions by card suffix (delegated to registry)
+        # Step 2b: Group CC transactions by card suffix (paid tier only)
         txns_by_card: dict[str, list[Transaction]] = {}
-        if all_cc_txns:
+        is_paid_tier = (
+            self.entitlements is not None and not self.entitlements.require_iban
+        )
+        if is_paid_tier and all_cc_txns:
             txns_by_card = self._registry.group_by_card(all_cc_txns, pdf_card_numbers)
             logger.debug(
                 "Grouped %s CC transactions into %s card groups",

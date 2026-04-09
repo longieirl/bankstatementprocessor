@@ -17,6 +17,7 @@ from bankstatements_core.config.processor_config import (
 from bankstatements_core.config.totals_config import parse_totals_columns
 from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.domain.converters import dicts_to_transactions
+from bankstatements_core.entitlements import Entitlements
 from bankstatements_core.processor import (
     BankStatementProcessor,
     calculate_column_totals,
@@ -1070,10 +1071,15 @@ class TestCCGroupingInProcessor(unittest.TestCase):
         return rows[0]
 
     def _make_processor_with_mock_registry(self):
-        """Create processor and return (processor, mock_registry)."""
+        """Create processor and return (processor, mock_registry).
+
+        Defaults to paid-tier entitlements so CC grouping is enabled.
+        Override processor.entitlements after calling for free-tier tests.
+        """
         from unittest.mock import MagicMock
 
         processor = create_test_processor(self.input_dir, self.output_dir)
+        processor.entitlements = Entitlements.paid_tier()
 
         mock_registry = MagicMock()
         # Default: group_by_iban returns empty dict, group_by_card returns empty dict
@@ -1284,6 +1290,31 @@ class TestCCGroupingInProcessor(unittest.TestCase):
             called_suffixes,
             f"_process_transaction_group must be called with CC card suffix, got: {called_suffixes}",
         )
+
+    def test_free_tier_does_not_group_cc_transactions(self):
+        """Free tier: group_by_card is never called even when CC results present."""
+        cc_tx = self._make_transaction(details="CC Purchase")
+        cc_pdf = self.input_dir / "cc.pdf"
+        cc_pdf.touch()
+
+        processor, mock_registry = self._make_processor_with_mock_registry()
+        processor.entitlements = Entitlements.free_tier()
+
+        cc_result = ExtractionResult(
+            transactions=[cc_tx],
+            page_count=1,
+            iban=None,
+            source_file=cc_pdf,
+            card_number="**** 1234",
+        )
+
+        with patch(
+            "bankstatements_core.services.pdf_processing_orchestrator.PDFProcessingOrchestrator.process_all_pdfs"
+        ) as mock_process:
+            mock_process.return_value = ([cc_result], 1, 1)
+            processor.run()
+
+        mock_registry.group_by_card.assert_not_called()
 
 
 if __name__ == "__main__":
