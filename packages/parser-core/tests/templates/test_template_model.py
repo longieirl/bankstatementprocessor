@@ -385,7 +385,11 @@ class TestBankTemplateColumnAliases:
 
     def test_column_aliases_set_explicitly(self):
         """BankTemplate with explicit column_aliases stores them correctly."""
-        aliases = {"Transaction Details": "Details", "Debit €": "Debit", "Credit €": "Credit"}
+        aliases = {
+            "Transaction Details": "Details",
+            "Debit €": "Debit",
+            "Credit €": "Credit",
+        }
         template = BankTemplate(
             id="cc_test",
             name="CC Test",

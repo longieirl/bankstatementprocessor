@@ -24,9 +24,9 @@ if TYPE_CHECKING:
     from bankstatements_core.config.processor_config import ProcessorConfig
     from bankstatements_core.domain.models.transaction import Transaction
     from bankstatements_core.domain.protocols.services import (
+        ICardGrouping,
         IDuplicateDetector,
         IIBANGrouping,
-        ICardGrouping,
         ITransactionSorting,
     )
     from bankstatements_core.entitlements import Entitlements
@@ -75,7 +75,7 @@ class ServiceRegistry:
     # ------------------------------------------------------------------
 
     @classmethod
-    def from_config(
+    def from_config(  # noqa: PLR0913
         cls,
         config: ProcessorConfig,
         entitlements: Entitlements | None = None,
@@ -153,10 +153,16 @@ class ServiceRegistry:
             from bankstatements_core.services.card_grouping import (  # noqa: PLC0415
                 CCGroupingService,
             )
+
             cc_grouping_service = CCGroupingService()
 
-        return cls(context, duplicate_detector, sorting_service, grouping_service,
-                   cc_grouping_service=cc_grouping_service)
+        return cls(
+            context,
+            duplicate_detector,
+            sorting_service,
+            grouping_service,
+            cc_grouping_service=cc_grouping_service,
+        )
 
     # ------------------------------------------------------------------
     # Primary methods (80 % case)
@@ -226,6 +232,7 @@ class ServiceRegistry:
             from bankstatements_core.services.card_grouping import (  # noqa: PLC0415
                 CCGroupingService,
             )
+
             self._cc_grouping_service = CCGroupingService()
         return self._cc_grouping_service.group_by_card(transactions, pdf_card_numbers)
 

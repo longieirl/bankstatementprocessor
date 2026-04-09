@@ -60,9 +60,7 @@ class CCGroupingService:
         for tx in rows:
             filename = tx.filename
             if not filename:
-                logger.warning(
-                    "Transaction missing filename, grouping under 'unknown'"
-                )
+                logger.warning("Transaction missing filename, grouping under 'unknown'")
                 card_suffix = "unknown"
             else:
                 full_card = pdf_card_numbers.get(filename)
@@ -100,9 +98,7 @@ class CCGroupingService:
             return cleaned[-self._suffix_length :]
         return cleaned if cleaned else "unknown"
 
-    def _log_grouping_summary(
-        self, grouped: dict[str, list[Transaction]]
-    ) -> None:
+    def _log_grouping_summary(self, grouped: dict[str, list[Transaction]]) -> None:
         """Log summary of grouping results."""
         total_groups = len(grouped)
         total_transactions = sum(len(group) for group in grouped.values())

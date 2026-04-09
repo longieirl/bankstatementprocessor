@@ -351,7 +351,12 @@ class TestColumnAliasesNormalisation:
             filename_date="",
             filename="cc.pdf",
         )
-        row = {"Date": "01/01/2025", "Transaction Details": "Shop", "Debit €": "", "Credit €": ""}
+        row = {
+            "Date": "01/01/2025",
+            "Transaction Details": "Shop",
+            "Debit €": "",
+            "Credit €": "",
+        }
         proc.process(row, "")
         assert row["document_type"] == "credit_card_statement"
         assert row["template_id"] == "aib_credit_card"

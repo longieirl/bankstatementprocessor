@@ -246,9 +246,12 @@ class TestFreeTierTemplateFiltering:
         assert paid_tier.require_iban is False
         assert paid_tier.tier == "PAID"
 
-    def test_paid_tier_loads_cc_template_with_column_aliases(self, template_with_iban, caplog):
+    def test_paid_tier_loads_cc_template_with_column_aliases(
+        self, template_with_iban, caplog
+    ):
         """D-10: Paid tier with CC template (no IBAN, has column_aliases) keeps CC template in registry."""
         import logging
+
         caplog.set_level(logging.INFO)
 
         # Build a CC template: no IBAN patterns, has column_aliases, document_type=credit_card_statement
@@ -263,7 +266,12 @@ class TestFreeTierTemplateFiltering:
             extraction=TemplateExtractionConfig(
                 table_top_y=320,
                 table_bottom_y=720,
-                columns={"Date": (29, 78), "Transaction Details": (78, 320), "Debit €": (320, 400), "Credit €": (400, 480)},
+                columns={
+                    "Date": (29, 78),
+                    "Transaction Details": (78, 320),
+                    "Debit €": (320, 400),
+                    "Credit €": (400, 480),
+                },
             ),
             processing=TemplateProcessingConfig(
                 supports_multiline=False,

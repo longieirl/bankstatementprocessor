@@ -204,7 +204,7 @@ class PDFTableExtractor:
             try:
                 match = re.search(pattern, text)
                 if match:
-                    return match.group(0)
+                    return str(match.group(0))
             except re.error:
                 logger.warning("Invalid card_number_pattern: %s", pattern)
         return None

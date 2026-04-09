@@ -645,7 +645,9 @@ class TestPDFTableExtractorCardNumber:
 
         # Header returns text WITHOUT matching card number
         mock_header_cropped = MagicMock()
-        mock_header_cropped.extract_text.return_value = "Account Statement\nNo card number here"
+        mock_header_cropped.extract_text.return_value = (
+            "Account Statement\nNo card number here"
+        )
         mock_table_cropped = MagicMock()
         mock_table_cropped.extract_words.return_value = []
 

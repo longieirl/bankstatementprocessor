@@ -731,7 +731,10 @@ class TestParseTemplateColumnAliases:
         data = sample_template_data.copy()
         data["column_aliases"] = {"Transaction Details": "Details", "Debit €": "Debit"}
         template = TemplateRegistry._parse_template("test_cc", data)
-        assert template.column_aliases == {"Transaction Details": "Details", "Debit €": "Debit"}
+        assert template.column_aliases == {
+            "Transaction Details": "Details",
+            "Debit €": "Debit",
+        }
 
     def test_parse_template_without_column_aliases(self, sample_template_data):
         """_parse_template defaults column_aliases to {} when key missing."""

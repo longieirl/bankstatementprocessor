@@ -164,7 +164,11 @@ class TestExtractionResultCardNumber:
         from bankstatements_core.domain.models.extraction_result import ExtractionResult
 
         result = ExtractionResult(
-            transactions=[], page_count=1, iban=None, source_file=Path("x.pdf"), warnings=[]
+            transactions=[],
+            page_count=1,
+            iban=None,
+            source_file=Path("x.pdf"),
+            warnings=[],
         )
         assert result.card_number is None
 

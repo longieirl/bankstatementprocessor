@@ -1060,7 +1060,9 @@ class TestCCGroupingInProcessor(unittest.TestCase):
 
     def _make_transaction(self, date="01 Jan 2024", details="Purchase"):
         """Create a minimal Transaction for testing."""
-        from bankstatements_core.domain.converters import dicts_to_transactions  # noqa: PLC0415
+        from bankstatements_core.domain.converters import (  # type: ignore[attr-defined]
+            dicts_to_transactions,
+        )
 
         rows = dicts_to_transactions(
             [{"Date": date, "Details": details, "Filename": "test.pdf"}]
@@ -1069,7 +1071,7 @@ class TestCCGroupingInProcessor(unittest.TestCase):
 
     def _make_processor_with_mock_registry(self):
         """Create processor and return (processor, mock_registry)."""
-        from unittest.mock import MagicMock  # noqa: PLC0415
+        from unittest.mock import MagicMock
 
         processor = create_test_processor(self.input_dir, self.output_dir)
 
@@ -1152,7 +1154,11 @@ class TestCCGroupingInProcessor(unittest.TestCase):
         if call_args:
             # If called, it must be with empty transactions
             args, _ = call_args[0]
-            self.assertEqual(args[0], [], "group_by_card must receive empty transactions for pure bank run")
+            self.assertEqual(
+                args[0],
+                [],
+                "group_by_card must receive empty transactions for pure bank run",
+            )
 
         # No cc_ prefixed keys in output_paths
         self.assertFalse(
@@ -1265,7 +1271,9 @@ class TestCCGroupingInProcessor(unittest.TestCase):
         ) as mock_process:
             mock_process.return_value = ([cc_result], 1, 1)
             with patch.object(
-                processor, "_process_transaction_group", wraps=processor._process_transaction_group
+                processor,
+                "_process_transaction_group",
+                wraps=processor._process_transaction_group,
             ) as mock_ptg:
                 processor.run()
 
