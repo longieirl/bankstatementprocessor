@@ -247,6 +247,18 @@ class TestExtractionOrchestrator(unittest.TestCase):
         assert t_with_iban.enabled is True
         assert t_no_iban.enabled is True
 
+    @patch("bankstatements_core.services.extraction_orchestrator.TemplateRegistry")
+    def test_template_init_failure_falls_back_to_default(self, mock_registry_class):
+        """ExtractionOrchestrator still constructs when template init raises (#120)."""
+        mock_registry_class.from_default_config.side_effect = FileNotFoundError(
+            "template file missing"
+        )
+        # Should not raise — falls back to default (no-template) configuration
+        orchestrator = ExtractionOrchestrator(
+            extraction_config=self.extraction_config
+        )
+        assert orchestrator is not None
+
 
 if __name__ == "__main__":
     unittest.main()

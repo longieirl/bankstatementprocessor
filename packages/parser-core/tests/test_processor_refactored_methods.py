@@ -383,5 +383,105 @@ class TestProcessorRefactoredIntegration(unittest.TestCase):
             self.assertTrue(csv_path.exists())
 
 
+class TestCoverageGaps(unittest.TestCase):
+    """Tests for previously uncovered branches (issues #118, #119)."""
+
+    def _make_processor(self, tmpdir, **kwargs):
+        input_dir = Path(tmpdir) / "input"
+        output_dir = Path(tmpdir) / "output"
+        input_dir.mkdir(exist_ok=True)
+        output_dir.mkdir(exist_ok=True)
+        config = ProcessorConfig(
+            input_dir=input_dir,
+            output_dir=output_dir,
+            extraction=ExtractionConfig(table_top_y=100, table_bottom_y=700),
+        )
+        return BankStatementProcessor(config=config, **kwargs)
+
+    def test_set_duplicate_strategy_stores_strategy(self):
+        """set_duplicate_strategy() assigns the strategy to _duplicate_strategy (#118)."""
+        from unittest.mock import MagicMock
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            processor = self._make_processor(tmpdir)
+            new_strategy = MagicMock()
+            processor.set_duplicate_strategy(new_strategy)
+            self.assertIs(processor._duplicate_strategy, new_strategy)
+
+    @patch(
+        "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
+    )
+    def test_activity_log_called_after_run(self, mock_extract):
+        """_activity_log.log_processing() is called once after run() (#119 lines 421-422)."""
+        from unittest.mock import MagicMock
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            input_dir = Path(tmpdir) / "input"
+            output_dir = Path(tmpdir) / "output"
+            input_dir.mkdir()
+            output_dir.mkdir()
+            (input_dir / "test.pdf").write_text("fake", encoding="utf-8")
+
+            mock_log = MagicMock()
+            config = ProcessorConfig(
+                input_dir=input_dir,
+                output_dir=output_dir,
+                extraction=ExtractionConfig(table_top_y=100, table_bottom_y=700),
+            )
+            processor = BankStatementProcessor(config=config, activity_log=mock_log)
+
+            mock_extract.return_value = ExtractionResult(
+                transactions=dicts_to_transactions(
+                    [{"Date": "01/01/23", "Details": "Test", "Debit €": "10"}]
+                ),
+                page_count=1,
+                iban=None,
+                source_file=Path("test.pdf"),
+            )
+
+            processor.run()
+            mock_log.log_processing.assert_called_once()
+
+    @patch(
+        "bankstatements_core.services.extraction_orchestrator.extract_tables_from_pdf"
+    )
+    def test_template_registry_lookup_on_transaction_group(self, mock_extract):
+        """Template registry is queried when transactions carry a template_id (#119 lines 469-472)."""
+        from unittest.mock import MagicMock
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            input_dir = Path(tmpdir) / "input"
+            output_dir = Path(tmpdir) / "output"
+            input_dir.mkdir()
+            output_dir.mkdir()
+            (input_dir / "test.pdf").write_text("fake", encoding="utf-8")
+
+            mock_registry = MagicMock()
+            mock_registry.get_template.return_value = None
+            config = ProcessorConfig(
+                input_dir=input_dir,
+                output_dir=output_dir,
+                extraction=ExtractionConfig(table_top_y=100, table_bottom_y=700),
+            )
+            processor = BankStatementProcessor(
+                config=config, template_registry=mock_registry
+            )
+
+            txns = dicts_to_transactions(
+                [{"Date": "01/01/23", "Details": "Test", "Debit €": "10"}]
+            )
+            txns[0].additional_fields["template_id"] = "aib_ireland"
+
+            mock_extract.return_value = ExtractionResult(
+                transactions=txns,
+                page_count=1,
+                iban=None,
+                source_file=Path("test.pdf"),
+            )
+
+            processor.run()
+            mock_registry.get_template.assert_called_once_with("aib_ireland")
+
+
 if __name__ == "__main__":
     unittest.main()
