@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -370,6 +372,9 @@ class BankStatementProcessor:
             len(txns_by_iban),
         )
 
+        # Step 2a-post: Route "unknown" IBAN group to excluded_files.json
+        self._exclude_unknown_iban_group(txns_by_iban)
+
         # Step 2b: Group CC transactions by card suffix (paid tier only)
         txns_by_card: dict[str, list[Transaction]] = {}
         is_paid_tier = (
@@ -459,6 +464,73 @@ class BankStatementProcessor:
             total_duplicates,
             all_output_paths,
         )
+
+    def _exclude_unknown_iban_group(
+        self, txns_by_iban: dict[str, list[Transaction]]
+    ) -> None:
+        """Pop the 'unknown' IBAN group and write identifiable PDFs to excluded_files.json.
+
+        Transactions from PDFs where an IBAN lookup returned nothing (but the
+        transaction carries a filename) are excluded from output and recorded in
+        excluded_files.json.  Transactions with no filename at all are returned
+        to the group under "unknown" so they are still processed — dropping them
+        would silently lose data.
+        """
+        unknown_txns = txns_by_iban.pop("unknown", [])
+        if not unknown_txns:
+            return
+
+        # Split: transactions with a known source file vs anonymous transactions
+        identifiable = [tx for tx in unknown_txns if tx.filename]
+        anonymous = [tx for tx in unknown_txns if not tx.filename]
+
+        # Return anonymous transactions to the grouping dict so they still get output
+        if anonymous:
+            txns_by_iban["unknown"] = anonymous
+
+        if not identifiable:
+            return
+
+        source_files: list[str] = sorted({tx.filename for tx in identifiable})
+        logger.warning(
+            "%d transaction(s) from %d PDF(s) have no IBAN and will be excluded: %s",
+            len(identifiable),
+            len(source_files),
+            source_files,
+        )
+
+        excluded_entries = [
+            {
+                "filename": name,
+                "path": str(Path(self.input_dir) / name),
+                "reason": "No IBAN found — transactions extracted but cannot be grouped",
+                "timestamp": datetime.now().isoformat(),
+                "pages": None,
+            }
+            for name in source_files
+        ]
+
+        excluded_path = Path(self.output_dir) / "excluded_files.json"
+        if excluded_path.exists():
+            with excluded_path.open() as fh:
+                existing = json.load(fh)
+            existing_entries: list[dict] = (
+                existing.get("excluded_files", []) if isinstance(existing, dict) else []
+            )
+            excluded_entries = existing_entries + excluded_entries
+
+        excluded_log = {
+            "summary": {
+                "total_excluded": len(excluded_entries),
+                "generated_at": datetime.now().isoformat(),
+                "note": (
+                    "Files excluded from processing due to "
+                    "missing IBAN or no extractable data"
+                ),
+            },
+            "excluded_files": excluded_entries,
+        }
+        self.repository.save_json_file(excluded_path, excluded_log)
 
     def _process_transaction_group(
         self, iban_suffix: str | None, iban_txns: list[Transaction]
