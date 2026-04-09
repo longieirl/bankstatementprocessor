@@ -298,5 +298,90 @@ class TestAIBDocumentTypes:
         assert aib_cc.document_type == "credit_card_statement"
 
 
+class TestAIBCCTemplateColumnsFix:
+    """Regression tests for issue #129 — CC PDF using wrong (bank) column layout.
+
+    Without aib_credit_card.json, get_default_for_type("credit_card_statement")
+    falls back to the global default (bank statement columns). RowBuilder then
+    maps CC PDF words to Date/Details/Debit/Credit/Balance — none of which match
+    the CC column positions — so RefContinuationClassifier sees an empty description
+    and classifies Ref lines as transactions, emitting phantom rows.
+    """
+
+    def test_cc_default_template_uses_cc_columns(self):
+        """get_default_for_type('credit_card_statement') returns aib_credit_card.
+
+        Before the fix, no credit_card_statement template existed and the call
+        fell back to the global default (bank statement columns), causing phantom
+        empty rows in CC output.
+        """
+        registry = TemplateRegistry.from_default_config()
+        cc_template = registry.get_default_for_type("credit_card_statement")
+
+        assert cc_template.document_type == "credit_card_statement", (
+            "Default CC template must have document_type='credit_card_statement'; "
+            "falling back to a bank_statement template causes phantom rows in CC output"
+        )
+        assert cc_template.id == "aib_credit_card"
+
+    def test_cc_columns_include_transaction_details(self):
+        """aib_credit_card columns include 'Transaction Details'.
+
+        RefContinuationClassifier uses ColumnTypeIdentifier to find the description
+        column by scanning column names for DESCRIPTION_PATTERNS. 'Transaction Details'
+        matches via 'detail' (or 'transaction'). If bank columns ('Details') are used
+        instead, the RefContinuationClassifier still works — but RowBuilder assigns
+        words to wrong positions because CC column x-boundaries differ from bank ones.
+        The CC template must define the correct x-boundaries for CC PDFs.
+        """
+        registry = TemplateRegistry.from_default_config()
+        aib_cc = registry.get_template("aib_credit_card")
+
+        assert aib_cc is not None
+        col_names = list(aib_cc.extraction.columns.keys())
+        assert "Transaction Details" in col_names, (
+            "CC template must have 'Transaction Details' column; "
+            "RefContinuationClassifier finds it via DESCRIPTION_PATTERNS"
+        )
+        assert "Transaction Date" in col_names
+        assert "Posting Date" in col_names
+        assert "Amount" in col_names
+
+    def test_cc_column_boundaries_match_aib_pdf_layout(self):
+        """aib_credit_card column x-boundaries match the known AIB CC PDF layout.
+
+        These boundaries were established from test_row_merger_integration.py
+        cc_columns fixture which was derived from real AIB CC PDF analysis.
+        If the boundaries are wrong, RowBuilder assigns words to wrong columns
+        and RefContinuationClassifier sees empty description, classifying Ref
+        lines as transactions.
+        """
+        registry = TemplateRegistry.from_default_config()
+        aib_cc = registry.get_template("aib_credit_card")
+
+        assert aib_cc is not None
+        cols = aib_cc.extraction.columns
+
+        txn_date = cols["Transaction Date"]
+        posting_date = cols["Posting Date"]
+        txn_details = cols["Transaction Details"]
+        amount = cols["Amount"]
+
+        # Transaction Date: narrow left-most column
+        assert txn_date[0] < txn_date[1], "Transaction Date must have positive width"
+        # Posting Date immediately follows Transaction Date
+        assert (
+            posting_date[0] >= txn_date[0]
+        ), "Posting Date starts at or after Txn Date"
+        # Transaction Details is the wide middle column
+        assert (txn_details[1] - txn_details[0]) > (
+            txn_date[1] - txn_date[0]
+        ), "Transaction Details should be wider than Transaction Date"
+        # Amount is rightmost
+        assert (
+            amount[0] >= txn_details[0]
+        ), "Amount must start after Transaction Details"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
