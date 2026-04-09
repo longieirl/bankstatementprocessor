@@ -983,3 +983,87 @@ class TestTransactionToDictCurrencySymbol:
         tx2 = Transaction.from_dict(d)
         assert tx2.debit == "50.00"
         assert tx2.balance == "100.00"
+
+
+class TestTransactionEnrichDate:
+    """Tests for _enrich_date and its integration in to_dict() (issue #134)."""
+
+    def _make_tx(self, date: str, statement_year: str | None = None) -> Transaction:
+        from bankstatements_core.domain.models.transaction import Transaction
+
+        additional: dict[str, str] = {}
+        if statement_year is not None:
+            additional["statement_year"] = statement_year
+        return Transaction(
+            date=date,
+            details="Test",
+            debit="10.00",
+            credit=None,
+            balance="100.00",
+            filename="cc.pdf",
+            additional_fields=additional,
+        )
+
+    # --- _enrich_date unit tests ---
+
+    def test_yearless_short_month_with_year(self):
+        """'3 Feb' + statement_year='2025' → '3 Feb 2025'."""
+        from bankstatements_core.domain.models.transaction import Transaction
+
+        assert (
+            Transaction._enrich_date("3 Feb", {"statement_year": "2025"})
+            == "3 Feb 2025"
+        )
+
+    def test_yearless_full_month_with_year(self):
+        """'3 February' + statement_year='2026' → '3 February 2026'."""
+        from bankstatements_core.domain.models.transaction import Transaction
+
+        assert (
+            Transaction._enrich_date("3 February", {"statement_year": "2026"})
+            == "3 February 2026"
+        )
+
+    def test_dated_with_year_unchanged(self):
+        """Full dates are left untouched."""
+        from bankstatements_core.domain.models.transaction import Transaction
+
+        assert (
+            Transaction._enrich_date("01/01/2025", {"statement_year": "2025"})
+            == "01/01/2025"
+        )
+
+    def test_yearless_no_statement_year_unchanged(self):
+        """Yearless date without statement_year returns original string."""
+        from bankstatements_core.domain.models.transaction import Transaction
+
+        assert Transaction._enrich_date("3 Feb", {}) == "3 Feb"
+
+    def test_empty_date_unchanged(self):
+        """Empty date string returns empty string."""
+        from bankstatements_core.domain.models.transaction import Transaction
+
+        assert Transaction._enrich_date("", {"statement_year": "2025"}) == ""
+
+    def test_invalid_year_unchanged(self):
+        """Non-integer statement_year leaves date unchanged."""
+        from bankstatements_core.domain.models.transaction import Transaction
+
+        assert Transaction._enrich_date("3 Feb", {"statement_year": "abc"}) == "3 Feb"
+
+    # --- integration: to_dict() applies enrichment ---
+
+    def test_to_dict_yearless_date_enriched(self):
+        """to_dict() Date field includes year when statement_year present."""
+        tx = self._make_tx("3 Feb", statement_year="2025")
+        assert tx.to_dict()["Date"] == "3 Feb 2025"
+
+    def test_to_dict_full_date_not_changed(self):
+        """to_dict() Date field is unchanged for full dates."""
+        tx = self._make_tx("01/01/2025", statement_year="2025")
+        assert tx.to_dict()["Date"] == "01/01/2025"
+
+    def test_to_dict_yearless_no_statement_year_unchanged(self):
+        """to_dict() Date field unchanged when no statement_year in additional_fields."""
+        tx = self._make_tx("3 Feb")
+        assert tx.to_dict()["Date"] == "3 Feb"
