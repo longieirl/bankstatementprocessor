@@ -17,7 +17,7 @@
       "size_bytes": 28746
     },
     "bank_statements_3656.xlsx": {
-      "size_bytes": 7323
+      "size_bytes": 7240
     },
     "bank_statements_9015.csv": {
       "row_count": 400,
@@ -28,7 +28,7 @@
       "size_bytes": 179922
     },
     "bank_statements_9015.xlsx": {
-      "size_bytes": 18947
+      "size_bytes": 18866
     },
     "duplicates.json": {
       "record_count": 0,
@@ -47,7 +47,7 @@
         "excluded_files",
         "summary"
       ],
-      "size_bytes": 547
+      "size_bytes": 867
     },
     "expense_analysis.json": {
       "keys": [
@@ -110,9 +110,9 @@
   },
   "processing_summary": {
     "duplicates": 0,
-    "pages_read": 24,
-    "pdf_count": 4,
-    "pdfs_extracted": 3,
+    "pages_read": 26,
+    "pdf_count": 5,
+    "pdfs_extracted": 4,
     "transactions": 467
   },
   "summary": {

@@ -7,6 +7,7 @@ import pytest
 from bankstatements_core.domain.currency import (
     CurrencyParseError,
     format_currency,
+    reroute_cr_suffix,
     to_float,
 )
 
@@ -122,6 +123,44 @@ def test_strip_currency_symbols():
     assert strip_currency_symbols("¥1000") == "1000"
     assert strip_currency_symbols("  € 99.99  ") == "99.99"
     assert strip_currency_symbols("123.45") == "123.45"
+
+
+class TestRerouteCrSuffix:
+    """Tests for reroute_cr_suffix (issue #131)."""
+
+    def test_cr_suffix_moves_to_credit(self):
+        """300.00CR in Debit is moved to Credit with suffix stripped."""
+        row = {"Debit": "300.00CR", "Credit": ""}
+        reroute_cr_suffix(row)
+        assert row["Credit"] == "300.00"
+        assert row["Debit"] == ""
+
+    def test_cr_suffix_lowercase(self):
+        """300.00cr (lowercase) is treated the same as CR."""
+        row = {"Debit": "300.00cr", "Credit": ""}
+        reroute_cr_suffix(row)
+        assert row["Credit"] == "300.00"
+        assert row["Debit"] == ""
+
+    def test_plain_debit_unchanged(self):
+        """A plain debit amount without CR suffix is not rerouted."""
+        row = {"Debit": "150.00", "Credit": ""}
+        reroute_cr_suffix(row)
+        assert row["Debit"] == "150.00"
+        assert row["Credit"] == ""
+
+    def test_empty_debit_is_noop(self):
+        """Empty Debit value is a no-op."""
+        row = {"Debit": "", "Credit": ""}
+        reroute_cr_suffix(row)
+        assert row["Debit"] == ""
+        assert row["Credit"] == ""
+
+    def test_missing_debit_key_is_noop(self):
+        """Row with no Debit key is a no-op."""
+        row = {"Credit": ""}
+        reroute_cr_suffix(row)
+        assert row == {"Credit": ""}
 
 
 def test_yen_through_transaction_get_amount():

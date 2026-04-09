@@ -29,9 +29,11 @@ _IBAN_HEADER_Y = 350
 # Matches lines like:
 #   "Payment Due  3 Mar 2026"
 #   "Payment Due Date: 20 Feb 2026"
+#   "Total Minimum Payment Due 17th April, 2026"
+#   "Total Minimum Payment Due 20th March, 2026"
 _PAYMENT_DUE_PATTERNS = [
-    r"Payment\s+Due\s+Date\s*[:\s]\s*\d{1,2}\s+\w+\s+(\d{4})",
-    r"Payment\s+Due\s+\d{1,2}\s+\w+\s+(\d{4})",
+    r"Payment\s+Due\s+Date\s*[:\s]\s*\d{1,2}(?:st|nd|rd|th)?\s+\w+,?\s+(\d{4})",
+    r"Payment\s+Due\s+\d{1,2}(?:st|nd|rd|th)?\s+\w+,?\s+(\d{4})",
 ]
 
 
