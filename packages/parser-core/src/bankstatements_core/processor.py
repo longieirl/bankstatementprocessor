@@ -342,6 +342,9 @@ class BankStatementProcessor:
         for extraction in cc_results:
             card_num = extraction.card_number or "unknown"
             pdf_card_numbers[extraction.source_file.name] = card_num
+            for tx in extraction.transactions:
+                if not tx.filename:
+                    tx.filename = extraction.source_file.name
             all_cc_txns.extend(extraction.transactions)
 
         return all_bank_txns, pdf_ibans, all_cc_txns, pdf_card_numbers
