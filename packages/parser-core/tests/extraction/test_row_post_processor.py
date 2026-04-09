@@ -430,3 +430,52 @@ class TestColumnAliasesNormalisation:
         }
         proc.process(row, "")
         assert "statement_year" not in row
+
+
+class TestCRAmountRerouting:
+    """Tests for CR-suffix rerouting in RowPostProcessor (issue #131)."""
+
+    def _make_cc_processor(self) -> RowPostProcessor:
+        template = Mock()
+        template.document_type = "credit_card_statement"
+        template.id = "aib_credit_card"
+        template.column_aliases = {"Amount": "Debit"}
+        cc_columns = {
+            "Date": (0, 50),
+            "Details": (50, 200),
+            "Debit": (200, 300),
+            "Credit": (300, 400),
+        }
+        return RowPostProcessor(
+            columns=cc_columns,
+            row_classifier=_make_classifier("transaction"),
+            template=template,
+            filename_date="",
+            filename="cc_statement.pdf",
+        )
+
+    def test_cr_amount_rerouted_to_credit(self):
+        """300.00CR in Debit is moved to Credit and Debit is cleared after process()."""
+        proc = self._make_cc_processor()
+        row = {
+            "Date": "3 Feb",
+            "Details": "PAYMENT THANK YOU",
+            "Debit": "300.00CR",
+            "Credit": "",
+        }
+        proc.process(row, "")
+        assert row["Credit"] == "300.00"
+        assert row["Debit"] == ""
+
+    def test_plain_debit_unchanged(self):
+        """A plain debit amount (no CR suffix) stays in Debit after process()."""
+        proc = self._make_cc_processor()
+        row = {
+            "Date": "3 Feb",
+            "Details": "TESCO STORE",
+            "Debit": "42.50",
+            "Credit": "",
+        }
+        proc.process(row, "")
+        assert row["Debit"] == "42.50"
+        assert row["Credit"] == ""

@@ -12,6 +12,7 @@ import re
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from bankstatements_core.domain.currency import reroute_cr_suffix
 from bankstatements_core.domain.models.extraction_scoring_config import (
     ExtractionScoringConfig,
 )
@@ -77,6 +78,10 @@ class RowPostProcessor:
         )
         self._last_source: str = ""
 
+    def _reroute_cr_amounts(self, row: dict) -> None:
+        """Reroute CR-suffixed debit amounts to the Credit column."""
+        reroute_cr_suffix(row)
+
     def _apply_column_aliases(self, row: dict) -> None:
         """Rename non-canonical row keys to canonical names using template.column_aliases.
 
@@ -109,6 +114,7 @@ class RowPostProcessor:
         """
         self._last_source = ""
         self._apply_column_aliases(row)
+        self._reroute_cr_amounts(row)
         if self._row_classifier.classify(row, self._columns) != "transaction":
             return current_date
 

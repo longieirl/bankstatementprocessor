@@ -120,6 +120,23 @@ def to_float(
         return None
 
 
+def reroute_cr_suffix(row: dict[str, str]) -> None:
+    """Move a CR-suffixed Debit value to the Credit column.
+
+    AIB CC statements encode credits (payments/refunds) as amounts suffixed
+    with 'CR' (e.g. '300.00CR') in a single Amount column, which the template
+    aliases to Debit. This function detects the suffix, strips it, writes the
+    clean value to Credit, and clears Debit.
+
+    Args:
+        row: Row dictionary (modified in-place)
+    """
+    debit = row.get("Debit", "")
+    if debit.upper().endswith("CR"):
+        row["Credit"] = debit[:-2].strip()
+        row["Debit"] = ""
+
+
 def format_currency(
     value: float | None,
     currency_symbol: str = "€",
