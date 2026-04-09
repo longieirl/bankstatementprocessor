@@ -713,3 +713,97 @@ class TestPDFTableExtractorCardNumber:
 
         assert result.card_number is None
         assert any(w.code == CODE_CREDIT_CARD_SKIPPED for w in result.warnings)
+
+    @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
+    def test_extract_card_number_crop_raises_falls_back_to_extract_text(
+        self, mock_pdfplumber
+    ):
+        """page.crop() raising AttributeError causes fallback to page.extract_text()."""
+        mock_pdf = MagicMock()
+        mock_page = MagicMock()
+        mock_pdf.pages = [mock_page]
+        mock_pdfplumber.return_value = mock_pdf
+        mock_page.width = 600
+
+        # First call to crop (header crop in _extract_card_number) raises AttributeError;
+        # subsequent calls (table crop in _determine_boundaries_and_extract) succeed.
+        mock_table_cropped = MagicMock()
+        mock_table_cropped.extract_words.return_value = []
+
+        crop_call_count = {"n": 0}
+
+        def crop_side_effect(bbox):
+            crop_call_count["n"] += 1
+            if crop_call_count["n"] == 1:
+                raise AttributeError("crop failed")
+            return mock_table_cropped
+
+        mock_page.crop.side_effect = crop_side_effect
+        mock_page.extract_text.return_value = "**** **** **** 9876"
+
+        mock_template = MagicMock()
+        mock_template.detection.get_card_number_patterns.return_value = [
+            r"\*{4}\s*\*{4}\s*\*{4}\s*[0-9]{4}",
+        ]
+        mock_entitlements = MagicMock()
+        mock_entitlements.require_iban = False
+
+        extractor = PDFTableExtractor(
+            columns=TEST_COLUMNS,
+            enable_page_validation=False,
+            enable_header_check=False,
+            template=mock_template,
+            entitlements=mock_entitlements,
+        )
+        extractor._header_analyser = MagicMock()
+        extractor._header_analyser.is_credit_card_statement.return_value = True
+        extractor._header_analyser.extract_iban.return_value = None
+
+        result = extractor.extract(Path("/tmp/cc.pdf"))
+        assert result.card_number == "**** **** **** 9876"
+
+    @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
+    def test_extract_card_number_invalid_regex_pattern_skipped(self, mock_pdfplumber):
+        """An invalid regex in card_number_patterns logs a warning and returns None."""
+        mock_pdf = MagicMock()
+        mock_page = MagicMock()
+        mock_pdf.pages = [mock_page]
+        mock_pdfplumber.return_value = mock_pdf
+        mock_page.width = 600
+
+        mock_header_cropped = MagicMock()
+        mock_header_cropped.extract_text.return_value = (
+            "Account Statement **** **** **** 1234"
+        )
+        mock_table_cropped = MagicMock()
+        mock_table_cropped.extract_words.return_value = []
+
+        def crop_side_effect(bbox):
+            if bbox[1] == 0 and bbox[3] == 400:
+                return mock_header_cropped
+            return mock_table_cropped
+
+        mock_page.crop.side_effect = crop_side_effect
+
+        mock_template = MagicMock()
+        # Provide ONLY an invalid regex (unmatched bracket) — no valid patterns
+        mock_template.detection.get_card_number_patterns.return_value = ["[invalid"]
+
+        mock_entitlements = MagicMock()
+        mock_entitlements.require_iban = False
+
+        extractor = PDFTableExtractor(
+            columns=TEST_COLUMNS,
+            enable_page_validation=False,
+            enable_header_check=False,
+            template=mock_template,
+            entitlements=mock_entitlements,
+        )
+        extractor._header_analyser = MagicMock()
+        extractor._header_analyser.is_credit_card_statement.return_value = True
+        extractor._header_analyser.extract_iban.return_value = None
+
+        # Should NOT raise; card_number falls through to "unknown" because
+        # the CC statement is detected but no valid pattern matched
+        result = extractor.extract(Path("/tmp/cc.pdf"))
+        assert result.card_number == "unknown"

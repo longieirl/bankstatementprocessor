@@ -6,6 +6,7 @@ import logging
 import unittest
 
 from bankstatements_core.domain.models.transaction import Transaction
+from bankstatements_core.exceptions import InputValidationError
 from bankstatements_core.services.card_grouping import CCGroupingService
 
 
@@ -109,6 +110,23 @@ class TestCCGroupingService(unittest.TestCase):
         # "1234 5678 9012 3456" -> clean -> "1234567890123456" -> last 6 -> "123456"
         suffix = service._extract_suffix("1234 5678 9012 3456")
         self.assertEqual(suffix, "123456")
+
+    def test_init_raises_if_suffix_length_not_int(self):
+        """suffix_length must be int — passing a float raises InputValidationError."""
+        with self.assertRaises(InputValidationError):
+            CCGroupingService(suffix_length=4.0)
+
+    def test_init_raises_if_suffix_length_less_than_one(self):
+        """suffix_length < 1 raises InputValidationError."""
+        with self.assertRaises(InputValidationError):
+            CCGroupingService(suffix_length=0)
+
+    def test_extract_suffix_short_card_number(self):
+        """Card number shorter than suffix_length returns cleaned string, not 'unknown'."""
+        service = CCGroupingService(suffix_length=4)
+        # "123" -> clean -> "123" -> len 3 < 4 -> return "123" (non-empty)
+        suffix = service._extract_suffix("123")
+        self.assertEqual(suffix, "123")
 
 
 if __name__ == "__main__":
