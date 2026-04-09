@@ -195,7 +195,7 @@ class StatefulPageRowProcessor:
         for row in page_rows:
             self._current_date = self._post_processor.process(row, self._current_date)
             self._last_source = self._post_processor._last_source
-            if row:
+            if row.get("Filename"):
                 result.append(row)
         return result
 
