@@ -218,6 +218,34 @@ class ReferenceCodeClassifier(RowClassifier):
         return None
 
 
+class RefContinuationClassifier(RowClassifier):
+    """Classifies reference-number continuation lines (e.g. AIB CC 'Ref: 123456').
+
+    AIB Credit Card PDFs split each transaction across two physical lines:
+    - Line 1: Transaction Date | Posting Date | Details | Amount
+    - Line 2: Reference number only (e.g. "Ref: 123456") with the same date
+              repeated in the Transaction Date column
+
+    Without this classifier, Line 2 is misclassified as a 'transaction' by
+    TransactionClassifier (it has a date) and emitted as an empty phantom row.
+    This classifier catches it before TransactionClassifier runs and marks it
+    as 'continuation' so RowMergerService merges it into the parent transaction.
+    """
+
+    _REF_PATTERN = re.compile(r"^Ref\s*:\s*\d+", re.IGNORECASE)
+
+    def _do_classify(
+        self, row: dict, columns: dict[str, tuple[int | float, int | float]]
+    ) -> str | None:
+        """Detect reference-number continuation lines."""
+        description_text = self._get_description_text(row, columns)
+
+        if self._REF_PATTERN.match(description_text):
+            return "continuation"
+
+        return None
+
+
 class FXContinuationClassifier(RowClassifier):
     """Classifies foreign exchange continuation lines."""
 
@@ -401,10 +429,11 @@ def create_row_classifier_chain() -> RowClassifier:
       0  HeaderMetadataClassifier    — column headers and field labels
       1  AdministrativeClassifier    — BALANCE FORWARD, Lending @
       2  ReferenceCodeClassifier     — IE123456 patterns
-      3  FXContinuationClassifier    — FX rates, fees, exchange lines
-      4  TimestampMetadataClassifier — 01JAN2023 TIME 14:30
-      5  TransactionClassifier       — debit/credit/date combinations
-      6  DefaultMetadataClassifier   — catch-all fallback
+      3  RefContinuationClassifier   — Ref: 123456 continuation lines (AIB CC)
+      4  FXContinuationClassifier    — FX rates, fees, exchange lines
+      5  TimestampMetadataClassifier — 01JAN2023 TIME 14:30
+      6  TransactionClassifier       — debit/credit/date combinations
+      7  DefaultMetadataClassifier   — catch-all fallback
 
     Returns:
         The head of the classifier chain
@@ -414,9 +443,10 @@ def create_row_classifier_chain() -> RowClassifier:
             (0, HeaderMetadataClassifier),
             (1, AdministrativeClassifier),
             (2, ReferenceCodeClassifier),
-            (3, FXContinuationClassifier),
-            (4, TimestampMetadataClassifier),
-            (5, TransactionClassifier),
-            (6, DefaultMetadataClassifier),
+            (3, RefContinuationClassifier),
+            (4, FXContinuationClassifier),
+            (5, TimestampMetadataClassifier),
+            (6, TransactionClassifier),
+            (7, DefaultMetadataClassifier),
         ]
     ).build_chain()

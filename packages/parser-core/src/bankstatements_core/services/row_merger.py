@@ -33,7 +33,7 @@ class RowMergerService:
 
     def merge_continuation_lines(  # noqa: C901, PLR0912, PLR0915
         # pylint: disable=too-many-branches
-        # Row merger heuristic — 17 branches reflect the full set of continuation
+        # Row merger heuristic — branches reflect the full set of continuation
         # line detection rules. Complexity is inherent to the domain logic.
         self,
         rows: list[dict],
@@ -79,6 +79,31 @@ class RowMergerService:
             row_type = self._classify_row_type(current_row, columns)
 
             if row_type == "transaction":
+                # Detect date-only split: row has a date but no description/amount.
+                # This happens when the PDF lays out the transaction date at a slightly
+                # different Y-coordinate than the rest of the row (e.g. AIB CC).
+                # In that case, carry the date into the next transaction row and skip
+                # the empty date-only row entirely.
+                if (
+                    date_col
+                    and current_row.get(date_col, "").strip()
+                    and not current_row.get(description_col, "").strip()
+                    and self._is_date_only_row(current_row, columns)
+                    and i + 1 < len(rows)
+                    and self._classify_row_type(rows[i + 1], columns) == "transaction"
+                    and not rows[i + 1].get(date_col, "").strip()
+                ):
+                    # Carry this date into the next row and process that row instead
+                    next_row = rows[i + 1].copy()
+                    next_row[date_col] = current_row[date_col]
+                    rows[i + 1] = next_row
+                    logger.debug(
+                        "Date-only split row: carried date '%s' into next row",
+                        current_row[date_col],
+                    )
+                    i += 1
+                    continue
+
                 # Look ahead for continuation lines
                 continuation_parts = []
                 j = i + 1
@@ -150,6 +175,35 @@ class RowMergerService:
                 i += 1
 
         return merged_rows
+
+    def _is_date_only_row(
+        self,
+        row: dict,
+        columns: dict[str, tuple[int | float, int | float]],
+    ) -> bool:
+        """Return True if the row contains only date-column values and nothing else.
+
+        Used to detect AIB CC Y-split rows where the Transaction Date lands at a
+        slightly different Y-coordinate than the Posting Date / Details / Amount,
+        causing RowBuilder to emit a standalone date-only row.
+
+        Args:
+            row: Row dictionary to inspect
+            columns: Column definitions
+
+        Returns:
+            True if all non-empty, non-Filename values belong to date-type columns
+        """
+        from bankstatements_core.domain.column_types import (  # noqa: PLC0415
+            get_type_as_string,
+        )
+
+        non_empty = {
+            k: v for k, v in row.items() if v.strip() and k != "Filename"
+        }
+        if not non_empty:
+            return False
+        return all(get_type_as_string(k) == "date" for k in non_empty)
 
     def _classify_row_type(
         self, row: dict, columns: dict[str, tuple[int | float, int | float]]
