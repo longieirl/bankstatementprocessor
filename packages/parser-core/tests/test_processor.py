@@ -1045,5 +1045,240 @@ class TestMonthlySummary(unittest.TestCase):
         temp_dir.cleanup()
 
 
+class TestCCGroupingInProcessor(unittest.TestCase):
+    """Tests for CC grouping routing in BankStatementProcessor.run()."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.input_dir = Path(self.temp_dir.name) / "input"
+        self.output_dir = Path(self.temp_dir.name) / "output"
+        self.input_dir.mkdir(exist_ok=True)
+        self.output_dir.mkdir(exist_ok=True)
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def _make_transaction(self, date="01 Jan 2024", details="Purchase"):
+        """Create a minimal Transaction for testing."""
+        from bankstatements_core.domain.converters import dicts_to_transactions  # noqa: PLC0415
+
+        rows = dicts_to_transactions(
+            [{"Date": date, "Details": details, "Filename": "test.pdf"}]
+        )
+        return rows[0]
+
+    def _make_processor_with_mock_registry(self):
+        """Create processor and return (processor, mock_registry)."""
+        from unittest.mock import MagicMock  # noqa: PLC0415
+
+        processor = create_test_processor(self.input_dir, self.output_dir)
+
+        mock_registry = MagicMock()
+        # Default: group_by_iban returns empty dict, group_by_card returns empty dict
+        mock_registry.group_by_iban.return_value = {}
+        mock_registry.group_by_card.return_value = {}
+        # process_transaction_group returns ([tx], []) — no duplicates
+        mock_registry.process_transaction_group.return_value = ([], [])
+        processor._registry = mock_registry
+        return processor, mock_registry
+
+    def test_cc_grouping_routes_cc_results(self):
+        """CC ExtractionResult (card_number set) routes through group_by_card, not group_by_iban."""
+        tx1 = self._make_transaction(details="CC Purchase 1")
+        tx2 = self._make_transaction(details="CC Purchase 2")
+        cc_pdf = self.input_dir / "cc.pdf"
+        cc_pdf.touch()
+
+        processor, mock_registry = self._make_processor_with_mock_registry()
+        mock_registry.group_by_card.return_value = {"1234": [tx1, tx2]}
+        mock_registry.process_transaction_group.return_value = ([tx1, tx2], [])
+
+        cc_result = ExtractionResult(
+            transactions=[tx1, tx2],
+            page_count=1,
+            iban=None,
+            source_file=cc_pdf,
+            card_number="**** **** **** 1234",
+        )
+
+        with patch(
+            "bankstatements_core.services.pdf_processing_orchestrator.PDFProcessingOrchestrator.process_all_pdfs"
+        ) as mock_process:
+            mock_process.return_value = ([cc_result], 1, 1)
+            result = processor.run()
+
+        # group_by_card called with CC transactions and card number mapping
+        mock_registry.group_by_card.assert_called_once_with(
+            [tx1, tx2], {"cc.pdf": "**** **** **** 1234"}
+        )
+        # group_by_iban called with empty lists (no bank results)
+        mock_registry.group_by_iban.assert_called_once_with([], {})
+        # Output paths should contain "cc_" prefixed keys
+        self.assertTrue(
+            any("cc_" in key for key in result.get("output_paths", {}).keys()),
+            f"Expected cc_ keys in output_paths but got: {list(result.get('output_paths', {}).keys())}",
+        )
+
+    def test_bank_grouping_unaffected_by_cc(self):
+        """Bank ExtractionResult (card_number=None) routes through group_by_iban only."""
+        tx1 = self._make_transaction(details="Salary")
+        bank_pdf = self.input_dir / "bank.pdf"
+        bank_pdf.touch()
+
+        processor, mock_registry = self._make_processor_with_mock_registry()
+        mock_registry.group_by_iban.return_value = {"1234": [tx1]}
+        mock_registry.process_transaction_group.return_value = ([tx1], [])
+
+        bank_result = ExtractionResult(
+            transactions=[tx1],
+            page_count=1,
+            iban="IE12BOFI90001234567890",
+            source_file=bank_pdf,
+            card_number=None,
+        )
+
+        with patch(
+            "bankstatements_core.services.pdf_processing_orchestrator.PDFProcessingOrchestrator.process_all_pdfs"
+        ) as mock_process:
+            mock_process.return_value = ([bank_result], 1, 1)
+            result = processor.run()
+
+        # group_by_iban receives the bank transaction and IBAN mapping
+        mock_registry.group_by_iban.assert_called_once_with(
+            [tx1], {"bank.pdf": "IE12BOFI90001234567890"}
+        )
+        # group_by_card should NOT be called (or called with empty list — no CC txns)
+        call_args = mock_registry.group_by_card.call_args_list
+        if call_args:
+            # If called, it must be with empty transactions
+            args, _ = call_args[0]
+            self.assertEqual(args[0], [], "group_by_card must receive empty transactions for pure bank run")
+
+        # No cc_ prefixed keys in output_paths
+        output_paths = result.get("output_paths", {})
+        self.assertFalse(
+            any("cc_" in key for key in output_paths.keys()),
+            f"Expected no cc_ keys in output_paths but got: {list(output_paths.keys())}",
+        )
+
+    def test_mixed_batch_produces_both(self):
+        """Mixed bank + CC batch routes each to the correct grouping service."""
+        bank_tx = self._make_transaction(details="Salary")
+        cc_tx = self._make_transaction(details="CC Purchase")
+        bank_pdf = self.input_dir / "bank.pdf"
+        cc_pdf = self.input_dir / "cc.pdf"
+        bank_pdf.touch()
+        cc_pdf.touch()
+
+        processor, mock_registry = self._make_processor_with_mock_registry()
+        mock_registry.group_by_iban.return_value = {"5678": [bank_tx]}
+        mock_registry.group_by_card.return_value = {"1234": [cc_tx]}
+        mock_registry.process_transaction_group.return_value = ([bank_tx], [])
+
+        bank_result = ExtractionResult(
+            transactions=[bank_tx],
+            page_count=1,
+            iban="IE12BOFI90005678",
+            source_file=bank_pdf,
+            card_number=None,
+        )
+        cc_result = ExtractionResult(
+            transactions=[cc_tx],
+            page_count=1,
+            iban=None,
+            source_file=cc_pdf,
+            card_number="**** 1234",
+        )
+
+        with patch(
+            "bankstatements_core.services.pdf_processing_orchestrator.PDFProcessingOrchestrator.process_all_pdfs"
+        ) as mock_process:
+            mock_process.return_value = ([bank_result, cc_result], 2, 2)
+            result = processor.run()
+
+        # group_by_iban receives only bank transactions
+        mock_registry.group_by_iban.assert_called_once_with(
+            [bank_tx], {"bank.pdf": "IE12BOFI90005678"}
+        )
+        # group_by_card receives only CC transactions
+        mock_registry.group_by_card.assert_called_once_with(
+            [cc_tx], {"cc.pdf": "**** 1234"}
+        )
+        # Output paths have both IBAN-prefixed and cc_-prefixed keys
+        output_paths = result.get("output_paths", {})
+        self.assertTrue(
+            any("cc_" in key for key in output_paths.keys()),
+            f"Expected cc_ keys in mixed output but got: {list(output_paths.keys())}",
+        )
+
+    def test_cc_transactions_never_in_iban_group(self):
+        """CC ExtractionResults are excluded from the IBAN grouping pass entirely."""
+        cc_tx = self._make_transaction(details="CC Purchase")
+        cc_pdf = self.input_dir / "cc.pdf"
+        cc_pdf.touch()
+
+        processor, mock_registry = self._make_processor_with_mock_registry()
+        mock_registry.group_by_card.return_value = {"1234": [cc_tx]}
+        mock_registry.process_transaction_group.return_value = ([cc_tx], [])
+
+        cc_result = ExtractionResult(
+            transactions=[cc_tx],
+            page_count=1,
+            iban=None,
+            source_file=cc_pdf,
+            card_number="**** 1234",
+        )
+
+        with patch(
+            "bankstatements_core.services.pdf_processing_orchestrator.PDFProcessingOrchestrator.process_all_pdfs"
+        ) as mock_process:
+            mock_process.return_value = ([cc_result], 1, 1)
+            processor.run()
+
+        # Verify group_by_iban received no transactions (CC excluded)
+        args, _ = mock_registry.group_by_iban.call_args
+        iban_txns = args[0]
+        self.assertEqual(
+            iban_txns,
+            [],
+            f"CC transactions must not flow to group_by_iban, got: {iban_txns}",
+        )
+
+    def test_cc_output_formats(self):
+        """CC group goes through _process_transaction_group (same pipeline as bank)."""
+        cc_tx = self._make_transaction(details="CC Purchase")
+        cc_pdf = self.input_dir / "cc.pdf"
+        cc_pdf.touch()
+
+        processor, mock_registry = self._make_processor_with_mock_registry()
+        mock_registry.group_by_card.return_value = {"1234": [cc_tx]}
+        mock_registry.process_transaction_group.return_value = ([cc_tx], [])
+
+        cc_result = ExtractionResult(
+            transactions=[cc_tx],
+            page_count=1,
+            iban=None,
+            source_file=cc_pdf,
+            card_number="**** 1234",
+        )
+
+        with patch(
+            "bankstatements_core.services.pdf_processing_orchestrator.PDFProcessingOrchestrator.process_all_pdfs"
+        ) as mock_process:
+            mock_process.return_value = ([cc_result], 1, 1)
+            with patch.object(
+                processor, "_process_transaction_group", wraps=processor._process_transaction_group
+            ) as mock_ptg:
+                processor.run()
+
+        # _process_transaction_group was called for the CC group
+        called_suffixes = [call.args[0] for call in mock_ptg.call_args_list]
+        self.assertIn(
+            "1234",
+            called_suffixes,
+            f"_process_transaction_group must be called with CC card suffix, got: {called_suffixes}",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
