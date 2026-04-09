@@ -21,6 +21,9 @@ class ExtractionResult:
         warnings: Document-level non-fatal events (e.g. credit card detected,
             skipped). Distinct from per-row Transaction.extraction_warnings.
             In-memory only — not written to output files.
+        card_number: Card number extracted from credit card statement header,
+            or None for bank statements. Set to "unknown" when CC PDF is
+            detected on paid tier but no card number pattern matches.
     """
 
     transactions: list[Transaction]
@@ -28,3 +31,4 @@ class ExtractionResult:
     iban: str | None
     source_file: Path
     warnings: list[ExtractionWarning] = field(default_factory=list)
+    card_number: str | None = None

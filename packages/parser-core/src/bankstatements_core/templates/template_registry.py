@@ -415,6 +415,7 @@ class TemplateRegistry:
 
         # Parse document_type with default fallback
         document_type = data.get("document_type", "bank_statement")
+        column_aliases = data.get("column_aliases", {})
 
         return BankTemplate(
             id=template_id,
@@ -424,6 +425,7 @@ class TemplateRegistry:
             extraction=extraction,
             processing=processing,
             document_type=document_type,
+            column_aliases=column_aliases,
         )
 
     def get_template(self, template_id: str) -> BankTemplate | None:

@@ -145,3 +145,42 @@ class TestExtractionResultWarningIsolation:
         )
         assert result.warnings == []
         assert "row-level anomaly" not in result.warnings
+
+
+class TestExtractionResultCardNumber:
+    """Tests for ExtractionResult.card_number field (CC-07)."""
+
+    def test_card_number_field_defaults_to_none(self):
+        """card_number defaults to None when not provided."""
+        from bankstatements_core.domain.models.extraction_result import ExtractionResult
+
+        result = ExtractionResult(
+            transactions=[], page_count=1, iban=None, source_file=Path("x.pdf")
+        )
+        assert result.card_number is None
+
+    def test_card_number_backward_compatible(self):
+        """Existing callers without card_number still work — no TypeError."""
+        from bankstatements_core.domain.models.extraction_result import ExtractionResult
+
+        result = ExtractionResult(
+            transactions=[],
+            page_count=1,
+            iban=None,
+            source_file=Path("x.pdf"),
+            warnings=[],
+        )
+        assert result.card_number is None
+
+    def test_card_number_explicit_value(self):
+        """card_number accepts an explicit string value."""
+        from bankstatements_core.domain.models.extraction_result import ExtractionResult
+
+        result = ExtractionResult(
+            transactions=[],
+            page_count=1,
+            iban=None,
+            source_file=Path("x.pdf"),
+            card_number="**** **** **** 1234",
+        )
+        assert result.card_number == "**** **** **** 1234"

@@ -7,6 +7,7 @@ PDF bank statements with proper separation of concerns.
 from __future__ import annotations
 
 import logging
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -92,6 +93,7 @@ class PDFTableExtractor:
         """
         rows: list[dict] = []
         iban = None
+        card_number: str | None = None
 
         filename_date = extract_filename_date(pdf_path.name)
         page_processor = StatefulPageRowProcessor(
@@ -137,6 +139,17 @@ class PDFTableExtractor:
                             iban[-4:],
                         )
 
+                # Extract card number on page 1 for CC statements (paid tier only)
+                if page_num == 1 and card_number is None:
+                    extracted = self._extract_card_number(page)
+                    if extracted is not None:
+                        card_number = extracted
+                    elif self._header_analyser.is_credit_card_statement(
+                        page, self.table_top_y
+                    ):
+                        # CC PDF detected on paid tier but no card pattern matched
+                        card_number = "unknown"
+
                 page_rows = self._extract_page(page, page_num)
                 if page_rows is None:
                     continue
@@ -154,7 +167,41 @@ class PDFTableExtractor:
                 page_count=len(pdf.pages),
                 iban=iban,
                 source_file=pdf_path,
+                card_number=card_number,
             )
+
+    def _extract_card_number(self, page: Any) -> str | None:
+        """Extract card number from page header using template card_number_patterns.
+
+        Crops the header area (0, 0, width, 400) -- same bbox as CardNumberDetector --
+        and runs the template's card_number_patterns regex loop.
+
+        Args:
+            page: pdfplumber page object (page 1 only)
+
+        Returns:
+            Matched card number string, or None if no match found.
+        """
+        if self.template is None:
+            return None
+        patterns = self.template.detection.get_card_number_patterns()
+        if not patterns:
+            return None
+        header_bbox = (0, 0, page.width, 400)
+        try:
+            text = page.crop(header_bbox).extract_text()
+        except (AttributeError, ValueError, TypeError):
+            text = page.extract_text()
+        if not text:
+            return None
+        for pattern in patterns:
+            try:
+                match = re.search(pattern, text)
+                if match:
+                    return str(match.group(0))
+            except re.error:
+                logger.warning("Invalid card_number_pattern: %s", pattern)
+        return None
 
     def _extract_page(self, page: Any, page_num: int) -> list[dict] | None:
         """Extract rows from a single page.

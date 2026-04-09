@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from bankstatements_core.config.processor_config import ProcessorConfig
     from bankstatements_core.domain.models.transaction import Transaction
     from bankstatements_core.domain.protocols.services import (
+        ICardGrouping,
         IDuplicateDetector,
         IIBANGrouping,
         ITransactionSorting,
@@ -61,24 +62,27 @@ class ServiceRegistry:
         duplicate_detector: IDuplicateDetector,
         sorting_service: ITransactionSorting,
         grouping_service: IIBANGrouping,
+        cc_grouping_service: ICardGrouping | None = None,
     ) -> None:
         self._context = context
         self._duplicate_detector = duplicate_detector
         self._sorting_service = sorting_service
         self._grouping_service = grouping_service
+        self._cc_grouping_service = cc_grouping_service
 
     # ------------------------------------------------------------------
     # Factory
     # ------------------------------------------------------------------
 
     @classmethod
-    def from_config(
+    def from_config(  # noqa: PLR0913
         cls,
         config: ProcessorConfig,
         entitlements: Entitlements | None = None,
         duplicate_detector: IDuplicateDetector | None = None,
         sorting_service: ITransactionSorting | None = None,
         grouping_service: IIBANGrouping | None = None,
+        cc_grouping_service: ICardGrouping | None = None,
     ) -> ServiceRegistry:
         """Build a ServiceRegistry from a ProcessorConfig.
 
@@ -145,7 +149,20 @@ class ServiceRegistry:
         if grouping_service is None:
             grouping_service = IBANGroupingService()
 
-        return cls(context, duplicate_detector, sorting_service, grouping_service)
+        if cc_grouping_service is None:
+            from bankstatements_core.services.card_grouping import (  # noqa: PLC0415
+                CCGroupingService,
+            )
+
+            cc_grouping_service = CCGroupingService()
+
+        return cls(
+            context,
+            duplicate_detector,
+            sorting_service,
+            grouping_service,
+            cc_grouping_service=cc_grouping_service,
+        )
 
     # ------------------------------------------------------------------
     # Primary methods (80 % case)
@@ -197,6 +214,28 @@ class ServiceRegistry:
         """
         return self._grouping_service.group_by_iban(transactions, pdf_ibans)
 
+    def group_by_card(
+        self,
+        transactions: list[Transaction],
+        pdf_card_numbers: dict[str, str],
+    ) -> dict[str, list[Transaction]]:
+        """Group transactions by card number suffix.
+
+        Args:
+            transactions: Flat list of CC Transaction objects.
+            pdf_card_numbers: Mapping of PDF filename -> card number string.
+
+        Returns:
+            Dict of card suffix -> list of Transaction objects.
+        """
+        if self._cc_grouping_service is None:
+            from bankstatements_core.services.card_grouping import (  # noqa: PLC0415
+                CCGroupingService,
+            )
+
+            self._cc_grouping_service = CCGroupingService()
+        return self._cc_grouping_service.group_by_card(transactions, pdf_card_numbers)
+
     # ------------------------------------------------------------------
     # Escape hatches (20 % case)
     # ------------------------------------------------------------------
@@ -209,6 +248,9 @@ class ServiceRegistry:
 
     def get_grouping_service(self) -> IIBANGrouping:
         return self._grouping_service
+
+    def get_cc_grouping_service(self) -> ICardGrouping | None:
+        return self._cc_grouping_service
 
     # ------------------------------------------------------------------
     # Internal enrichment helpers

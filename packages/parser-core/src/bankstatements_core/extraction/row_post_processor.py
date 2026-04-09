@@ -75,6 +75,20 @@ class RowPostProcessor:
         )
         self._last_source: str = ""
 
+    def _apply_column_aliases(self, row: dict) -> None:
+        """Rename non-canonical row keys to canonical names using template.column_aliases.
+
+        Modifies the row dict in-place. Must be called before row classification
+        so the classifier sees canonical column names.
+
+        Args:
+            row: Row dictionary to normalise (modified in-place)
+        """
+        if self._template and self._template.column_aliases:
+            for old_key, new_key in self._template.column_aliases.items():
+                if old_key in row:
+                    row[new_key] = row.pop(old_key)
+
     def process(self, row: dict, current_date: str) -> str:
         """Tag row with metadata and propagate date. Returns updated current_date.
 
@@ -92,6 +106,7 @@ class RowPostProcessor:
             Updated current_date
         """
         self._last_source = ""
+        self._apply_column_aliases(row)
         if self._row_classifier.classify(row, self._columns) != "transaction":
             return current_date
 

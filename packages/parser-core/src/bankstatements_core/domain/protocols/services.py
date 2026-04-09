@@ -48,6 +48,18 @@ class IIBANGrouping(Protocol):
         ...
 
 
+class ICardGrouping(Protocol):
+    """Protocol for grouping transactions by card number."""
+
+    def group_by_card(
+        self,
+        transactions: list[Transaction],
+        pdf_card_numbers: dict[str, str],
+    ) -> dict[str, list[Transaction]]:
+        """Group transactions by card suffix (last 4 digits)."""
+        ...
+
+
 class IColumnTotals(Protocol):
     """Protocol for calculating column totals."""
 

@@ -365,3 +365,40 @@ class TestBankTemplate:
                 detection=detection,
                 extraction=extraction,
             )
+
+
+class TestBankTemplateColumnAliases:
+    """Tests for BankTemplate.column_aliases field (CC-05)."""
+
+    def test_default_column_aliases_is_empty_dict(self):
+        """BankTemplate without column_aliases kwarg defaults to {}."""
+        template = BankTemplate(
+            id="test",
+            name="Test",
+            enabled=True,
+            detection=TemplateDetectionConfig(header_keywords=["Test"]),
+            extraction=TemplateExtractionConfig(
+                table_top_y=100, table_bottom_y=500, columns={"Date": (10, 50)}
+            ),
+        )
+        assert template.column_aliases == {}
+
+    def test_column_aliases_set_explicitly(self):
+        """BankTemplate with explicit column_aliases stores them correctly."""
+        aliases = {
+            "Transaction Details": "Details",
+            "Debit €": "Debit",
+            "Credit €": "Credit",
+        }
+        template = BankTemplate(
+            id="cc_test",
+            name="CC Test",
+            enabled=True,
+            detection=TemplateDetectionConfig(header_keywords=["CC"]),
+            extraction=TemplateExtractionConfig(
+                table_top_y=100, table_bottom_y=500, columns={"Date": (10, 50)}
+            ),
+            column_aliases=aliases,
+        )
+        assert template.column_aliases == aliases
+        assert template.column_aliases["Transaction Details"] == "Details"
