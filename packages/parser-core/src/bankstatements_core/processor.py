@@ -317,6 +317,33 @@ class BankStatementProcessor:
         """
         return self._sorting_service.sort(rows)
 
+    def _build_grouping_inputs(
+        self, extraction_results: list[ExtractionResult]
+    ) -> tuple[list[Transaction], dict[str, str], list[Transaction], dict[str, str]]:
+        """Split extraction results into bank/CC buckets and build grouping dicts.
+
+        Returns:
+            (all_bank_txns, pdf_ibans, all_cc_txns, pdf_card_numbers)
+        """
+        bank_results = [r for r in extraction_results if r.card_number is None]
+        cc_results = [r for r in extraction_results if r.card_number is not None]
+
+        all_bank_txns: list[Transaction] = []
+        pdf_ibans: dict[str, str] = {}
+        for extraction in bank_results:
+            if extraction.iban:
+                pdf_ibans[extraction.source_file.name] = extraction.iban
+            all_bank_txns.extend(extraction.transactions)
+
+        all_cc_txns: list[Transaction] = []
+        pdf_card_numbers: dict[str, str] = {}
+        for extraction in cc_results:
+            card_num = extraction.card_number or "unknown"
+            pdf_card_numbers[extraction.source_file.name] = card_num
+            all_cc_txns.extend(extraction.transactions)
+
+        return all_bank_txns, pdf_ibans, all_cc_txns, pdf_card_numbers
+
     def run(self) -> dict:
         """Process all bank statement PDFs and generate output files.
 
@@ -330,25 +357,10 @@ class BankStatementProcessor:
             self._process_all_pdfs()
         )  # list[ExtractionResult]
 
-        # Pre-split: bank results (card_number is None) vs CC results (card_number is not None)
-        bank_results = [r for r in extraction_results if r.card_number is None]
-        cc_results = [r for r in extraction_results if r.card_number is not None]
-
-        # Build bank grouping inputs
-        all_bank_txns: list[Transaction] = []
-        pdf_ibans: dict[str, str] = {}
-        for extraction in bank_results:
-            if extraction.iban:
-                pdf_ibans[extraction.source_file.name] = extraction.iban
-            all_bank_txns.extend(extraction.transactions)
-
-        # Build CC grouping inputs
-        all_cc_txns: list[Transaction] = []
-        pdf_card_numbers: dict[str, str] = {}
-        for extraction in cc_results:
-            card_num = extraction.card_number or "unknown"
-            pdf_card_numbers[extraction.source_file.name] = card_num
-            all_cc_txns.extend(extraction.transactions)
+        # Split results and build grouping inputs
+        all_bank_txns, pdf_ibans, all_cc_txns, pdf_card_numbers = (
+            self._build_grouping_inputs(extraction_results)
+        )
 
         # Step 2a: Group bank transactions by IBAN (delegated to registry)
         txns_by_iban = self._registry.group_by_iban(all_bank_txns, pdf_ibans)
