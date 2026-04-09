@@ -366,7 +366,12 @@ class TestChainOfResponsibility:
         chain = create_row_classifier_chain()
         # AIB CC: date repeats on the Ref line — without this classifier,
         # TransactionClassifier would see the date and emit a phantom empty row.
-        row = {"Date": "4 Feb", "Details": "Ref: 1234567890", "Debit €": "", "Filename": "test"}
+        row = {
+            "Date": "4 Feb",
+            "Details": "Ref: 1234567890",
+            "Debit €": "",
+            "Filename": "test",
+        }
         result = chain.classify(row, TEST_COLUMNS)
         assert result == "continuation"
 

@@ -31,10 +31,7 @@ class RowMergerService:
         """Initialize the row merger service."""
         self._last_transaction_row: dict | None = None
 
-    def merge_continuation_lines(  # noqa: C901, PLR0912, PLR0915
-        # pylint: disable=too-many-branches
-        # Row merger heuristic — branches reflect the full set of continuation
-        # line detection rules. Complexity is inherent to the domain logic.
+    def merge_continuation_lines(
         self,
         rows: list[dict],
         columns: dict[str, tuple[int | float, int | float]],
@@ -61,15 +58,13 @@ class RowMergerService:
         if not rows:
             return rows
 
-        # Reset state for this batch
         self._last_transaction_row = None
 
-        # Find description and date columns
         description_col = find_first_column_of_type(columns, "description")
         date_col = find_first_column_of_type(columns, "date")
 
         if not description_col:
-            return rows  # Can't merge without description column
+            return rows
 
         merged_rows = []
         i = 0
@@ -79,102 +74,120 @@ class RowMergerService:
             row_type = self._classify_row_type(current_row, columns)
 
             if row_type == "transaction":
-                # Detect date-only split: row has a date but no description/amount.
-                # This happens when the PDF lays out the transaction date at a slightly
-                # different Y-coordinate than the rest of the row (e.g. AIB CC).
-                # In that case, carry the date into the next transaction row and skip
-                # the empty date-only row entirely.
-                if (
-                    date_col
-                    and current_row.get(date_col, "").strip()
-                    and not current_row.get(description_col, "").strip()
-                    and self._is_date_only_row(current_row, columns)
-                    and i + 1 < len(rows)
-                    and self._classify_row_type(rows[i + 1], columns) == "transaction"
-                    and not rows[i + 1].get(date_col, "").strip()
-                ):
-                    # Carry this date into the next row and process that row instead
+                if self._is_date_only_split(current_row, rows, i, date_col, columns):
                     next_row = rows[i + 1].copy()
-                    next_row[date_col] = current_row[date_col]
+                    next_row[date_col] = current_row[date_col]  # type: ignore[index]
                     rows[i + 1] = next_row
-                    logger.debug(
-                        "Date-only split row: carried date '%s' into next row",
-                        current_row[date_col],
-                    )
+                    logger.debug("Date-only split row: carried date '%s' into next row", current_row[date_col])  # type: ignore[index]
                     i += 1
                     continue
 
-                # Look ahead for continuation lines
-                continuation_parts = []
-                j = i + 1
-
-                while j < len(rows):
-                    next_row = rows[j]
-                    next_type = self._classify_row_type(next_row, columns)
-
-                    if next_type == "continuation":
-                        # Extract the continuation text
-                        continuation_text = next_row.get(description_col, "").strip()
-                        if continuation_text:
-                            continuation_parts.append(continuation_text)
-
-                        # If this continuation line has a balance, preserve it
-                        current_row = self._preserve_balance_from_continuation(
-                            current_row, next_row, columns
-                        )
-
-                        j += 1
-                    elif next_type == "transaction":
-                        # Found next transaction, stop looking for continuations
-                        break
-                    else:
-                        # Other row types (administrative, etc.) - stop looking
-                        break
-
-                # Merge continuation parts into the main transaction description
-                if continuation_parts:
-                    original_desc = current_row.get(description_col, "").strip()
-                    merged_desc = original_desc + " " + " ".join(continuation_parts)
-                    current_row[description_col] = merged_desc.strip()
-
-                # Store current row as last transaction for date carry-forward
+                current_row, j = self._collect_continuations(
+                    current_row, rows, i, description_col, columns
+                )
                 self._last_transaction_row = current_row.copy()
-
                 merged_rows.append(current_row)
-                i = j  # Skip to after the last continuation line
+                i = j
 
             elif row_type == "continuation":
-                # Continuation line without preceding transaction
-                # Check if it's missing a date (date grouping pattern)
-                if date_col and self._last_transaction_row:
-                    current_date = current_row.get(date_col, "").strip()
-                    if not current_date:
-                        # Carry forward date from last transaction
-                        last_date = self._last_transaction_row.get(date_col, "").strip()
-                        if last_date:
-                            current_row[date_col] = last_date
-                            logger.debug(
-                                "Carried forward date '%s' to continuation row",
-                                last_date,
-                            )
-                            # Reclassify - it might be a transaction now
-                            row_type = self._classify_row_type(current_row, columns)
-
+                current_row, row_type = self._handle_orphaned_continuation(
+                    current_row, row_type, date_col, columns
+                )
                 if row_type == "transaction":
-                    # After date carry-forward, it's now a transaction
                     self._last_transaction_row = current_row.copy()
                     merged_rows.append(current_row)
                 else:
-                    # Still a continuation - skip orphaned line
                     logger.warning("Orphaned continuation line: %s", current_row)
                 i += 1
 
             else:
-                # Non-transaction, non-continuation row - keep as is
                 merged_rows.append(current_row)
                 i += 1
 
         return merged_rows
+
+    def _is_date_only_split(
+        self,
+        current_row: dict,
+        rows: list[dict],
+        i: int,
+        date_col: str | None,
+        columns: dict[str, tuple[int | float, int | float]],
+    ) -> bool:
+        """Return True when this row is a date-only PDF split that should be carried forward.
+
+        Detects AIB CC Y-split rows where the transaction date lands at a slightly
+        different Y-coordinate, causing RowBuilder to emit a standalone date-only row.
+        """
+        desc_col = find_first_column_of_type(columns, "description")
+        return bool(
+            date_col
+            and desc_col
+            and current_row.get(date_col, "").strip()
+            and not current_row.get(desc_col, "").strip()
+            and self._is_date_only_row(current_row, columns)
+            and i + 1 < len(rows)
+            and self._classify_row_type(rows[i + 1], columns) == "transaction"
+            and not rows[i + 1].get(date_col, "").strip()
+        )
+
+    def _collect_continuations(
+        self,
+        current_row: dict,
+        rows: list[dict],
+        i: int,
+        description_col: str,
+        columns: dict[str, tuple[int | float, int | float]],
+    ) -> tuple[dict, int]:
+        """Scan ahead and merge any continuation lines into current_row.
+
+        Returns the updated row and the index of the next unprocessed row.
+        """
+        continuation_parts: list[str] = []
+        j = i + 1
+
+        while j < len(rows):
+            next_row = rows[j]
+            next_type = self._classify_row_type(next_row, columns)
+
+            if next_type == "continuation":
+                text = next_row.get(description_col, "").strip()
+                if text:
+                    continuation_parts.append(text)
+                current_row = self._preserve_balance_from_continuation(
+                    current_row, next_row, columns
+                )
+                j += 1
+            else:
+                break
+
+        if continuation_parts:
+            original_desc = current_row.get(description_col, "").strip()
+            current_row[description_col] = (
+                original_desc + " " + " ".join(continuation_parts)
+            ).strip()
+
+        return current_row, j
+
+    def _handle_orphaned_continuation(
+        self,
+        current_row: dict,
+        row_type: str,
+        date_col: str | None,
+        columns: dict[str, tuple[int | float, int | float]],
+    ) -> tuple[dict, str]:
+        """Attempt to promote an orphaned continuation by carrying forward the last date."""
+        if (
+            date_col
+            and self._last_transaction_row
+            and not current_row.get(date_col, "").strip()
+        ):
+            last_date = self._last_transaction_row.get(date_col, "").strip()
+            if last_date:
+                current_row[date_col] = last_date
+                logger.debug("Carried forward date '%s' to continuation row", last_date)
+                row_type = self._classify_row_type(current_row, columns)
+        return current_row, row_type
 
     def _is_date_only_row(
         self,
@@ -198,9 +211,7 @@ class RowMergerService:
             get_type_as_string,
         )
 
-        non_empty = {
-            k: v for k, v in row.items() if v.strip() and k != "Filename"
-        }
+        non_empty = {k: v for k, v in row.items() if v.strip() and k != "Filename"}
         if not non_empty:
             return False
         return all(get_type_as_string(k) == "date" for k in non_empty)
