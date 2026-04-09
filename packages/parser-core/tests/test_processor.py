@@ -1113,10 +1113,10 @@ class TestCCGroupingInProcessor(unittest.TestCase):
         )
         # group_by_iban called with empty lists (no bank results)
         mock_registry.group_by_iban.assert_called_once_with([], {})
-        # Output paths should contain "cc_" prefixed keys
+        # Output paths should contain "cc_" prefixed keys (flattened into summary result)
         self.assertTrue(
-            any("cc_" in key for key in result.get("output_paths", {}).keys()),
-            f"Expected cc_ keys in output_paths but got: {list(result.get('output_paths', {}).keys())}",
+            any("cc_" in key for key in result.keys()),
+            f"Expected cc_ keys in result but got: {list(result.keys())}",
         )
 
     def test_bank_grouping_unaffected_by_cc(self):
@@ -1155,10 +1155,9 @@ class TestCCGroupingInProcessor(unittest.TestCase):
             self.assertEqual(args[0], [], "group_by_card must receive empty transactions for pure bank run")
 
         # No cc_ prefixed keys in output_paths
-        output_paths = result.get("output_paths", {})
         self.assertFalse(
-            any("cc_" in key for key in output_paths.keys()),
-            f"Expected no cc_ keys in output_paths but got: {list(output_paths.keys())}",
+            any("cc_" in key for key in result.keys()),
+            f"Expected no cc_ keys in result but got: {[k for k in result.keys() if 'cc_' in k]}",
         )
 
     def test_mixed_batch_produces_both(self):
@@ -1204,11 +1203,10 @@ class TestCCGroupingInProcessor(unittest.TestCase):
         mock_registry.group_by_card.assert_called_once_with(
             [cc_tx], {"cc.pdf": "**** 1234"}
         )
-        # Output paths have both IBAN-prefixed and cc_-prefixed keys
-        output_paths = result.get("output_paths", {})
+        # Output paths have both IBAN-prefixed and cc_-prefixed keys (flattened into result)
         self.assertTrue(
-            any("cc_" in key for key in output_paths.keys()),
-            f"Expected cc_ keys in mixed output but got: {list(output_paths.keys())}",
+            any("cc_" in key for key in result.keys()),
+            f"Expected cc_ keys in mixed result but got: {list(result.keys())}",
         )
 
     def test_cc_transactions_never_in_iban_group(self):

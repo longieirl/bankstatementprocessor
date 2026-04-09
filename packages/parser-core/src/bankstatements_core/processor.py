@@ -329,20 +329,44 @@ class BankStatementProcessor:
         extraction_results, pdf_count, pages_read = (
             self._process_all_pdfs()
         )  # list[ExtractionResult]
-        all_transactions: list[Transaction] = []
+
+        # Pre-split: bank results (card_number is None) vs CC results (card_number is not None)
+        bank_results = [r for r in extraction_results if r.card_number is None]
+        cc_results = [r for r in extraction_results if r.card_number is not None]
+
+        # Build bank grouping inputs
+        all_bank_txns: list[Transaction] = []
         pdf_ibans: dict[str, str] = {}
-        for extraction in extraction_results:
+        for extraction in bank_results:
             if extraction.iban:
                 pdf_ibans[extraction.source_file.name] = extraction.iban
-            all_transactions.extend(extraction.transactions)
+            all_bank_txns.extend(extraction.transactions)
 
-        # Step 2: Group transactions by IBAN (delegated to registry)
-        txns_by_iban = self._registry.group_by_iban(all_transactions, pdf_ibans)
+        # Build CC grouping inputs
+        all_cc_txns: list[Transaction] = []
+        pdf_card_numbers: dict[str, str] = {}
+        for extraction in cc_results:
+            card_num = extraction.card_number or "unknown"
+            pdf_card_numbers[extraction.source_file.name] = card_num
+            all_cc_txns.extend(extraction.transactions)
+
+        # Step 2a: Group bank transactions by IBAN (delegated to registry)
+        txns_by_iban = self._registry.group_by_iban(all_bank_txns, pdf_ibans)
         logger.debug(
-            "Grouped %s transactions into %s IBAN groups",
-            len(all_transactions),
+            "Grouped %s bank transactions into %s IBAN groups",
+            len(all_bank_txns),
             len(txns_by_iban),
         )
+
+        # Step 2b: Group CC transactions by card suffix (delegated to registry)
+        txns_by_card: dict[str, list[Transaction]] = {}
+        if all_cc_txns:
+            txns_by_card = self._registry.group_by_card(all_cc_txns, pdf_card_numbers)
+            logger.debug(
+                "Grouped %s CC transactions into %s card groups",
+                len(all_cc_txns),
+                len(txns_by_card),
+            )
 
         # Step 3: Process each IBAN group
         all_output_paths = {}
@@ -369,6 +393,28 @@ class BankStatementProcessor:
             # Merge output paths with IBAN prefix
             for key, value in result["output_paths"].items():
                 all_output_paths[f"{iban_suffix}_{key}"] = value
+
+        # Step 3b: Process each card group (CC)
+        for card_suffix, card_txns in txns_by_card.items():
+            result = self._process_transaction_group(card_suffix, card_txns)
+
+            logger.debug(
+                "Card %s: Adding %s unique, %s duplicates to totals",
+                card_suffix,
+                result["unique_count"],
+                result["duplicate_count"],
+            )
+            total_unique += result["unique_count"]
+            total_duplicates += result["duplicate_count"]
+            logger.debug(
+                "Running totals: %s unique, %s duplicates",
+                total_unique,
+                total_duplicates,
+            )
+
+            # Merge output paths with cc_ prefix to avoid collision with IBAN keys
+            for key, value in result["output_paths"].items():
+                all_output_paths[f"cc_{card_suffix}_{key}"] = value
 
         # Step 4: Log processing activity for GDPR audit trail
         if self._activity_log:
