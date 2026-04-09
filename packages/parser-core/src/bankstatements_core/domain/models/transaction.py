@@ -6,6 +6,7 @@ This module defines the core Transaction entity with validation and business log
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 
@@ -304,6 +305,40 @@ class Transaction:
                 return data[key]
         return None
 
+    @staticmethod
+    def _enrich_date(date_str: str, additional_fields: dict[str, str]) -> str:
+        """Append statement year to yearless CC dates in output.
+
+        CC statement dates like "3 Feb" lack a year. When statement_year is
+        available in additional_fields, append it so output reads "3 Feb 2025".
+
+        Args:
+            date_str: Raw date string from the transaction.
+            additional_fields: Transaction additional_fields dict.
+
+        Returns:
+            Enriched date string if yearless + year available, else original.
+
+        Examples:
+            >>> Transaction._enrich_date("3 Feb", {"statement_year": "2025"})
+            '3 Feb 2025'
+            >>> Transaction._enrich_date("01/01/2025", {"statement_year": "2025"})
+            '01/01/2025'
+        """
+        if not date_str:
+            return date_str
+        # Yearless CC date: digits, optional space, 3+ letter month abbreviation, end
+        if not re.fullmatch(r"\d{1,2}\s+[A-Za-z]{3,}", date_str.strip()):
+            return date_str
+        year_raw = additional_fields.get("statement_year")
+        if not year_raw:
+            return date_str
+        try:
+            year = int(year_raw)
+        except ValueError:
+            return date_str
+        return f"{date_str.strip()} {year}"
+
     def to_dict(self, currency_symbol: str = "€") -> dict[str, str | None]:
         """Convert Transaction to dictionary.
 
@@ -325,7 +360,7 @@ class Transaction:
         """
         suffix = f" {currency_symbol}" if currency_symbol else ""
         result: dict[str, str | None] = {
-            "Date": self.date,
+            "Date": self._enrich_date(self.date, self.additional_fields),
             "Details": self.details,
             f"Debit{suffix}": self.debit,
             f"Credit{suffix}": self.credit,
