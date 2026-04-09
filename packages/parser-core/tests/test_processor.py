@@ -233,13 +233,13 @@ class TestBankStatementProcessor(unittest.TestCase):
                     ExtractionResult(
                         transactions=dicts_to_transactions(mock_data_pdf1),
                         page_count=1,
-                        iban=None,
+                        iban="IE29AIBK93115212345678",
                         source_file=pdf1,
                     ),
                     ExtractionResult(
                         transactions=dicts_to_transactions(mock_data_pdf2),
                         page_count=1,
-                        iban=None,
+                        iban="IE29AIBK93115212345678",
                         source_file=pdf2,
                     ),
                 ],
@@ -1315,6 +1315,89 @@ class TestCCGroupingInProcessor(unittest.TestCase):
             processor.run()
 
         mock_registry.group_by_card.assert_not_called()
+
+    def test_unknown_iban_group_excluded_and_not_written(self):
+        """Transactions grouped under 'unknown' IBAN must not produce output files."""
+        import json
+
+        tx = self._make_transaction(details="No IBAN transaction")
+        # Give the transaction a known filename so we can assert on it
+        tx = tx.__class__(**{**tx.__dict__, "filename": "no_iban.pdf"})
+        bank_pdf = self.input_dir / "no_iban.pdf"
+        bank_pdf.touch()
+
+        processor, mock_registry = self._make_processor_with_mock_registry()
+        # group_by_iban returns an "unknown" group — no real IBAN groups
+        mock_registry.group_by_iban.return_value = {"unknown": [tx]}
+
+        bank_result = ExtractionResult(
+            transactions=[tx],
+            page_count=1,
+            iban=None,
+            source_file=bank_pdf,
+            card_number=None,
+        )
+
+        with patch(
+            "bankstatements_core.services.pdf_processing_orchestrator.PDFProcessingOrchestrator.process_all_pdfs"
+        ) as mock_process:
+            mock_process.return_value = ([bank_result], 1, 1)
+            processor.run()
+
+        # _process_transaction_group must never be called for "unknown"
+        mock_registry.process_transaction_group.assert_not_called()
+
+        # excluded_files.json must exist and contain no_iban.pdf
+        excluded_path = self.output_dir / "excluded_files.json"
+        self.assertTrue(excluded_path.exists(), "excluded_files.json not written")
+        with excluded_path.open() as fh:
+            data = json.load(fh)
+        filenames = [e["filename"] for e in data["excluded_files"]]
+        self.assertIn("no_iban.pdf", filenames)
+
+    def test_unknown_iban_group_merges_with_existing_excluded_files(self):
+        """If excluded_files.json already exists, unknown-IBAN entries are appended."""
+        import json
+
+        # Pre-write an excluded_files.json as the orchestrator would
+        existing_log = {
+            "summary": {"total_excluded": 1, "generated_at": "2026-01-01T00:00:00"},
+            "excluded_files": [
+                {"filename": "already_excluded.pdf", "reason": "No IBAN found"}
+            ],
+        }
+        excluded_path = self.output_dir / "excluded_files.json"
+        with excluded_path.open("w") as fh:
+            json.dump(existing_log, fh)
+
+        tx = self._make_transaction(details="No IBAN transaction")
+        tx = tx.__class__(**{**tx.__dict__, "filename": "no_iban2.pdf"})
+        bank_pdf = self.input_dir / "no_iban2.pdf"
+        bank_pdf.touch()
+
+        processor, mock_registry = self._make_processor_with_mock_registry()
+        mock_registry.group_by_iban.return_value = {"unknown": [tx]}
+
+        bank_result = ExtractionResult(
+            transactions=[tx],
+            page_count=1,
+            iban=None,
+            source_file=bank_pdf,
+            card_number=None,
+        )
+
+        with patch(
+            "bankstatements_core.services.pdf_processing_orchestrator.PDFProcessingOrchestrator.process_all_pdfs"
+        ) as mock_process:
+            mock_process.return_value = ([bank_result], 1, 1)
+            processor.run()
+
+        with excluded_path.open() as fh:
+            data = json.load(fh)
+        filenames = [e["filename"] for e in data["excluded_files"]]
+        self.assertIn("already_excluded.pdf", filenames)
+        self.assertIn("no_iban2.pdf", filenames)
+        self.assertEqual(data["summary"]["total_excluded"], 2)
 
 
 if __name__ == "__main__":
