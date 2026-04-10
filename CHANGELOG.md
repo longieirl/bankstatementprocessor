@@ -9,6 +9,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.3] — 2026-04-10
+
+### Added
+- **CC statement support** (`#28, #29, #31–#34`, PR #122) — full credit card pipeline for paid tier: `ExtractionResult.card_number`, `BankTemplate.column_aliases`, `CCGroupingService` grouping by last-4 card suffix, wired into `ServiceRegistry.group_by_card()`. `processor.run()` splits on `card_number is None` to route bank vs CC results.
+- **`aib_credit_card.json` template** (`#129`, PR #138) — correct CC column boundaries (`Transaction Date 29–80`, `Posting Date 80–118`, `Transaction Details 118–370`, `Amount 370–430`) so `RefContinuationClassifier` and `RowMergerService` handle CC two-line transaction splits correctly without falling back to bank columns.
+- **`PDFExtractorOptions` dataclass** (`#109`, PR #139) — groups 8 optional `PDFTableExtractor` constructor params into a single options object, reducing the constructor from 11 params to 3.
+- **Pylint design gate in CI** (`#85`, PR #104) — Xenon complexity gate and Pylint design checks added to CI pipeline.
+
+### Fixed
+- **#129** — Non-transaction (empty/phantom) rows in CC CSV/JSON output eliminated. Root cause: missing CC template caused `Ref:` lines to be misclassified as transactions. Fixed by adding `aib_credit_card.json` (PR #138) and an earlier classifier fix (PR #133).
+- **#131** — CC amounts ending in `CR` now populate the Credit column instead of Debit. `reroute_cr_suffix()` added to `currency.py`, wired via `RowPostProcessor._reroute_cr_amounts()` (PR #135).
+- **#132** — CC transactions sorted incorrectly due to yearless dates. Year inferred from `Payment Due` date in statement; ordinal date suffixes added to `_PAYMENT_DUE_PATTERNS` (PR #133).
+- **#134** — CC output dates now include the statement year (e.g. `4 Feb 2025`). `Transaction._enrich_date()` appends year via `to_dict()` (PR #137).
+- **#125** — Unknown-IBAN group was producing output files instead of routing to `excluded_files.json` (PR #126).
+- **#123** — Free-tier pipeline was producing CC grouped output files instead of routing to `excluded_files.json`. CC grouping now gated behind paid-tier entitlement check (PR #124).
+- **#106** — Credit card PDFs were unconditionally skipped on the paid tier; now correctly processed (PR #108).
+- **#110** — `data_retention_days` was not forwarded to `DataRetentionService` (PR #115).
+- **#78** — `date_propagated` extraction warnings suppressed from JSON/CSV output (PR #93).
+- **#90** — 214 logging f-string violations (G004) replaced with `%`-formatting (PR #100).
+- **#98** — `_detect_text_based_table` decomposed to pass Xenon C complexity gate (PR #101).
+- **#80** — Pre-existing unused imports (F401) removed from test files (PR #94).
+
+### Changed
+- **Service layer migrated to `list[Transaction]`** (`#71`, PR #79) — all services accept/return `list[Transaction]`; dict round-trips removed. Output boundary conversion via `transactions_to_dicts(currency_symbol="")`.
+- **Currency-agnostic field names** (`#62–#64, #66`, PR #67) — `TransactionRow` fields renamed `_EUR → _AMT`; `strip_currency_symbols()` unified in `domain/currency.py`; `currency_symbol` defaults to `""` throughout.
+- **`ruff` replaces `flake8`** (`#84, #89`, PR #91) — ruff lint config in both `pyproject.toml` files; pre-commit hook updated to `astral-sh/ruff-pre-commit v0.8.0`.
+- **`pip-audit` replaces `safety`** (`#86`, PR #97) — dependency vulnerability scanning updated.
+- **Hadolint + pinned `trivy-action`** added to CI (`#87`, PR #96).
+- **`[skip downstream]` support** added to dispatch-downstream CI job (PR #82).
+- **`#111, #112, #113`** — Dead fields removed from `ExtractionConfig` and `ExtractionScoringConfig`; dead `scoring_config` param removed from `PDFTableExtractor` (PRs #116, #117).
+- **CONTRIBUTING.md** — Coverage threshold corrected to 91% to match `pyproject.toml` (PR #140).
+
+---
+
 ## [0.1.2] — 2026-03-25
 
 ### Fixed
