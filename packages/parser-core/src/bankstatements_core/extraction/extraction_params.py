@@ -7,7 +7,13 @@ to improve separation of concerns.
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
+
 from bankstatements_core.config.environment_parser import EnvironmentParser
+
+if TYPE_CHECKING:
+    from bankstatements_core.templates.template_model import BankTemplate
 
 # ---- Table vertical bounds ----
 TABLE_TOP_Y = 300
@@ -48,3 +54,22 @@ ADMINISTRATIVE_PATTERNS = EnvironmentParser.parse_json_list(
     "ADMINISTRATIVE_PATTERNS",
     ["BALANCE FORWARD", "Interest Rate", "Lending @"],
 )
+
+
+@dataclass
+class PDFExtractorOptions:
+    """Configuration options for PDFTableExtractor.
+
+    Groups the optional parameters so the constructor signature stays
+    within pylint's design limit (R0913/R0917).
+    """
+
+    table_top_y: int = TABLE_TOP_Y
+    table_bottom_y: int = TABLE_BOTTOM_Y
+    enable_dynamic_boundary: bool = False
+    enable_page_validation: bool = True
+    enable_header_check: bool = True
+    header_check_top_y: int | None = None
+    extraction_config: Any | None = None
+    template: BankTemplate | None = field(default=None)
+    entitlements: Any | None = None

@@ -11,6 +11,7 @@ from bankstatements_core.domain.models.extraction_warning import (
     ExtractionWarning,
 )
 from bankstatements_core.entitlements import Entitlements
+from bankstatements_core.extraction.extraction_params import PDFExtractorOptions
 from bankstatements_core.extraction.pdf_extractor import PDFTableExtractor
 
 # Test columns configuration
@@ -381,7 +382,8 @@ class TestCreditCardDetection:
 
         # Paid tier: require_iban=False → credit card PDFs should proceed
         extractor = PDFTableExtractor(
-            columns=TEST_COLUMNS, entitlements=Entitlements.paid_tier()
+            columns=TEST_COLUMNS,
+            options=PDFExtractorOptions(entitlements=Entitlements.paid_tier()),
         )
         result = extractor.extract(Path("/tmp/credit_card.pdf"))
 
@@ -404,7 +406,8 @@ class TestCreditCardDetection:
         mock_page.crop.return_value = mock_header
 
         extractor = PDFTableExtractor(
-            columns=TEST_COLUMNS, entitlements=Entitlements.free_tier()
+            columns=TEST_COLUMNS,
+            options=PDFExtractorOptions(entitlements=Entitlements.free_tier()),
         )
         result = extractor.extract(Path("/tmp/credit_card.pdf"))
 
@@ -425,7 +428,7 @@ class TestCreditCardDetection:
         mock_header.extract_text.return_value = "Statement for Card Number 1234"
         mock_page.crop.return_value = mock_header
 
-        extractor = PDFTableExtractor(columns=TEST_COLUMNS, entitlements=None)
+        extractor = PDFTableExtractor(columns=TEST_COLUMNS)
         result = extractor.extract(Path("/tmp/credit_card.pdf"))
 
         assert isinstance(result, ExtractionResult)
