@@ -42,7 +42,7 @@ pip install -e "packages/parser-free[test]"
 
 ```bash
 # Core tests with coverage
-pytest packages/parser-core/tests/ --cov=bankstatements_core --cov-fail-under=92
+pytest packages/parser-core/tests/ --cov=bankstatements_core --cov-fail-under=91
 
 # Free CLI smoke test
 bankstatements --version
@@ -63,7 +63,7 @@ bankstatements --init
 
 1. Fork the repository and create a branch
 2. Make changes following the code standards below
-3. **Write tests** — 92% coverage on `bankstatements-core` is enforced by CI
+3. **Write tests** — 91% coverage on `bankstatements-core` is enforced by CI
 4. Run quality checks:
    ```bash
    # From packages/parser-core/
@@ -109,13 +109,13 @@ def process_transaction(amount: Decimal, date: datetime) -> Transaction:
 
 ### Coverage Requirement
 
-**92% minimum on `bankstatements-core`** — enforced by CI. PRs that drop below this threshold will not be merged.
+**91% minimum on `bankstatements-core`** — enforced by CI. PRs that drop below this threshold will not be merged.
 
 ### Running Tests
 
 ```bash
 # All tests with coverage (integration tests excluded by default)
-pytest packages/parser-core/tests/ --cov=bankstatements_core --cov-fail-under=92 -v
+pytest packages/parser-core/tests/ --cov=bankstatements_core --cov-fail-under=91 -v
 
 # Specific file or test
 pytest packages/parser-core/tests/services/test_my_service.py -v
@@ -141,7 +141,7 @@ pytest tests/integration/ -m integration --snapshot-update -v
 pytest tests/integration/ -m integration -v
 ```
 
-The snapshot file (`tests/integration/snapshots/output_snapshot.json`) is gitignored — it is personal to your machine and input files.
+The snapshot file (`tests/integration/snapshots/output_snapshot.json`) is committed to the repo — it contains no personal data and serves as the CI baseline. Re-baseline with `--snapshot-update` after intentional output changes.
 
 ### Test Organisation
 
@@ -174,7 +174,7 @@ Quick summary:
 
 ### Before Submitting
 
-- [ ] All tests pass with 92%+ coverage
+- [ ] All tests pass with 91%+ coverage
 - [ ] Code is formatted (`ruff format`)
 - [ ] Linting passes (`ruff check`, MyPy)
 - [ ] New functionality has tests
@@ -186,7 +186,7 @@ Your PR must pass:
 
 - **lint-core** — ruff, MyPy on `parser-core`
 - **lint-free** — ruff on `parser-free`
-- **test-core** — pytest with 92%+ coverage on `bankstatements-core`
+- **test-core** — pytest with 91%+ coverage on `bankstatements-core`
 - **test-free** — pytest on `parser-free`
 - **boundary-check** — CI fails if `parser-free` imports `bankstatements_premium` or `src.licensing`
 - **security** — Bandit on both packages
