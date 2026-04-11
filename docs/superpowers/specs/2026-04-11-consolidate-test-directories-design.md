@@ -43,7 +43,7 @@ One PR that:
 |---|---|---|
 | `tests/test_output_strategies.py` | All 19 tests — concrete write behaviour of `CSVOutputStrategy`, `ExcelOutputStrategy`, `JSONOutputStrategy` (Excel column formatting, numeric types, multi-format dispatch). Not covered by parser-core's output tests which only test entitlements. | `packages/parser-core/tests/services/test_output_strategies.py` |
 | `tests/test_app.py` | All tests — `main()` error path integration (`ConfigurationError`, `FileNotFoundError`, `PermissionError`, `KeyboardInterrupt`). Parser-core has `test_app_config.py` but nothing testing `main()` itself. | `packages/parser-core/tests/test_app.py` |
-| `tests/test_coverage_improvements.py` | 5 tests only — `main()` error paths and `AppConfig.from_env` generic exception handling. The remaining 17 are already present in `test_processor.py`, `test_utils.py`, `services/test_column_analysis.py`. | Merge into `packages/parser-core/tests/test_app.py` (de-duplicate with `test_app.py` port above) |
+| `tests/test_coverage_improvements.py` | 5 tests only — `main()` error paths and `AppConfig.from_env` generic exception handling. The remaining 17 are already covered in `test_processor.py`, `test_utils.py`, `services/test_column_analysis.py` and are discarded. | Add the 5 unique tests into `packages/parser-core/tests/test_app.py` alongside the `test_app.py` port above |
 | `tests/test_recursive_scan_entitlements_integration.py` | All tests — entitlement enforcement for PAID tier features via `BankStatementProcessingFacade` end-to-end. `test_tier_feature_parity.py` covers the same topic at unit level, not facade level. | `packages/parser-core/tests/test_recursive_scan_entitlements_integration.py` |
 
 ### Files with no unique value (already fully covered)
@@ -56,7 +56,7 @@ One PR that:
 |---|---|---|
 | `test` | `pytest tests/ --cov=src` | `pytest packages/parser-core/tests/ --cov=bankstatements_core` (mirrors what `cd packages/parser-core && pytest` does) |
 | `test-unit` | `pytest tests/ -m unit --cov=src` | Same path swap |
-| `test-integration` | currently separate | unchanged (already correct) |
+| `test-integration` | `pytest tests/ -m integration --cov=src` | `pytest packages/parser-core/tests/ -m integration --cov=bankstatements_core` |
 | `test-fast` | `pytest tests/ -n auto` | Same path swap |
 
 ## CI Guardrail
