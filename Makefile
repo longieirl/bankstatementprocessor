@@ -288,7 +288,7 @@ ci-lint:	## Simulate CI linting job locally
 
 ci-test:	## Simulate CI test job locally
 	@echo "🤖 Simulating CI test job..."
-	python3 -m pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=xml --cov-report=html -n auto --tb=short
+	python3 -m pytest packages/parser-core/tests/ -v --cov=bankstatements_core --cov-report=term-missing --cov-report=xml --cov-report=html --cov-fail-under=91 -n auto --tb=short
 	@echo "✅ CI test simulation completed"
 
 ci-docker:	## Simulate CI Docker job locally
