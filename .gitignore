@@ -184,11 +184,6 @@ docker-compose.override.yml
 marketplace/
 .myob/
 
-# Root-level legacy artefacts (old pre-restructure layout — not part of monorepo)
-# Old flat src/ — replaced by packages/parser-core/src/ and packages/parser-free/src/
-/src/
-# Old root-level tests — replaced by packages/*/tests/
-/tests/
 /license.json
 # Docker env files (private repo only)
 /.env.remote

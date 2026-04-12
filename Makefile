@@ -35,22 +35,22 @@ setup:	## Full development environment setup
 
 # Testing
 test:	## Run all tests with coverage
-	python3 -m pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=xml --cov-report=html --cov-fail-under=90
+	python3 -m pytest packages/parser-core/tests/ -v --cov=bankstatements_core --cov-report=term-missing --cov-report=xml --cov-report=html --cov-fail-under=91
 
 test-unit:	## Run only unit tests
-	python3 -m pytest tests/ -v -m "unit" --cov=src --cov-report=term-missing
+	python3 -m pytest packages/parser-core/tests/ -v -m "unit" --cov=bankstatements_core --cov-report=term-missing
 
 test-integration:	## Run only integration tests
-	python3 -m pytest tests/ -v -m "integration" --cov=src --cov-report=term-missing
+	python3 -m pytest packages/parser-core/tests/ -v -m "integration" --cov=bankstatements_core --cov-report=term-missing
 
 test-fast:	## Run tests in parallel (faster)
-	python3 -m pytest tests/ -v -n auto --cov=src --cov-report=term-missing
+	python3 -m pytest packages/parser-core/tests/ -v -n auto --cov=bankstatements_core --cov-report=term-missing
 
 test-watch:	## Run tests in watch mode (re-run on file changes)
-	python3 -m ptw -- tests/ -v --cov=src
+	python3 -m ptw -- packages/parser-core/tests/ -v --cov=bankstatements_core
 
 coverage:	## Generate and open coverage report
-	python3 -m pytest tests/ --cov=src --cov-report=html --cov-fail-under=90
+	python3 -m pytest packages/parser-core/tests/ --cov=bankstatements_core --cov-report=html --cov-fail-under=91
 	@echo "Opening coverage report in browser..."
 	@python3 -c "import webbrowser; webbrowser.open('htmlcov/index.html')"
 
@@ -288,7 +288,7 @@ ci-lint:	## Simulate CI linting job locally
 
 ci-test:	## Simulate CI test job locally
 	@echo "🤖 Simulating CI test job..."
-	python3 -m pytest tests/ -v --cov=src --cov-report=term-missing --cov-report=xml --cov-report=html -n auto --tb=short
+	python3 -m pytest packages/parser-core/tests/ -v --cov=bankstatements_core --cov-report=term-missing --cov-report=xml --cov-report=html --cov-fail-under=91 -n auto --tb=short
 	@echo "✅ CI test simulation completed"
 
 ci-docker:	## Simulate CI Docker job locally

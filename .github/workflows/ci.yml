@@ -231,6 +231,24 @@ jobs:
           pip-audit-report.json
 
   # ---------------------------------------------------------------------------
+  # Structural guardrail — root tests/ and src/ must not exist
+  # ---------------------------------------------------------------------------
+  check-test-structure:
+    name: Verify test directory structure
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+    - uses: actions/checkout@v6
+    - name: Fail if root tests/ or src/ exist
+      run: |
+        if [ -d "tests/" ] || [ -d "src/" ]; then
+          echo "ERROR: root tests/ or src/ must not exist."
+          echo "Use packages/parser-core/tests/ for all tests."
+          exit 1
+        fi
+        echo "OK: root tests/ and src/ are absent."
+
+  # ---------------------------------------------------------------------------
   # Test jobs (serial after their respective lint job)
   # ---------------------------------------------------------------------------
   test-core:
@@ -430,7 +448,7 @@ jobs:
     name: CI Pass
     runs-on: ubuntu-latest
     if: always()
-    needs: [changes, lint-core, lint-free, security, test-core, test-free, build-docker, workflow-lint]
+    needs: [changes, lint-core, lint-free, security, test-core, test-free, build-docker, workflow-lint, check-test-structure]
     steps:
       - name: Check all jobs passed
         run: |
