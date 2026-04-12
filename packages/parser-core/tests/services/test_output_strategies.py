@@ -36,9 +36,24 @@ class TestExcelOutputStrategy(unittest.TestCase):
         self.temp_dir = TemporaryDirectory()
         self.temp_path = Path(self.temp_dir.name)
         self.transactions = [
-            {"Date": "01/01/2024", "Details": "Purchase 1", "Debit": "€100.00", "Credit": ""},
-            {"Date": "02/01/2024", "Details": "Purchase 2", "Debit": "€50.00", "Credit": ""},
-            {"Date": "03/01/2024", "Details": "Refund", "Debit": "", "Credit": "€25.00"},
+            {
+                "Date": "01/01/2024",
+                "Details": "Purchase 1",
+                "Debit": "€100.00",
+                "Credit": "",
+            },
+            {
+                "Date": "02/01/2024",
+                "Details": "Purchase 2",
+                "Debit": "€50.00",
+                "Credit": "",
+            },
+            {
+                "Date": "03/01/2024",
+                "Details": "Refund",
+                "Debit": "",
+                "Credit": "€25.00",
+            },
         ]
         self.column_names = ["Date", "Details", "Debit", "Credit"]
 
@@ -47,7 +62,9 @@ class TestExcelOutputStrategy(unittest.TestCase):
 
     def test_write_excel_basic(self):
         file_path = self.temp_path / "test.xlsx"
-        self.strategy.write(self.transactions, file_path, self.column_names, include_totals=False)
+        self.strategy.write(
+            self.transactions, file_path, self.column_names, include_totals=False
+        )
         self.assertTrue(file_path.exists())
         df = pd.read_excel(file_path, sheet_name="Transactions")
         self.assertEqual(len(df), 3)
@@ -56,6 +73,7 @@ class TestExcelOutputStrategy(unittest.TestCase):
     def test_write_excel_with_totals(self):
         file_path = self.temp_path / "test_totals.xlsx"
         from bankstatements_core.services.totals_calculator import ColumnTotalsService
+
         df = pd.DataFrame(self.transactions)
         totals_service = ColumnTotalsService(["debit", "credit"])
         totals = totals_service.calculate(df)
@@ -178,7 +196,11 @@ class TestOutputFormatIntegration(unittest.TestCase):
     def test_processor_with_multiple_formats(self):
         with patch.dict(
             "os.environ",
-            {"INPUT_DIR": str(self.input_dir), "OUTPUT_DIR": str(self.output_dir), "OUTPUT_FORMATS": "csv,json,excel"},
+            {
+                "INPUT_DIR": str(self.input_dir),
+                "OUTPUT_DIR": str(self.output_dir),
+                "OUTPUT_FORMATS": "csv,json,excel",
+            },
         ):
             config = AppConfig.from_env()
             processor = ProcessorFactory.create_from_config(config)
@@ -186,13 +208,21 @@ class TestOutputFormatIntegration(unittest.TestCase):
             self.assertIn("json", processor.output_strategies)
             self.assertIn("excel", processor.output_strategies)
             self.assertIsInstance(processor.output_strategies["csv"], CSVOutputStrategy)
-            self.assertIsInstance(processor.output_strategies["json"], JSONOutputStrategy)
-            self.assertIsInstance(processor.output_strategies["excel"], ExcelOutputStrategy)
+            self.assertIsInstance(
+                processor.output_strategies["json"], JSONOutputStrategy
+            )
+            self.assertIsInstance(
+                processor.output_strategies["excel"], ExcelOutputStrategy
+            )
 
     def test_factory_creates_correct_strategies(self):
         with patch.dict(
             "os.environ",
-            {"INPUT_DIR": str(self.input_dir), "OUTPUT_DIR": str(self.output_dir), "OUTPUT_FORMATS": "csv,excel"},
+            {
+                "INPUT_DIR": str(self.input_dir),
+                "OUTPUT_DIR": str(self.output_dir),
+                "OUTPUT_FORMATS": "csv,excel",
+            },
         ):
             config = AppConfig.from_env()
             processor = ProcessorFactory.create_from_config(config)
@@ -217,8 +247,13 @@ class TestOutputFormatIntegration(unittest.TestCase):
             {"INPUT_DIR": str(self.input_dir), "OUTPUT_DIR": str(self.output_dir)},
         ):
             config = AppConfig.from_env()
-            custom_strategies = {"csv": CSVOutputStrategy(), "excel": ExcelOutputStrategy()}
-            processor = ProcessorFactory.create_from_config(config, output_strategies=custom_strategies)
+            custom_strategies = {
+                "csv": CSVOutputStrategy(),
+                "excel": ExcelOutputStrategy(),
+            }
+            processor = ProcessorFactory.create_from_config(
+                config, output_strategies=custom_strategies
+            )
             self.assertEqual(len(processor.output_strategies), 2)
             self.assertIn("csv", processor.output_strategies)
             self.assertIn("excel", processor.output_strategies)
@@ -248,7 +283,10 @@ class TestStrategyBackwardCompatibility(unittest.TestCase):
             self.assertIn("csv", processor.output_strategies)
 
     def test_processor_direct_instantiation_still_works(self):
-        from bankstatements_core.config.processor_config import ExtractionConfig, ProcessorConfig
+        from bankstatements_core.config.processor_config import (
+            ExtractionConfig,
+            ProcessorConfig,
+        )
         from bankstatements_core.pdf_table_extractor import get_columns_config
         from bankstatements_core.processor import BankStatementProcessor
 

@@ -20,7 +20,9 @@ class TestRecursiveScanEntitlementEnforcement:
             output_dir = Path(tmpdir) / "output"
             input_dir.mkdir()
             output_dir.mkdir()
-            config = AppConfig(input_dir=input_dir, output_dir=output_dir, recursive_scan=True)
+            config = AppConfig(
+                input_dir=input_dir, output_dir=output_dir, recursive_scan=True
+            )
             facade = BankStatementProcessingFacade(config, Entitlements.free_tier())
             summary = facade.process_all()
             assert summary["pdf_count"] == 0
@@ -53,7 +55,9 @@ class TestRecursiveScanEntitlementEnforcement:
             subdir = input_dir / "subdir"
             subdir.mkdir()
             (subdir / "test.pdf").write_text("fake pdf")
-            config = AppConfig(input_dir=input_dir, output_dir=output_dir, recursive_scan=True)
+            config = AppConfig(
+                input_dir=input_dir, output_dir=output_dir, recursive_scan=True
+            )
             facade = BankStatementProcessingFacade(config, Entitlements.paid_tier())
             summary = facade.process_all()
             assert summary is not None
@@ -64,7 +68,9 @@ class TestRecursiveScanEntitlementEnforcement:
             output_dir = Path(tmpdir) / "output"
             input_dir.mkdir()
             output_dir.mkdir()
-            config = AppConfig(input_dir=input_dir, output_dir=output_dir, recursive_scan=False)
+            config = AppConfig(
+                input_dir=input_dir, output_dir=output_dir, recursive_scan=False
+            )
             facade = BankStatementProcessingFacade(config, Entitlements.paid_tier())
             summary = facade.process_all()
             assert summary["pdf_count"] == 0
