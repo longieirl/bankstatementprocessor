@@ -30,5 +30,5 @@ pre-commit>=3.0.0,<5.0.0
 # Security tools (using compatible versions)
 bandit[toml]>=1.7.0,<2.0.0
 safety>=2.0.0,<4.0.0
-detect-secrets>=1.4.0,<2.0.0
+detect-secrets>=1.5.0,<2.0.0
 yamllint>=1.33.0,<2.0.0
