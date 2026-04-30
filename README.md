@@ -101,7 +101,29 @@ docker-compose up --build
 
 Place PDFs in `./input/` before running. Results are written to `./output/`.
 
-**Premium tier:** production Docker images are built and published from the private `bankstatements-premium` repository.
+**Premium tier:** production Docker images are published to the GitHub Container Registry.
+
+```bash
+docker pull ghcr.io/longieirl/bankstatements-premium:latest
+```
+
+To run:
+
+```bash
+docker run --rm \
+  --network none \
+  -v ./input:/app/input \
+  -v ./output:/app/output \
+  -v ./logs:/app/logs \
+  -v ./license.json:/app/license.json:ro \
+  -e LICENSE_PATH=/app/license.json \
+  -e OUTPUT_FORMATS=csv,json \
+  ghcr.io/longieirl/bankstatements-premium:latest
+```
+
+Place PDFs in `./input/`; results are written to `./output/`.
+
+> **License:** A `license.json` is only required for credit card statements. Without one, the processor will handle any statements containing an IBAN — credit card PDFs will be skipped.
 
 ---
 
