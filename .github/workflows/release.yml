@@ -29,8 +29,8 @@ jobs:
       - name: Verify version consistency
         run: |
           TAG_VERSION=${{ steps.get-version.outputs.version }}
-          CODE_VERSION=$(grep '__version__ = ' src/__version__.py | cut -d'"' -f2)
-          TOML_VERSION=$(grep 'version = ' pyproject.toml | head -1 | cut -d'"' -f2)
+          CODE_VERSION=$(grep '__version__ = ' packages/parser-core/src/bankstatements_core/__version__.py | cut -d'"' -f2)
+          TOML_VERSION=$(grep '^version = ' packages/parser-core/pyproject.toml | cut -d'"' -f2)
 
           echo "Tag version: ${TAG_VERSION}"
           echo "Code version: ${CODE_VERSION}"
