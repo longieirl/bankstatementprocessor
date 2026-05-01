@@ -37,10 +37,11 @@ RUN python -c "import sysconfig; print(sysconfig.get_path('purelib'))" | xargs -
 FROM base AS production
 
 # hadolint ignore=DL3008
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get upgrade -y --no-install-recommends && apt-get install -y --no-install-recommends \
     poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 # poppler-utils is runtime-critical; pinning not practical. Mitigated by Trivy CI gate.
+# apt-get upgrade ensures OS packages (e.g. openssl) are patched at build time (CVE-2026-31789).
 
 RUN groupadd -r appuser && useradd -r -g appuser -u 1000 appuser
 
