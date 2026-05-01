@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.4] — 2026-05-01
+
+### Security
+- **CVE-2026-31789** (`#159`, PRs #163 #165 #166) — Added `apt-get upgrade` to the production Docker stage so every build pulls the latest patched Debian packages. Resolved 3 critical OpenSSL findings (`libssl3t64`, `openssl`, `openssl-provider-legacy`). Trivy scan on `:latest` confirms 0 critical vulnerabilities.
+
+### Fixed
+- **Release workflow** (PR #166) — `release.yml` was reading pre-monorepo paths (`src/__version__.py`, `pyproject.toml`). Updated to `packages/parser-core/src/bankstatements_core/__version__.py` and `packages/parser-core/pyproject.toml`. Also tightened version grep to `^version =` to avoid false match on ruff `target-version`.
+
+---
+
 ## [0.1.3] — 2026-04-10
 
 ### Added
