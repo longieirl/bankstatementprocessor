@@ -371,9 +371,11 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Smoke-test image
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           docker run --rm \
-            bankstatementsprocessor:pr-${{ github.event.pull_request.number }} \
+            "bankstatementsprocessor:pr-${PR_NUMBER}" \
             python -c "import bankstatements_free; import bankstatements_core; print('imports OK')"
 
   # ---------------------------------------------------------------------------
