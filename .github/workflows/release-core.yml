@@ -41,8 +41,10 @@ jobs:
 
     - name: Extract and validate version
       id: version
+      env:
+        GH_REF_NAME: ${{ github.ref_name }}
       run: |
-        TAG="${{ github.ref_name }}"               # e.g. core-v0.1.0
+        TAG="${GH_REF_NAME}"                       # e.g. core-v0.1.0
         TAG_VERSION="${TAG#core-v}"                # strip prefix → 0.1.0
 
         TOML_VERSION=$(grep '^version = ' pyproject.toml | head -1 | cut -d'"' -f2)
@@ -128,19 +130,26 @@ jobs:
 
     steps:
     - name: Dispatch core-released event to private repo
+      env:
+        DISPATCH_TOKEN: ${{ secrets.DOWNSTREAM_DISPATCH_TOKEN }}
+        CORE_VERSION: ${{ needs.validate.outputs.version }}
+        GH_REF_NAME: ${{ github.ref_name }}
+        GH_SHA: ${{ github.sha }}
+        GH_REPOSITORY: ${{ github.repository }}
+        GH_RUN_ID: ${{ github.run_id }}
       run: |
         curl -fsSL \
           -X POST \
           -H "Accept: application/vnd.github+json" \
-          -H "Authorization: Bearer ${{ secrets.DOWNSTREAM_DISPATCH_TOKEN }}" \
+          -H "Authorization: Bearer ${DISPATCH_TOKEN}" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
           https://api.github.com/repos/longieirl/bankstatements/dispatches \
           -d "{
             \"event_type\": \"core-released\",
             \"client_payload\": {
-              \"core_version\": \"${{ needs.validate.outputs.version }}\",
-              \"ref\": \"${{ github.ref_name }}\",
-              \"sha\": \"${{ github.sha }}\",
-              \"run_url\": \"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
+              \"core_version\": \"${CORE_VERSION}\",
+              \"ref\": \"${GH_REF_NAME}\",
+              \"sha\": \"${GH_SHA}\",
+              \"run_url\": \"https://github.com/${GH_REPOSITORY}/actions/runs/${GH_RUN_ID}\"
             }
           }"
