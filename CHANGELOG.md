@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.5] — 2026-05-04
+
+### Security
+- **CVE-2026-31789** (`#164`) — Rebuilt production Docker image to pick up `openssl 3.5.5-1~deb13u2` patch, which resolves 3 critical heap-buffer-overflow findings (`libssl3t64`, `openssl`, `openssl-provider-legacy`). The existing `apt-get upgrade -y` in the production stage pulls the patched packages automatically on every rebuild; the previous `:latest` image predated the Debian fix release. Trivy gate in CI confirms 0 critical vulnerabilities post-rebuild.
+
+---
+
 ## [0.1.4] — 2026-05-01
 
 ### Security
