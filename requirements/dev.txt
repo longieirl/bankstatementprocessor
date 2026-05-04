@@ -21,7 +21,7 @@ types-tabulate>=0.10.0.20260408
 # Note: types-requests removed (requests library not used for GDPR compliance)
 
 # Development and debugging tools
-ipython>=8.0.0,<10.0.0
+ipython>=9.13.0,<10.0.0
 ipdb>=0.13.0
 
 # Pre-commit hooks
