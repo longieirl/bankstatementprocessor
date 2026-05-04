@@ -73,8 +73,8 @@ jobs:
           RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
         run: |
           VERSION="${RELEASE_VERSION}"
-          MAJOR=$(echo ${VERSION} | cut -d. -f1)
-          MINOR=$(echo ${VERSION} | cut -d. -f1-2)
+          MAJOR=$(echo "${VERSION}" | cut -d. -f1)
+          MINOR=$(echo "${VERSION}" | cut -d. -f1-2)
           BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           VCS_REF=$(git rev-parse --short HEAD)
 
@@ -109,8 +109,8 @@ jobs:
         env:
           RELEASE_VERSION: ${{ steps.meta.outputs.version }}
         run: |
-          docker pull ghcr.io/longieirl/bankstatements:${RELEASE_VERSION}
-          docker inspect ghcr.io/longieirl/bankstatements:${RELEASE_VERSION} | jq '.[0].Config.Labels'
+          docker pull "ghcr.io/longieirl/bankstatements:${RELEASE_VERSION}"
+          docker inspect "ghcr.io/longieirl/bankstatements:${RELEASE_VERSION}" | jq '.[0].Config.Labels'
 
       - name: Run Trivy vulnerability scanner on release
         uses: aquasecurity/trivy-action@master

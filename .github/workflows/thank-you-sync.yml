@@ -19,7 +19,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           # 1. Get all unique authors from the commits in this merged PR
-          COMMITTERS=$(gh pr view $PR_NUMBER --json commits --jq '.commits[].author.login' | sort -u)
+          COMMITTERS=$(gh pr view "$PR_NUMBER" --json commits --jq '.commits[].author.login' | sort -u)
           # 2. Loop through each committer
           for USER in $COMMITTERS; do
             if [ "$USER" == "web-flow" ] || [ -z "$USER" ]; then continue; fi

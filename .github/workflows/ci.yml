@@ -375,7 +375,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           docker run --rm \
-            bankstatementsprocessor:pr-${PR_NUMBER} \
+            "bankstatementsprocessor:pr-${PR_NUMBER}" \
             python -c "import bankstatements_free; import bankstatements_core; print('imports OK')"
 
   # ---------------------------------------------------------------------------
