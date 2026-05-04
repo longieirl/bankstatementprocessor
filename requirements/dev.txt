@@ -25,7 +25,7 @@ ipython>=8.0.0,<10.0.0
 ipdb>=0.13.0
 
 # Pre-commit hooks
-pre-commit>=3.0.0,<5.0.0
+pre-commit>=4.6.0,<5.0.0
 
 # Security tools (using compatible versions)
 bandit[toml]>=1.7.0,<2.0.0
