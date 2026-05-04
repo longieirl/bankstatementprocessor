@@ -11,12 +11,15 @@ Usage:
 
 import argparse
 import json
+import re
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List
 import urllib.request
 import urllib.error
+
+_PYPI_NAME_RE = re.compile(r"^[A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?$")
 
 
 def load_sbom(path: Path) -> Dict[str, Any]:
@@ -54,6 +57,8 @@ def fetch_pypi_metadata(package_name: str) -> Dict[str, Any]:
 
     Returns empty dict if package not found or error occurs.
     """
+    if not _PYPI_NAME_RE.match(package_name):
+        return {}
     try:
         url = f"https://pypi.org/pypi/{package_name}/json"
         with urllib.request.urlopen(url, timeout=5) as response:
