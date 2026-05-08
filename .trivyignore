@@ -1,7 +1,13 @@
 # Trivy vulnerability ignore list
 # Format: CVE-YYYY-NNNNN [reason]
 
-# No ignored vulnerabilities - all critical and high severity issues resolved
-# Last review: 2026-03-02
-# Next review: 2026-04-01
+# CVE-2026-33845: libgnutls30t64 — GnuTLS DoS via DTLS zero-length fragment.
+# No fixed version available in Debian 13 as of 2026-05-08; apt-get upgrade cannot
+# resolve this. The application processes PDF files locally and never initiates or
+# handles DTLS traffic, so this code path is unreachable at runtime.
+# Re-evaluate when a Debian patch is released.
+CVE-2026-33845
+
+# Last review: 2026-05-08
+# Next review: 2026-06-08
 
