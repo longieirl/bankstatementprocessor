@@ -31,6 +31,7 @@ setup:	## Full development environment setup
 	$(MAKE) pre-commit-install
 	chmod +x setup-git-hooks.sh
 	./setup-git-hooks.sh
+	git config core.hooksPath .githooks
 	@echo "✅ Setup complete!"
 
 # Testing

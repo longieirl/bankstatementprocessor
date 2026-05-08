@@ -36,6 +36,9 @@ pip install -e "packages/parser-core[dev,test]"
 
 # Install parser-free in editable mode (depends on parser-core above)
 pip install -e "packages/parser-free[test]"
+
+# Activate local git hooks (blocks direct pushes to main)
+git config core.hooksPath .githooks
 ```
 
 ### Verify Setup
