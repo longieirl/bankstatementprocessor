@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.6] — 2026-05-08
+
+### Security
+- **CVE-2026-33845** (`#184`) — `libgnutls30t64` (GnuTLS DoS via DTLS zero-length fragment). No fixed version is available in Debian 13; `apt-get upgrade -y` cannot resolve this. The application processes PDF files locally and never handles DTLS traffic, so the vulnerable code path is unreachable at runtime. Added to `.trivyignore` with justification and a 2026-06-08 review date. Will be removed once Debian ships a patched package.
+
+---
+
 ## [0.1.5] — 2026-05-04
 
 ### Security
