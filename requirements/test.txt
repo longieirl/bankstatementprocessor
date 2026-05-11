@@ -20,7 +20,7 @@ responses==0.26.0
 httpretty==1.1.4
 
 # Code coverage
-coverage==7.13.5
+coverage==7.14.0
 
 # Performance testing
 pytest-benchmark==5.2.3
