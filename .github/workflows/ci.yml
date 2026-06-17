@@ -305,7 +305,7 @@ jobs:
 
     - name: Upload coverage to Codecov
       if: matrix.python-version == '3.12'
-      uses: codecov/codecov-action@v6
+      uses: codecov/codecov-action@v7
       with:
         files: packages/parser-core/coverage.xml
         flags: parser-core
