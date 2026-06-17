@@ -1,0 +1,32 @@
+# Bank Statement Processor
+
+> Open-source Python tool that extracts transactions from PDF bank statements and outputs CSV, Excel, or JSON. Free tier (`bankstatements-free` on PyPI) covers all output formats, recursive scanning, monthly summaries, and expense analysis. Requires IBANs in PDFs (bank statements only — credit card PDFs require the paid tier).
+
+Two packages live in this repo:
+- `bankstatements-core` (`packages/parser-core/`) — PDF extraction engine, services, templates
+- `bankstatements-free` (`packages/parser-free/`) — thin CLI wrapper around core; installs as `bankstatements` command
+
+Configuration is entirely via environment variables (`INPUT_DIR`, `OUTPUT_DIR`, `OUTPUT_FORMATS`). No config file required.
+
+## Docs
+
+- [README](README.md): Installation, quick start, Docker usage
+- [CLAUDE.md](CLAUDE.md): AI agent instructions — package layout, dev setup, make targets, CI, architecture
+- [CONTRIBUTING.md](CONTRIBUTING.md): Branch/PR workflow, git hooks setup
+- [Quick Start](docs/QUICK_START.md): Minimal setup to first CSV output
+- [Output Formats](docs/OUTPUT_FORMATS_USAGE.md): CSV, Excel, JSON options and env vars
+- [Custom Templates](docs/CUSTOM_TEMPLATES.md): Adding support for new banks
+- [Adding Templates](docs/ADDING_NEW_TEMPLATES.md): Template JSON structure reference
+- [GDPR Compliance](docs/GDPR_COMPLIANCE.md): No network calls, local-only processing, data retention
+- [Architecture](docs/architecture.md): Module structure, data flow, service registry
+
+## Skills
+
+- [process-bank-statements](skills/process-bank-statements/SKILL.md): Claude Code skill — checks pip install, gathers inputs, runs CLI, reviews output
+
+## Optional
+
+- [INSTALLATION.md](docs/INSTALLATION.md): Detailed install options (pip, Docker, dev mode)
+- [TEMPLATES.md](docs/TEMPLATES.md): All built-in bank templates
+- [REFERENCE.md](docs/REFERENCE.md): Full environment variable reference
+- [PRIVACY_NOTICE.md](docs/PRIVACY_NOTICE.md): Data handling and privacy
