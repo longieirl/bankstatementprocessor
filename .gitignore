@@ -206,6 +206,8 @@ site/
 # ==============================================================================
 
 .claude/
+!.claude/skills/
+!.claude/skills/**
 !CLAUDE.md
 .pr_template_content.md
 HANDOFF.md
