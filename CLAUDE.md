@@ -1,2 +1,2 @@
 @AGENTS.md
-@~/.claude/global-claude.md
+@configs/global-claude.md

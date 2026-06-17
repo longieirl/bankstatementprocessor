@@ -134,7 +134,7 @@ make version-bump-major   # bump N.0.0
 
 ## AI Agent Behavior
 
-See [global-claude.md](https://github.com/longieirl/ai-tools/blob/main/configs/global-claude.md) for full behavioral guidelines (Think Before Coding, Surgical Changes, Goal-Driven Execution). Read that file before starting any task.
+See [configs/global-claude.md](configs/global-claude.md) for full behavioral guidelines (Think Before Coding, Surgical Changes, Goal-Driven Execution). Read that file before starting any task.
 
 ---
 
