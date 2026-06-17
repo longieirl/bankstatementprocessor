@@ -1,0 +1,13 @@
+{
+  "name": "bankstatements-skills",
+  "description": "Claude Code skills for processing PDF bank statements — extract transactions, generate CSV/Excel/JSON output",
+  "version": "1.0.0",
+  "author": {
+    "name": "longieirl",
+    "email": ""
+  },
+  "homepage": "https://github.com/longieirl/bankstatementprocessor",
+  "repository": "https://github.com/longieirl/bankstatementprocessor",
+  "license": "MIT",
+  "keywords": ["skills", "bank-statements", "pdf", "csv", "excel", "finance", "transactions"]
+}
