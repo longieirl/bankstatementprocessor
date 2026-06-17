@@ -165,14 +165,6 @@ make version-bump-major   # bump N.0.0
 
 ---
 
-## AI Agent Behavior
-
-See [.agent/global-claude.md](.agent/global-claude.md) for full behavioral guidelines (Think Before Coding, Surgical Changes, Goal-Driven Execution). Read that file before starting any task.
-
-@.agent/global-claude.md
-
----
-
 ## Git Conventions
 
 Commit format: `type: description`
