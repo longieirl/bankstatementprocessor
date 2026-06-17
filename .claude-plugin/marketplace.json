@@ -1,0 +1,20 @@
+{
+  "name": "bankstatements-skills",
+  "description": "Bank statement processing skills for Claude Code",
+  "owner": {
+    "name": "longieirl",
+    "email": ""
+  },
+  "plugins": [
+    {
+      "name": "bankstatements-skills",
+      "description": "Claude Code skills for processing PDF bank statements — extract transactions, generate CSV/Excel/JSON output",
+      "version": "1.0.0",
+      "source": "./",
+      "author": {
+        "name": "longieirl",
+        "email": ""
+      }
+    }
+  ]
+}

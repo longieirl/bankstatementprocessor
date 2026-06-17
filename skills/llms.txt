@@ -1,0 +1,7 @@
+# Bank Statement Processor — Skills Registry
+
+> Claude Code skills for processing PDF bank statements. Each skill guides an AI agent through install checking, input gathering, CLI invocation, and output review.
+
+## Skills
+
+- [process-bank-statements](process-bank-statements/SKILL.md): Extract transactions from PDF bank statements to CSV, Excel, or JSON using the `bankstatements` CLI
