@@ -43,8 +43,6 @@ concurrency:
 
 permissions:
   contents: read
-  security-events: write
-  actions: read
 
 # ---------------------------------------------------------------------------
 # Jobs
@@ -64,17 +62,20 @@ jobs:
       docker: ${{ steps.filter.outputs.docker }}
       workflows: ${{ steps.filter.outputs.workflows }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v4
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d  # v4
         id: filter
         with:
           filters: |
             core:
               - 'packages/parser-core/**'
+              - '.github/workflows/ci.yml'
             free:
               - 'packages/parser-free/**'
+              - '.github/workflows/ci.yml'
             any-src:
               - 'packages/**'
+              - '.github/workflows/ci.yml'
             docker:
               - 'Dockerfile'
               - 'entrypoint.sh'
@@ -93,9 +94,9 @@ jobs:
         working-directory: packages/parser-core
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
 
-    - uses: actions/setup-python@v6
+    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
       with:
         python-version: '3.12'
         cache: pip
@@ -147,9 +148,9 @@ jobs:
         working-directory: packages/parser-free
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
 
-    - uses: actions/setup-python@v6
+    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
       with:
         python-version: '3.12'
         cache: pip
@@ -184,9 +185,9 @@ jobs:
     if: needs.changes.outputs.any-src == 'true'
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
 
-    - uses: actions/setup-python@v6
+    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
       with:
         python-version: '3.12'
 
@@ -221,7 +222,7 @@ jobs:
           packages/parser-core/src
 
     - name: Upload security reports
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
       if: always()
       with:
         name: security-reports
@@ -238,7 +239,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
     - name: Fail if root tests/ or src/ exist
       run: |
         if [ -d "tests/" ] || [ -d "src/" ]; then
@@ -267,9 +268,9 @@ jobs:
         python-version: ${{ github.event_name == 'pull_request' && fromJSON('["3.12"]') || fromJSON('["3.11", "3.12", "3.13"]') }}
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
 
-    - uses: actions/setup-python@v6
+    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
       with:
         python-version: ${{ matrix.python-version }}
         cache: pip
@@ -295,7 +296,7 @@ jobs:
           --tb=short
 
     - name: Upload test results
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
       if: always()
       with:
         name: test-results-core-${{ matrix.python-version }}
@@ -305,7 +306,7 @@ jobs:
 
     - name: Upload coverage to Codecov
       if: matrix.python-version == '3.12'
-      uses: codecov/codecov-action@v7
+      uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f  # v7
       with:
         files: packages/parser-core/coverage.xml
         flags: parser-core
@@ -321,9 +322,9 @@ jobs:
         working-directory: packages/parser-free
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
 
-    - uses: actions/setup-python@v6
+    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
       with:
         python-version: '3.12'
         cache: pip
@@ -355,12 +356,12 @@ jobs:
     if: needs.changes.outputs.docker == 'true' && github.event_name == 'pull_request'
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
 
-      - uses: docker/setup-buildx-action@v4
+      - uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5  # v4
 
       - name: Build image (no push)
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf  # v7
         with:
           context: .
           target: production
@@ -414,10 +415,10 @@ jobs:
     if: needs.changes.outputs.workflows == 'true'
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
 
       - name: Run actionlint
-        uses: rhysd/actionlint@v1.7.12
+        uses: rhysd/actionlint@914e7df21a07ef503a81201c76d2b11c789d3fca  # v1.7.12
 
   # ---------------------------------------------------------------------------
   # Downstream dispatch — notify private repo when parser-core changes on main
@@ -442,11 +443,11 @@ jobs:
       github.ref == 'refs/heads/main' &&
       !contains(github.event.head_commit.message, '[skip downstream]')
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6
 
       - name: Check if parser-core changed
         id: changes
-        uses: dorny/paths-filter@v4
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d  # v4
         with:
           filters: |
             core:
@@ -454,7 +455,7 @@ jobs:
 
       - name: Trigger downstream CI in bankstatements
         if: steps.changes.outputs.core == 'true'
-        uses: peter-evans/repository-dispatch@v4
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697  # v4
         with:
           token: ${{ secrets.DOWNSTREAM_DISPATCH_TOKEN }}
           repository: longieirl/bankstatements
