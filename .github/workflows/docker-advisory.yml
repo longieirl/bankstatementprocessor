@@ -1,0 +1,51 @@
+name: Docker security advisory
+
+on:
+  pull_request:
+    paths:
+      - '**/Dockerfile*'
+      - '**/docker-compose*.yml'
+      - '**/docker-compose*.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  advisory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+
+      - name: Scan for risky Docker patterns
+        run: |
+          patterns=(
+            "privileged: true"
+            "network_mode: host"
+            "/var/run/docker.sock"
+            "cap_add"
+            "SYS_ADMIN"
+            "user: root"
+            "0\.0\.0\.0:"
+          )
+
+          {
+            echo "## Docker Security Advisory"
+            echo ""
+
+            found=0
+            for pattern in "${patterns[@]}"; do
+              matches=$(find . \( -name "Dockerfile*" -o -name "docker-compose*.yml" -o -name "docker-compose*.yaml" \) \
+                -exec grep -nH "$pattern" {} + 2>/dev/null || true)
+              if [ -n "$matches" ]; then
+                echo "**Pattern:** \`$pattern\`"
+                echo '```'
+                echo "$matches"
+                echo '```'
+                found=$((found + 1))
+              fi
+            done
+
+            if [ "$found" -eq 0 ]; then
+              echo "No risky patterns found."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
