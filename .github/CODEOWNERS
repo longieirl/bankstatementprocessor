@@ -18,22 +18,19 @@
 
 # Python dependencies and requirements
 /requirements/ @longieirl
-/requirements.txt @longieirl
 /pyproject.toml @longieirl
-/setup.py @longieirl
 
 # Development and CI configuration
 /.pre-commit-config.yaml @longieirl
-/.flake8 @longieirl
 /Makefile @longieirl
 /setup-git-hooks.sh @longieirl
 /.githooks/ @longieirl
 
 # Core application source code
+/packages/ @longieirl
 /src/ @longieirl
 
 # Test configuration and critical tests
-/tests/ @longieirl
 /pytest.ini @longieirl
 
 # Documentation that affects workflow or setup
