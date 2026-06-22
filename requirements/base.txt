@@ -1,7 +1,7 @@
 # requirements/base.txt
 # Core dependencies for FREE and PAID tiers
 
-pdfplumber>=0.11.9  # PDF parsing (updated 2026-03-02)
+pdfplumber>=0.11.10  # PDF parsing (updated 2026-03-02)
 pypdf>=6.11.0  # PDF utilities - security patches (updated 2026-03-02)
 pandas>=3.0.3  # Data processing
 python-dotenv>=1.2.2  # Environment configuration
