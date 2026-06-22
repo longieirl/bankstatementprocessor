@@ -17,7 +17,7 @@ jobs:
       version: ${{ steps.get-version.outputs.version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7.0.0
 
       - name: Get version from tag
         id: get-version
@@ -55,7 +55,7 @@ jobs:
     needs: validate-version
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7.0.0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -142,7 +142,7 @@ jobs:
     needs: [validate-version, build-and-push]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7.0.0
 
       - name: Extract changelog for version
         id: changelog
