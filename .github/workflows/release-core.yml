@@ -37,7 +37,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7.0.0
 
     - name: Extract and validate version
       id: version
@@ -77,7 +77,7 @@ jobs:
         working-directory: packages/parser-core
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v7.0.0
 
     - uses: actions/setup-python@v6
       with:
