@@ -8,6 +8,13 @@
 # Re-evaluate when a Debian patch is released.
 CVE-2026-33845
 
-# Last review: 2026-05-08
-# Next review: 2026-06-08
+# CVE-2026-42496: perl-base / perl-archive-tar — path traversal when extracting
+# tar archives. fix_deferred upstream; no Debian patch available as of 2026-07-30.
+# This application never extracts tar archives — perl is an indirect OS dependency
+# (poppler-utils) with no user-controlled archive extraction path.
+# Re-evaluate when a Debian patch is released.
+CVE-2026-42496
+
+# Last review: 2026-07-30
+# Next review: 2026-08-30
 
