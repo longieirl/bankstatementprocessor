@@ -169,6 +169,7 @@ select = [
 ignore = [
     "E501",    # line too long — handled by black
     "PLR2004", # magic value comparison — acceptable in tests and config
+    "PLR0917", # too many positional args — DI constructors legitimately exceed 5
 ]
 
 [tool.ruff.lint.per-file-ignores]

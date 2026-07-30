@@ -123,7 +123,7 @@ class ExpenseAnalysisService:
         except EntitlementError:
             # Re-raise tier restriction errors (fail fast)
             raise
-        except Exception as e:  # noqa: BLE001 — service-boundary catch
+        except Exception as e:
             # Unexpected errors: log warning and return empty insights
             logger.warning(
                 "Expense analysis failed: %s. Returning empty insights.",
