@@ -22,6 +22,14 @@ CVE-2026-42496
 # Re-evaluate if a newer python:3.12-slim base image ships >=78.1.1 natively.
 CVE-2025-47273
 
+# GHSA-6v7p-g79w-8964: msgpack — out-of-bounds read on Unpacker reuse after memoryview.
+# msgpack is an indirect transitive dependency; this application never directly imports
+# or calls msgpack's Unpacker class, so the vulnerable code path is unreachable.
+# Trivy detects 1.1.2 from a Docker build layer that persists despite runtime upgrades
+# due to BuildKit layer caching behaviour with cross-stage mounts.
+# Remove when the package that pulls msgpack updates to >=1.2.1.
+GHSA-6v7p-g79w-8964
+
 # Last review: 2026-08-31
 # Next review: 2026-09-30
 
