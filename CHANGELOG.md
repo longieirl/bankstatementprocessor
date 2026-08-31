@@ -12,8 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.7] — 2026-08-31
 
 ### Security
-- **GHSA-6v7p-g79w-8964** — `msgpack 1.1.2` (out-of-bounds read on Unpacker reuse). Upgraded to `>=1.2.1` via explicit pip constraint in production Docker stage.
-- **CVE-2025-47273** — `setuptools 70.3.0` (path traversal in `PackageIndex`). Upgraded to `>=78.1.1` via explicit pip upgrade in production Docker stage. `PackageIndex` is not used at runtime; this is a build-tool residual from the base Python image.
+- **GHSA-6v7p-g79w-8964** — `msgpack 1.1.2` (out-of-bounds read on Unpacker reuse). Upgraded to `>=1.2.1` in the builder stage so the purelib copy never introduces the vulnerable version into the production image layer.
+- **CVE-2025-47273** — `setuptools 70.3.0` (path traversal in `PackageIndex`). The vulnerable version is in the `python:3.12-slim` base image layer; production runtime upgrades to `>=78.1.1`. Added to `.trivyignore`: `PackageIndex` is not used at runtime and the base layer cannot be eliminated without a new base image. Re-evaluate when `python:3.12-slim` ships `>=78.1.1` natively.
 
 ---
 

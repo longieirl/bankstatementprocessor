@@ -11,12 +11,19 @@ jobs:
   auto-merge:
     if: github.actor == 'dependabot[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Fetch Dependabot metadata
         id: metadata
         uses: dependabot/fetch-metadata@d7267f607e9d3fb96fc2fbe83e0af444713e90b7  # v2.3.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait for required checks to pass
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr checks "$PR_URL" --required --watch --interval 30
 
       - name: Approve patch-level PRs
         if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
