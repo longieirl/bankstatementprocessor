@@ -15,6 +15,13 @@ CVE-2026-33845
 # Re-evaluate when a Debian patch is released.
 CVE-2026-42496
 
-# Last review: 2026-07-30
-# Next review: 2026-08-30
+# CVE-2025-47273: setuptools — path traversal in PackageIndex.
+# setuptools 70.3.0 is in the python:3.12-slim base image layer; Trivy detects it
+# from that layer even though the production stage upgrades to >=78.1.1 at runtime.
+# PackageIndex is not used by this application — no package installation at runtime.
+# Re-evaluate if a newer python:3.12-slim base image ships >=78.1.1 natively.
+CVE-2025-47273
+
+# Last review: 2026-08-31
+# Next review: 2026-09-30
 
