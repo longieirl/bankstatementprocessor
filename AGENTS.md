@@ -41,7 +41,7 @@ This is the **free-tier** open-source repo. The private `bankstatements-premium`
 - **Production image:** `ghcr.io/longieirl/bankstatements-premium:latest` (private repo only)
 - Legitimate references to `ghcr.io/longieirl/bankstatements` belong only in `.env.remote`, `Makefile docker-push`, and `.github/workflows/`.
 
-Current version: **0.1.6**
+Current version: **0.1.7**
 
 ---
 

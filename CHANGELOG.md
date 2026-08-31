@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.7] — 2026-08-31
+
+### Security
+- **GHSA-6v7p-g79w-8964** — `msgpack 1.1.2` (out-of-bounds read on Unpacker reuse). Upgraded to `>=1.2.1` via explicit pip constraint in production Docker stage.
+- **CVE-2025-47273** — `setuptools 70.3.0` (path traversal in `PackageIndex`). Upgraded to `>=78.1.1` via explicit pip upgrade in production Docker stage. `PackageIndex` is not used at runtime; this is a build-tool residual from the base Python image.
+
+---
+
 ## [0.1.6] — 2026-05-08
 
 ### Security
