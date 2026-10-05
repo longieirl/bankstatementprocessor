@@ -10,7 +10,7 @@ isort>=9.0.2,<10.0.0
 
 # Linting and Type Checking
 ruff>=0.16.5,<1.0.0
-mypy>=2.3.0,<3.0.0
+mypy>=2.4.0,<3.0.0
 pyright>=1.1.411
 
 # Type stubs (compatible versions)
