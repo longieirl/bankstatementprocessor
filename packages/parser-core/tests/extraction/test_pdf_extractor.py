@@ -174,8 +174,8 @@ class TestPDFTableExtractor:
 
         mock_cropped = MagicMock()
         mock_page.crop.return_value = mock_cropped
-
-        # Mock words that form a transaction
+        mock_page.extract_text.return_value = "IE40AIBK93002712345678"
+        mock_cropped.extract_text.return_value = "IE40AIBK93002712345678"
         mock_words = [
             {"text": "01", "x0": 30, "top": 350},
             {"text": "Jan", "x0": 35, "top": 350},
@@ -283,6 +283,7 @@ class TestPDFTableExtractor:
             {"text": "50.00", "x0": 210, "top": 350},
         ]
         mock_cropped1.extract_words.return_value = mock_words1
+        mock_cropped1.extract_text.return_value = "IE40AIBK93002712345678"
 
         mock_cropped2 = MagicMock()
         mock_page2.crop.return_value = mock_cropped2
@@ -319,6 +320,7 @@ class TestPDFTableExtractor:
         mock_cropped.width = 595
         mock_cropped.height = 842
         mock_page.crop.return_value = mock_cropped
+        mock_cropped.extract_text.return_value = "IE40AIBK93002712345678"
 
         # First row has date, second doesn't
         # Date column: [0, 50], Details: [50, 200], Debit: [200, 250], Credit: [250, 300], Balance: [300, 350]
@@ -443,6 +445,7 @@ class TestPDFTableExtractor:
             {"text": "25.00", "x0": 260, "top": 150},
         ]
         mock_cropped1.extract_words.return_value = mock_words1
+        mock_cropped1.extract_text.return_value = "IE40AIBK93002712345678"
         mock_cropped2.extract_words.return_value = mock_words2
 
         # Create extractor with extraction_config
@@ -486,6 +489,7 @@ class TestPDFTableExtractor:
 
         mock_cropped = MagicMock()
         mock_page.crop.return_value = mock_cropped
+        mock_cropped.extract_text.return_value = "IE40AIBK93002712345678"
 
         mock_words = [
             {"text": "01", "x0": 30, "top": 350},
@@ -544,9 +548,9 @@ class TestPDFTableExtractor:
 
         mock_cropped = MagicMock()
         mock_page.crop.return_value = mock_cropped
+        mock_cropped.extract_text.return_value = "IE40AIBK93002712345678"
 
         mock_words = [
-            {"text": "Date", "x0": 30, "top": 460},  # Header
             {"text": "Details", "x0": 60, "top": 460},
             {"text": "01", "x0": 30, "top": 500},  # Transaction
             {"text": "Jan", "x0": 35, "top": 500},
@@ -587,22 +591,14 @@ class TestPDFTableExtractorCardNumber:
 
         mock_page.width = 600
 
-        # Cropped header returns text with masked card number
-        mock_header_cropped = MagicMock()
-        mock_header_cropped.extract_text.return_value = (
+        # page.extract_text() returns text with masked card number
+        mock_page.extract_text.return_value = (
             "Account Statement\n**** **** **** 1234\nSome other text"
         )
         # Table crop returns empty (no transactions)
         mock_table_cropped = MagicMock()
         mock_table_cropped.extract_words.return_value = []
-
-        def crop_side_effect(bbox):
-            # header crop (0, 0, width, 400)
-            if bbox[1] == 0 and bbox[3] == 400:
-                return mock_header_cropped
-            return mock_table_cropped
-
-        mock_page.crop.side_effect = crop_side_effect
+        mock_page.crop.return_value = mock_table_cropped
 
         # Template with card_number_patterns
         mock_template = MagicMock()
@@ -666,20 +662,11 @@ class TestPDFTableExtractorCardNumber:
 
         mock_page.width = 600
 
-        # Header returns text WITHOUT matching card number
-        mock_header_cropped = MagicMock()
-        mock_header_cropped.extract_text.return_value = (
-            "Account Statement\nNo card number here"
-        )
+        # page.extract_text() returns text WITHOUT matching card number
+        mock_page.extract_text.return_value = "Account Statement\nNo card number here"
         mock_table_cropped = MagicMock()
         mock_table_cropped.extract_words.return_value = []
-
-        def crop_side_effect(bbox):
-            if bbox[1] == 0 and bbox[3] == 400:
-                return mock_header_cropped
-            return mock_table_cropped
-
-        mock_page.crop.side_effect = crop_side_effect
+        mock_page.crop.return_value = mock_table_cropped
 
         mock_template = MagicMock()
         mock_template.detection.get_card_number_patterns.return_value = [
@@ -703,30 +690,19 @@ class TestPDFTableExtractorCardNumber:
         assert result.card_number == "unknown"
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
-    def test_extract_card_number_crop_raises_falls_back_to_extract_text(
+    def test_extract_card_number_from_page_text(
         self, mock_pdfplumber
     ):
-        """page.crop() raising AttributeError causes fallback to page.extract_text()."""
+        """page.extract_text() used directly for card number extraction."""
         mock_pdf = MagicMock()
         mock_page = MagicMock()
         mock_pdf.pages = [mock_page]
         mock_pdfplumber.return_value = mock_pdf
         mock_page.width = 600
 
-        # First call to crop (header crop in _extract_card_number) raises AttributeError;
-        # subsequent calls (table crop in _determine_boundaries_and_extract) succeed.
         mock_table_cropped = MagicMock()
         mock_table_cropped.extract_words.return_value = []
-
-        crop_call_count = {"n": 0}
-
-        def crop_side_effect(bbox):
-            crop_call_count["n"] += 1
-            if crop_call_count["n"] == 1:
-                raise AttributeError("crop failed")
-            return mock_table_cropped
-
-        mock_page.crop.side_effect = crop_side_effect
+        mock_page.crop.return_value = mock_table_cropped
         mock_page.extract_text.return_value = "**** **** **** 9876"
 
         mock_template = MagicMock()
@@ -757,19 +733,11 @@ class TestPDFTableExtractorCardNumber:
         mock_pdfplumber.return_value = mock_pdf
         mock_page.width = 600
 
-        mock_header_cropped = MagicMock()
-        mock_header_cropped.extract_text.return_value = (
-            "Account Statement **** **** **** 1234"
-        )
+        # page.extract_text() returns text — invalid regex skipped, generic fallback won't match
+        mock_page.extract_text.return_value = "Account Statement **** **** **** 1234"
         mock_table_cropped = MagicMock()
         mock_table_cropped.extract_words.return_value = []
-
-        def crop_side_effect(bbox):
-            if bbox[1] == 0 and bbox[3] == 400:
-                return mock_header_cropped
-            return mock_table_cropped
-
-        mock_page.crop.side_effect = crop_side_effect
+        mock_page.crop.return_value = mock_table_cropped
 
         mock_template = MagicMock()
         # Provide ONLY an invalid regex (unmatched bracket) — no valid patterns

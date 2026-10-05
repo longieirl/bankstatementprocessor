@@ -113,6 +113,18 @@ class PDFTableExtractor:
                         iban[-4:],
                     )
 
+                if iban is None and card_number is None:
+                    logger.warning(
+                        "No IBAN or card number found in '%s'. Skipping remaining pages.",
+                        pdf_path.name,
+                    )
+                    return ExtractionResult(
+                        transactions=[],
+                        page_count=len(pdf.pages),
+                        iban=None,
+                        source_file=pdf_path,
+                    )
+
             # Build page processor now that document-level metadata is known
             filename_date = extract_filename_date(pdf_path.name)
             page_processor = StatefulPageRowProcessor(
@@ -163,13 +175,10 @@ class PDFTableExtractor:
         if self.template is None:
             return None
         patterns = self.template.detection.get_card_number_patterns()
-        if not patterns:
-            return None
-        header_bbox = (0, 0, page.width, 400)
         try:
-            text = page.crop(header_bbox).extract_text()
+            text = page.extract_text() or ""
         except (AttributeError, ValueError, TypeError):
-            text = page.extract_text()
+            text = ""
         if not text:
             return None
         for pattern in patterns:
@@ -179,6 +188,10 @@ class PDFTableExtractor:
                     return str(match.group(0))
             except re.error:
                 logger.warning("Invalid card_number_pattern: %s", pattern)
+        # Generic fallback: masked card number e.g. "4402 60** **** 9459"
+        fallback = re.search(r"\d{4}\s+\d{2}\*+\s+\*+\s+(\d{4})", text)
+        if fallback:
+            return str(fallback.group(0))
         return None
 
     def _extract_page(self, page: Any, page_num: int) -> list[dict] | None:
