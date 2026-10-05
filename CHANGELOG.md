@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed entitlements/tier system — all output formats, CC processing, recursive scanning, monthly summaries, and expense analysis are now unconditionally available
 - Credit card PDF processing enabled in open-source repo (previously PAID tier only)
 - `entitlements.py` deleted
+- `cc.json` written to output directory alongside `ibans.json` whenever credit card PDFs are processed; contains masked card number and last-4 suffix per file
+- `PDFTableExtractor.extract()` now early-exits with empty `ExtractionResult` when page 1 yields neither an IBAN nor a card number; the PDF is recorded in `excluded_files.json`
+- AIB CC template extraction boundaries tightened: `table_top_y` 300 → 205, `header_check_top_y` 250 → 175
+- Processor log messages now distinguish IBAN groups (`"IBAN suffix: …"`) from CC groups (`"Credit Card suffix: …"`)
 
 ---
 
