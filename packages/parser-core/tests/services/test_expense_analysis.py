@@ -882,4 +882,55 @@ class TestExpenseAnalysisService:
         result = service._empty_insights()
 
         assert "repeated_vendors" in result["insights"]
+
+    def test_analyze_returns_empty_insights_on_unexpected_error(self):
+        """Test except Exception handler returns empty insights with error key."""
+        from unittest.mock import patch
+
+        service = ExpenseAnalysisService()
+        transactions = [
+            {
+                "Date": "01 Jan 2023",
+                "Details": "Test",
+                "Debit €": "10.00",
+                "Credit €": "",
+                "Balance €": "100.00",
+                "Filename": "test.pdf",
+            }
+        ]
+        with patch.object(
+            service, "_detect_recurring_charges", side_effect=RuntimeError("boom")
+        ):
+            result = service.analyze(transactions)
+
+        assert result["total_transactions_analyzed"] == 0
+        assert result["insights"]["recurring_charges"] == []
+        assert result["error"] == "boom"
+
+    def test_analyze_skips_transactions_with_empty_description(self):
+        """Test _group_similar_descriptions skips empty-details transactions."""
+        service = ExpenseAnalysisService()
+        transactions = [
+            {
+                "Date": "01 Jan 2023",
+                "Details": "",
+                "Debit €": "10.00",
+                "Credit €": "",
+                "Balance €": "100.00",
+                "Filename": "test.pdf",
+            },
+            {
+                "Date": "15 Jan 2023",
+                "Details": "",
+                "Debit €": "20.00",
+                "Credit €": "",
+                "Balance €": "80.00",
+                "Filename": "test.pdf",
+            },
+        ]
+        result = service.analyze(transactions)
+
+        assert result["total_transactions_analyzed"] == 2
+        assert result["insights"]["recurring_charges"] == []
+        assert result["insights"]["repeated_vendors"] == []
         assert result["insights"]["repeated_vendors"] == []
