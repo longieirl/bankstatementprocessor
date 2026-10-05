@@ -408,7 +408,7 @@ class BankStatementProcessor:
 
         # Step 3b: Process each card group (CC)
         for card_suffix, card_txns in txns_by_card.items():
-            result = self._process_transaction_group(card_suffix, card_txns)
+            result = self._process_transaction_group(card_suffix, card_txns, "Credit Card")
 
             logger.debug(
                 "Card %s: Adding %s unique, %s duplicates to totals",
@@ -525,20 +525,25 @@ class BankStatementProcessor:
         self.repository.save_json_file(excluded_path, excluded_log)
 
     def _process_transaction_group(
-        self, iban_suffix: str | None, iban_txns: list[Transaction]
+        self,
+        iban_suffix: str | None,
+        iban_txns: list[Transaction],
+        group_label: str = "IBAN",
     ) -> dict:
-        """Process a group of transactions for a single IBAN.
+        """Process a group of transactions for a single IBAN or card suffix.
 
         Args:
-            iban_suffix: IBAN suffix for this group (or "unknown")
+            iban_suffix: IBAN or card suffix for this group (or "unknown")
             iban_txns: List of Transaction objects
+            group_label: Label used in log messages ("IBAN" or "Credit Card")
 
         Returns:
             Dictionary with unique_count, duplicate_count, and output_paths
         """
         logger.info(
-            "Processing %s transactions for IBAN suffix: %s",
+            "Processing %s transactions for %s suffix: %s",
             len(iban_txns),
+            group_label,
             iban_suffix,
         )
 
@@ -563,7 +568,8 @@ class BankStatementProcessor:
         duplicate_txns = self._filter_service.filter_header_rows(duplicate_txns)
 
         logger.info(
-            "IBAN %s: %s unique transactions, %s duplicates",
+            "%s %s: %s unique transactions, %s duplicates",
+            group_label,
             iban_suffix,
             len(unique_txns),
             len(duplicate_txns),
