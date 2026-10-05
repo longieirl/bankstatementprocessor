@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking changes
+- `BankStatementProcessor.__init__()` no longer accepts `entitlements` parameter — `TypeError` on next install for any caller passing it
+- `ServiceRegistry.from_config()` no longer accepts `entitlements` parameter
+- `ProcessorFactory` functions no longer accept `entitlements` parameter
+- `EntitlementError` removed from `exceptions` module
+- `create_output_strategy()` no longer accepts `entitlements` parameter
+
+### Changes
+- Removed entitlements/tier system — all output formats, CC processing, recursive scanning, monthly summaries, and expense analysis are now unconditionally available
+- Credit card PDF processing enabled in open-source repo (previously PAID tier only)
+- `entitlements.py` deleted
+- `cc.json` written to output directory alongside `ibans.json` whenever credit card PDFs are processed; follows the same masking and SHA-256 digest pattern as `ibans.json` (`card_masked`, `card_digest`)
+- `PDFTableExtractor.extract()` now early-exits with empty `ExtractionResult` when page 1 yields neither an IBAN nor a card number; the PDF is recorded in `excluded_files.json`
+- AIB CC template extraction boundaries tightened: `table_top_y` 300 → 205, `header_check_top_y` 250 → 175
+- Processor log messages now distinguish IBAN groups (`"IBAN suffix: …"`) from CC groups (`"Credit Card suffix: …"`)
+
 ---
 
 ## [0.1.7] — 2026-08-31

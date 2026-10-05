@@ -11,7 +11,6 @@ from bankstatements_core.config.app_config import AppConfig, ConfigurationError
 from bankstatements_core.config.column_config import (  # noqa: F401 — re-exported for backward compat
     get_columns_config,
 )
-from bankstatements_core.entitlements import Entitlements
 
 logger = logging.getLogger(__name__)
 
@@ -20,14 +19,8 @@ __all__ = [
     "ConfigurationError",
     "log_summary",
     "main",
-    "resolve_entitlements",
     "setup_logging",
 ]
-
-
-def resolve_entitlements() -> Entitlements:
-    """Return FREE tier entitlements (no license required)."""
-    return Entitlements.free_tier()
 
 
 def setup_logging() -> None:
@@ -135,8 +128,7 @@ def main(argv: list[str] | None = None) -> int:
     setup_logging()
 
     try:
-        entitlements = resolve_entitlements()
-        facade = BankStatementProcessingFacade.from_environment(entitlements)
+        facade = BankStatementProcessingFacade.from_environment()
         return facade.process_with_error_handling()
     except ConfigurationError as e:
         logger.error("Configuration error: %s", e)

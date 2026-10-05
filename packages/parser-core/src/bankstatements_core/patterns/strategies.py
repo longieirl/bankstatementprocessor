@@ -20,7 +20,6 @@ from bankstatements_core.utils import to_float
 
 if TYPE_CHECKING:
     from bankstatements_core.domain.models.transaction import Transaction
-    from bankstatements_core.entitlements import Entitlements
 
 logger = logging.getLogger(__name__)
 
@@ -473,51 +472,22 @@ class ExcelOutputStrategy(OutputFormatStrategy):
                     cell.number_format = numbers.FORMAT_NUMBER_COMMA_SEPARATED1
 
 
-def create_output_strategy(
-    format_name: str, entitlements: Entitlements
-) -> OutputFormatStrategy:
+def create_output_strategy(format_name: str) -> OutputFormatStrategy:
     """
-    Create output strategy with entitlement enforcement.
-
-    This factory function enforces tier-based access control for output formats.
-    FREE tier users can only output CSV, while PAID tier users can output
-    CSV, JSON, and Excel formats.
+    Create output strategy for the given format.
 
     Args:
         format_name: Output format ("csv", "json", or "excel"/"xlsx")
-        entitlements: Entitlements to enforce
 
     Returns:
         Appropriate OutputFormatStrategy instance
 
     Raises:
-        EntitlementError: If format is not allowed for the tier
         ValueError: If format_name is not recognized
-
-    Examples:
-        >>> from bankstatements_core.entitlements import Entitlements
-        >>> # FREE tier - only CSV allowed
-        >>> ent = Entitlements.free_tier()
-        >>> strategy = create_output_strategy("csv", ent)  # OK
-        >>> strategy = create_output_strategy("json", ent)  # Raises EntitlementError
-        >>> # PAID tier - all formats allowed
-        >>> ent = Entitlements.paid_tier()
-        >>> strategy = create_output_strategy("json", ent)  # OK
     """
 
     # Normalize format name
     format_lower = format_name.lower()
-
-    # Normalize "excel" to "xlsx" for entitlement checking
-    # (the strategy factory accepts both, but entitlements use "xlsx")
-    entitlement_format = "xlsx" if format_lower == "excel" else format_lower
-
-    # Enforce entitlements BEFORE creating strategy
-    entitlements.check_output_format(entitlement_format)
-
-    logger.info(
-        "Creating %s output strategy (%s tier)", format_lower.upper(), entitlements.tier
-    )
 
     # Map format names to strategy classes
     # Note: both "excel" and "xlsx" map to ExcelOutputStrategy

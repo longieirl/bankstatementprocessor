@@ -194,13 +194,14 @@ EOF
 
 ## Key Architecture Notes
 
-- `ExtractionResult.card_number: str | None` — `None` = bank statement, string = credit card (last-4 suffix)
+- `ExtractionResult.card_number: str | None` — `None` = bank statement, string = credit card (matched card number or last-4 suffix)
 - `BankTemplate.column_aliases` — renames template keys to canonical column names; `RowPostProcessor._apply_column_aliases()` is the sole owner
 - `CCGroupingService` in `services/card_grouping.py` — groups CC results by last-4 card suffix
 - `processor.run()` splits on `card_number is None`: bank → `group_by_iban`, CC → `group_by_card`
-- `PDFProcessingOrchestrator.process_all_pdfs()` returns `tuple[list[ExtractionResult], int, int]` → `(results, pdf_count, pages_read)`
-- `ServiceRegistry.from_config(ProcessorConfig, Entitlements)` is the primary factory
-- Credit card support is **paid tier only** via `require_iban=False` in `Entitlements.paid_tier()`
+- `PDFProcessingOrchestrator.process_all_pdfs()` returns `tuple[list[ExtractionResult], int, int]` → `(results, pdf_count, pages_read)`; also writes `ibans.json` (bank statements) and `cc.json` (credit cards) to the output directory
+- `PDFTableExtractor.extract()` early-exits with empty `ExtractionResult` when page 1 yields neither an IBAN nor a card number — the PDF is added to `excluded_files.json`
+- `ServiceRegistry.from_config(ProcessorConfig)` is the primary factory
+- Credit card processing is unconditionally available (no tier gating)
 - Service layer uses `list[Transaction]` throughout — no dict round-trips internally; conversion at output boundary via `transactions_to_dicts()`
 - Architecture test (`test_architecture.py`) enforces module placement and bans circular imports
 

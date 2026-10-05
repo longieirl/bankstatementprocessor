@@ -8,7 +8,7 @@ improve separation of concerns.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from bankstatements_core.config.column_config import DEFAULT_COLUMNS
 from bankstatements_core.domain import ExtractionResult
@@ -77,7 +77,6 @@ def extract_tables_from_pdf(  # noqa: PLR0913
     enable_page_validation: bool | None = None,
     enable_header_check: bool | None = None,
     template: BankTemplate | None = None,
-    entitlements: Any | None = None,
 ) -> ExtractionResult:
     """
     Extract table data from PDF within specified bounds (facade function).
@@ -135,7 +134,6 @@ def extract_tables_from_pdf(  # noqa: PLR0913
             header_check_top_y=header_check_top_y,
             extraction_config=template.extraction if template is not None else None,
             template=template,
-            entitlements=entitlements,
         ),
     )
 

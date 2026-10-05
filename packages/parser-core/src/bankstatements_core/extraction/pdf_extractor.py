@@ -16,10 +16,6 @@ if TYPE_CHECKING:
 
 from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.domain.converters import dicts_to_transactions
-from bankstatements_core.domain.models.extraction_warning import (
-    CODE_CREDIT_CARD_SKIPPED,
-    ExtractionWarning,
-)
 from bankstatements_core.extraction.extraction_params import PDFExtractorOptions
 from bankstatements_core.extraction.iban_extractor import IBANExtractor
 from bankstatements_core.extraction.page_header_analyser import PageHeaderAnalyser
@@ -60,7 +56,6 @@ class PDFTableExtractor:
         self.header_check_top_y = opts.header_check_top_y
         self.extraction_config = opts.extraction_config
         self.template = opts.template
-        self._entitlements = opts.entitlements
 
         self._row_classifier = create_row_classifier_chain()
         self._row_builder = RowBuilder(columns, self._row_classifier)
@@ -98,25 +93,7 @@ class PDFTableExtractor:
                 if self._header_analyser.is_credit_card_statement(
                     page1, self.table_top_y
                 ):
-                    if self._entitlements is None or self._entitlements.require_iban:
-                        logger.warning(
-                            "Credit card statement detected in %s. Credit card statements are not currently supported. Skipping file.",
-                            pdf_path.name,
-                        )
-                        return ExtractionResult(
-                            transactions=[],
-                            page_count=len(pdf.pages),
-                            iban=None,
-                            source_file=pdf_path,
-                            warnings=[
-                                ExtractionWarning(
-                                    code=CODE_CREDIT_CARD_SKIPPED,
-                                    message="credit card statement detected, skipped",
-                                )
-                            ],
-                        )
-
-                    # Paid tier CC: extract card number and statement year up front
+                    # Extract card number and statement year up front
                     extracted = self._extract_card_number(page1)
                     card_number = extracted if extracted is not None else "unknown"
 
@@ -134,6 +111,18 @@ class PDFTableExtractor:
                         "IBAN found on page 1: %s****%s",
                         iban[:4],
                         iban[-4:],
+                    )
+
+                if iban is None and card_number is None:
+                    logger.warning(
+                        "No IBAN or card number found in '%s'. Skipping remaining pages.",
+                        pdf_path.name,
+                    )
+                    return ExtractionResult(
+                        transactions=[],
+                        page_count=len(pdf.pages),
+                        iban=None,
+                        source_file=pdf_path,
                     )
 
             # Build page processor now that document-level metadata is known
@@ -186,13 +175,10 @@ class PDFTableExtractor:
         if self.template is None:
             return None
         patterns = self.template.detection.get_card_number_patterns()
-        if not patterns:
-            return None
-        header_bbox = (0, 0, page.width, 400)
         try:
-            text = page.crop(header_bbox).extract_text()
+            text = page.extract_text() or ""
         except (AttributeError, ValueError, TypeError):
-            text = page.extract_text()
+            text = ""
         if not text:
             return None
         for pattern in patterns:
@@ -202,6 +188,10 @@ class PDFTableExtractor:
                     return str(match.group(0))
             except re.error:
                 logger.warning("Invalid card_number_pattern: %s", pattern)
+        # Generic fallback: masked card number e.g. "4402 60** **** 9459"
+        fallback = re.search(r"\d{4}\s+\d{2}\*+\s+\*+\s+(\d{4})", text)
+        if fallback:
+            return str(fallback.group(0))
         return None
 
     def _extract_page(self, page: Any, page_num: int) -> list[dict] | None:

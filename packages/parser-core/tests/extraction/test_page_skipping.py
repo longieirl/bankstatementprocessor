@@ -44,6 +44,7 @@ class TestPageSkipping:
         mock_page1.height = 800
         mock_cropped1 = MagicMock()
         mock_page1.crop.return_value = mock_cropped1
+        mock_cropped1.extract_text.return_value = "IE29AIBK93115212345678"
         mock_words1 = [
             {"text": "Random", "x0": 60, "top": 350},
             {"text": "Text", "x0": 80, "top": 350},
@@ -172,6 +173,10 @@ class TestPageSkipping:
             ]
             mock_cropped.extract_words.return_value = mock_words
 
+        mock_page1.crop.return_value.extract_text.return_value = (
+            "IE29AIBK93115212345678"
+        )
+
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
             options=PDFExtractorOptions(enable_dynamic_boundary=True),
@@ -197,6 +202,7 @@ class TestPageSkipping:
         mock_page1.height = 800
         mock_cropped1 = MagicMock()
         mock_page1.crop.return_value = mock_cropped1
+        mock_cropped1.extract_text.return_value = "IE29AIBK93115212345678"
         mock_words1 = [
             {"text": "Date", "x0": 30, "top": 320},
             {"text": "Details", "x0": 60, "top": 320},

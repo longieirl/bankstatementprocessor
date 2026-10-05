@@ -443,3 +443,49 @@ class TestRowMergerServiceIntegration:
         assert result[0]["Transaction Date"] == "4 Feb"
         assert result[0]["Amount"] == "59.99"
         assert "PAYPAL *STRAVA INC" in result[0]["Transaction Details"]
+
+    def test_orphaned_continuation_at_start_is_dropped(self, service, columns):
+        """Test orphaned continuation with no prior transaction is dropped."""
+        rows = [
+            {
+                "Date": "",
+                "Details": "Ref: 123456",
+                "Debit €": "",
+                "Credit €": "",
+                "Balance €": "",
+            }
+        ]
+        result = service.merge_continuation_lines(rows, columns)
+        assert len(result) == 0
+
+    def test_orphaned_continuation_carries_forward_date(self, service, columns):
+        """Test _handle_orphaned_continuation carries date from last transaction row."""
+        rows = [
+            {
+                "Date": "01 Jan 2024",
+                "Details": "Purchase",
+                "Debit €": "50.00",
+                "Credit €": "",
+                "Balance €": "450.00",
+            },
+            {
+                "Date": "",
+                "Details": "Statement info",
+                "Debit €": "",
+                "Credit €": "",
+                "Balance €": "",
+            },
+            {
+                "Date": "",
+                "Details": "Ref: 123456",
+                "Debit €": "",
+                "Credit €": "",
+                "Balance €": "",
+            },
+        ]
+        result = service.merge_continuation_lines(rows, columns)
+        # Row 0 (transaction) + row 1 (metadata) kept; row 2 (orphaned continuation)
+        # passes through _handle_orphaned_continuation with date carried forward,
+        # then stays continuation and is dropped with a warning
+        assert len(result) == 2
+        assert result[0]["Details"] == "Purchase"

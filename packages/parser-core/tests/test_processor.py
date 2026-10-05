@@ -17,7 +17,6 @@ from bankstatements_core.config.processor_config import (
 from bankstatements_core.config.totals_config import parse_totals_columns
 from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.domain.converters import dicts_to_transactions
-from bankstatements_core.entitlements import Entitlements
 from bankstatements_core.processor import (
     BankStatementProcessor,
     calculate_column_totals,
@@ -1071,15 +1070,10 @@ class TestCCGroupingInProcessor(unittest.TestCase):
         return rows[0]
 
     def _make_processor_with_mock_registry(self):
-        """Create processor and return (processor, mock_registry).
-
-        Defaults to paid-tier entitlements so CC grouping is enabled.
-        Override processor.entitlements after calling for free-tier tests.
-        """
+        """Create processor and return (processor, mock_registry)."""
         from unittest.mock import MagicMock
 
         processor = create_test_processor(self.input_dir, self.output_dir)
-        processor.entitlements = Entitlements.paid_tier()
 
         mock_registry = MagicMock()
         # Default: group_by_iban returns empty dict, group_by_card returns empty dict
@@ -1291,31 +1285,6 @@ class TestCCGroupingInProcessor(unittest.TestCase):
             f"_process_transaction_group must be called with CC card suffix, got: {called_suffixes}",
         )
 
-    def test_free_tier_does_not_group_cc_transactions(self):
-        """Free tier: group_by_card is never called even when CC results present."""
-        cc_tx = self._make_transaction(details="CC Purchase")
-        cc_pdf = self.input_dir / "cc.pdf"
-        cc_pdf.touch()
-
-        processor, mock_registry = self._make_processor_with_mock_registry()
-        processor.entitlements = Entitlements.free_tier()
-
-        cc_result = ExtractionResult(
-            transactions=[cc_tx],
-            page_count=1,
-            iban=None,
-            source_file=cc_pdf,
-            card_number="**** 1234",
-        )
-
-        with patch(
-            "bankstatements_core.services.pdf_processing_orchestrator.PDFProcessingOrchestrator.process_all_pdfs"
-        ) as mock_process:
-            mock_process.return_value = ([cc_result], 1, 1)
-            processor.run()
-
-        mock_registry.group_by_card.assert_not_called()
-
     def test_unknown_iban_group_excluded_and_not_written(self):
         """Transactions grouped under 'unknown' IBAN must not produce output files."""
         import json
@@ -1398,6 +1367,40 @@ class TestCCGroupingInProcessor(unittest.TestCase):
         self.assertIn("already_excluded.pdf", filenames)
         self.assertIn("no_iban2.pdf", filenames)
         self.assertEqual(data["summary"]["total_excluded"], 2)
+
+
+class TestBuildGroupingInputsFilenameBackfill(unittest.TestCase):
+    """Tests for _build_grouping_inputs filename backfill for CC transactions."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.input_dir = Path(self.temp_dir.name) / "input"
+        self.output_dir = Path(self.temp_dir.name) / "output"
+        self.input_dir.mkdir(exist_ok=True)
+        self.output_dir.mkdir(exist_ok=True)
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_cc_transaction_filename_backfilled_from_source_file(self):
+        """Transaction with empty filename gets source_file.name during CC grouping."""
+        txn = dicts_to_transactions(
+            [{"Date": "01 Jan 2024", "Details": "Purchase", "Filename": ""}]
+        )[0]
+        txn.filename = ""
+
+        result = ExtractionResult(
+            transactions=[txn],
+            page_count=1,
+            iban=None,
+            source_file=Path("/tmp/cc.pdf"),
+            card_number="9459",
+        )
+
+        processor = create_test_processor(self.input_dir, self.output_dir)
+        processor._build_grouping_inputs([result])
+
+        self.assertEqual(txn.filename, "cc.pdf")
 
 
 if __name__ == "__main__":

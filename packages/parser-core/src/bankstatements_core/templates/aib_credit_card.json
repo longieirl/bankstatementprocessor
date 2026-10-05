@@ -17,10 +17,10 @@
     ]
   },
   "extraction": {
-    "table_top_y": 300,
+    "table_top_y": 205,
     "table_bottom_y": 720,
     "enable_header_check": true,
-    "header_check_top_y": 250,
+    "header_check_top_y": 175,
     "columns": {
       "Transaction Date": [29, 80],
       "Posting Date": [80, 118],

@@ -36,6 +36,7 @@ class TestPdfTableExtractor(unittest.TestCase):
         # Mock cropped area
         mock_cropped = MagicMock()
         mock_page.crop.return_value = mock_cropped
+        mock_cropped.extract_text.return_value = "IE29AIBK93115212345678"
 
         # Mock extracted words - simulating bank statement structure
         mock_words = [
@@ -103,6 +104,7 @@ class TestPdfTableExtractor(unittest.TestCase):
 
         mock_cropped = MagicMock()
         mock_page.crop.return_value = mock_cropped
+        mock_cropped.extract_text.return_value = "IE29AIBK93115212345678"
 
         # Simple mock words for one transaction
         mock_words = [
@@ -137,6 +139,7 @@ class TestPdfTableExtractor(unittest.TestCase):
 
         mock_cropped = MagicMock()
         mock_page.crop.return_value = mock_cropped
+        mock_cropped.extract_text.return_value = "IE29AIBK93115212345678"
 
         # Mock words that would create some empty rows
         mock_words = [
@@ -393,6 +396,7 @@ class TestPdfTableExtractor(unittest.TestCase):
 
             mock_initial_crop.extract_words.return_value = all_words
             mock_final_crop.extract_words.return_value = transaction_words
+            mock_final_crop.extract_text.return_value = "IE29AIBK93115212345678"
 
             # Set up crop behavior to return different crops for different calls
             def crop_side_effect(*args):
@@ -599,6 +603,7 @@ class TestPdfTableExtractor(unittest.TestCase):
         # Mock page 1: Invalid page (no table structure)
         mock_crop1 = MagicMock()
         mock_page1.crop.return_value = mock_crop1
+        mock_crop1.extract_text.return_value = "IE29AIBK93115212345678"
         mock_crop1.extract_words.return_value = [
             {"text": "Account", "x0": 30, "top": 100},
             {"text": "Summary", "x0": 90, "top": 100},

@@ -17,7 +17,6 @@ from typing import TYPE_CHECKING, Any
 
 from bankstatements_core.config.processor_config import ExtractionConfig
 from bankstatements_core.domain import ExtractionResult
-from bankstatements_core.entitlements import Entitlements
 
 if TYPE_CHECKING:
     from bankstatements_core.domain.protocols.services import (
@@ -51,7 +50,6 @@ class PDFProcessingOrchestrator:
         column_names: list[str],
         output_dir: Path,
         repository: FileSystemTransactionRepository,
-        entitlements: Entitlements | None = None,
         pdf_discovery: IPDFDiscovery | None = None,
         extraction_orchestrator: ExtractionOrchestrator | None = None,
         filter_service: ITransactionFilter | None = None,
@@ -63,7 +61,6 @@ class PDFProcessingOrchestrator:
             column_names: List of column names for filtering
             output_dir: Directory to save IBAN and exclusion logs
             repository: Transaction repository for file I/O operations
-            entitlements: Optional entitlements for feature restrictions (e.g., recursive scanning)
             pdf_discovery: Service for discovering PDF files (optional, creates default if None)
             extraction_orchestrator: Service for extracting data from PDFs (optional, creates default if None)
             filter_service: Service for filtering transactions (optional, creates default if None)
@@ -82,26 +79,14 @@ class PDFProcessingOrchestrator:
         self.column_names = column_names
         self.output_dir = output_dir
         self.repository = repository
-        self.entitlements = entitlements
         # Initialize services with provided instances or create defaults
-        self.pdf_discovery = pdf_discovery or PDFDiscoveryService(
-            entitlements=entitlements
-        )
+        self.pdf_discovery = pdf_discovery or PDFDiscoveryService()
         self.extraction_orchestrator = (
             extraction_orchestrator
             or ExtractionOrchestrator(
-                extraction_config=extraction_config, entitlements=entitlements
+                extraction_config=extraction_config,
             )
         )
-        if (
-            extraction_orchestrator is not None
-            and extraction_orchestrator._entitlements != entitlements
-        ):
-            raise ValueError(
-                "ExtractionOrchestrator entitlements must match PDFProcessingOrchestrator "
-                "entitlements. Pass a consistent entitlements object to both, or omit "
-                "extraction_orchestrator to have it created automatically."
-            )
         self.filter_service = filter_service or TransactionFilterService(column_names)
 
     def process_all_pdfs(
@@ -125,6 +110,7 @@ class PDFProcessingOrchestrator:
         results: list[ExtractionResult] = []
         pages_read = 0
         pdf_ibans: dict[str, str] = {}
+        pdf_card_numbers: dict[str, str] = {}
         excluded_files: list[dict[str, Any]] = []
 
         # Process each PDF
@@ -141,20 +127,8 @@ class PDFProcessingOrchestrator:
                     and len(result.transactions) == 0
                     and result.page_count > 0
                 ):
-                    require_iban = (
-                        self.entitlements.require_iban
-                        if self.entitlements is not None
-                        else True
-                    )
-                    if require_iban:
-                        reason = (
-                            "Could not be processed - no IBAN found "
-                            "(likely credit card statement)"
-                        )
-                        log_detail = "No IBAN found, no data extracted"
-                    else:
-                        reason = "Could not be processed - no transactions extracted"
-                        log_detail = "No transactions extracted"
+                    reason = "Could not be processed - no transactions extracted"
+                    log_detail = "No transactions extracted"
                     excluded_files.append(
                         {
                             "filename": pdf.name,
@@ -175,6 +149,10 @@ class PDFProcessingOrchestrator:
                 # Store IBAN if found
                 if result.iban:
                     pdf_ibans[pdf.name] = result.iban
+
+                # Store card number if found
+                if result.card_number:
+                    pdf_card_numbers[pdf.name] = result.card_number
 
                 # Apply filters to extracted rows
                 filtered_rows = self.filter_service.apply_all_filters(
@@ -202,6 +180,10 @@ class PDFProcessingOrchestrator:
         # Save IBANs to output file
         if pdf_ibans:
             self._save_ibans(pdf_ibans)
+
+        # Save card numbers to output file
+        if pdf_card_numbers:
+            self._save_card_numbers(pdf_card_numbers)
 
         # Save excluded files to JSON log
         if excluded_files:
@@ -232,6 +214,30 @@ class PDFProcessingOrchestrator:
             )
 
         self.repository.save_json_file(ibans_path, iban_list)
+
+    def _save_card_numbers(self, pdf_card_numbers: dict[str, str]) -> None:
+        """Save extracted card numbers to JSON file.
+
+        Args:
+            pdf_card_numbers: Dictionary mapping PDF filenames to card numbers
+        """
+        cc_path = self.output_dir / "cc.json"
+        logger.info("Saving %d card numbers to: %s", len(pdf_card_numbers), cc_path)
+
+        cc_list: list[dict[str, str]] = []
+        for filename, card_number in pdf_card_numbers.items():
+            cleaned = card_number.replace(" ", "")
+            masked = f"{cleaned[:4]}{'*' * (len(cleaned) - 8)}{cleaned[-4:]}"
+            digest = hashlib.sha256(card_number.encode("utf-8")).hexdigest()
+            cc_list.append(
+                {
+                    "pdf_filename": filename,
+                    "card_masked": masked,
+                    "card_digest": digest,
+                }
+            )
+
+        self.repository.save_json_file(cc_path, cc_list)
 
     def _save_excluded_files(self, excluded_files: list[dict[str, Any]]) -> None:
         """Save excluded files log to JSON.

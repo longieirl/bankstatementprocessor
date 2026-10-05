@@ -47,7 +47,6 @@ class ProcessorFactory:
         duplicate_strategy: DuplicateDetectionStrategy | None = None,
         output_strategies: dict[str, OutputFormatStrategy] | None = None,
         activity_log: Any | None = None,
-        entitlements: Any | None = None,
     ) -> BankStatementProcessor:
         """
         Create a processor from application configuration using Builder pattern.
@@ -59,7 +58,6 @@ class ProcessorFactory:
             output_strategies: Optional custom output format strategies.
                               If None, builds strategies from config.output_formats.
             activity_log: Optional ProcessingActivityLog for GDPR audit trail.
-            entitlements: Optional Entitlements for tier-based feature access control.
 
         Returns:
             Configured BankStatementProcessor instance
@@ -122,10 +120,6 @@ class ProcessorFactory:
         if activity_log is not None:
             builder.with_activity_log(activity_log)
 
-        # Add entitlements if provided
-        if entitlements is not None:
-            builder.with_entitlements(entitlements)
-
         return builder.build()
 
     @staticmethod
@@ -164,7 +158,6 @@ class ProcessorFactory:
         table_bottom_y: int = 700,
         duplicate_strategy: DuplicateDetectionStrategy | None = None,
         output_strategies: dict[str, OutputFormatStrategy] | None = None,
-        entitlements: Any | None = None,
         **kwargs: Any,
     ) -> BankStatementProcessor:
         """
@@ -180,7 +173,6 @@ class ProcessorFactory:
             table_bottom_y: Bottom Y coordinate for table extraction
             duplicate_strategy: Custom duplicate detection strategy
             output_strategies: Custom output format strategies (default: CSV and JSON)
-            entitlements: Optional Entitlements for tier-based feature access control.
             **kwargs: Additional processor options (sort_by_date, etc.)
 
         Returns:
@@ -231,13 +223,12 @@ class ProcessorFactory:
             ServiceRegistry,
         )
 
-        registry = ServiceRegistry.from_config(config, entitlements=entitlements)
+        registry = ServiceRegistry.from_config(config)
 
         processor = BankStatementProcessor(
             config=config,
             output_strategies=output_strategies,
             duplicate_strategy=duplicate_strategy,
-            entitlements=entitlements,
             registry=registry,
         )
 

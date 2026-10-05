@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 
 from bankstatements_core.config.processor_config import ExtractionConfig
 from bankstatements_core.domain import ExtractionResult
-from bankstatements_core.entitlements import Entitlements
 from bankstatements_core.extraction.extraction_facade import extract_tables_from_pdf
 from bankstatements_core.templates import TemplateDetector, TemplateRegistry
 from bankstatements_core.templates.template_model import BankTemplate
@@ -33,7 +32,6 @@ class ExtractionOrchestrator:
         extraction_config: ExtractionConfig | None = None,
         template_detector: ITemplateDetector | None = None,
         forced_template: BankTemplate | None = None,
-        entitlements: Entitlements | None = None,
         pdf_reader: IPDFReader | None = None,
     ):
         """Initialize the extraction orchestrator.
@@ -42,13 +40,11 @@ class ExtractionOrchestrator:
             extraction_config: Configuration for PDF extraction
             template_detector: Optional template detector instance
             forced_template: Optional forced template to use for all PDFs
-            entitlements: Optional entitlements for tier-based filtering
             pdf_reader: Optional PDF reader for dependency injection (default: use pdfplumber adapter)
         """
         self._config = extraction_config or ExtractionConfig()
         self._template_detector = template_detector
         self._forced_template = forced_template
-        self._entitlements = entitlements
 
         # Inject PDF reader or use default pdfplumber adapter
         if pdf_reader is None:
@@ -68,27 +64,6 @@ class ExtractionOrchestrator:
         """Initialize template detection system."""
         try:
             template_registry = TemplateRegistry.from_default_config()
-
-            # Filter templates based on entitlements
-            # (FREE tier requires IBAN patterns)
-            if self._entitlements and self._entitlements.require_iban:
-                all_templates = template_registry.list_all()
-                iban_only_ids = {
-                    t.id for t in all_templates if t.detection.iban_patterns
-                }
-                skipped = len(all_templates) - len(iban_only_ids)
-
-                if skipped:
-                    skipped_names = ", ".join(
-                        t.name for t in all_templates if not t.detection.iban_patterns
-                    )
-                    logger.warning(
-                        "%s tier requires IBAN patterns for PDF processing. Ignoring %s template(s) without IBAN patterns: %s",
-                        self._entitlements.tier,
-                        skipped,
-                        skipped_names,
-                    )
-                    template_registry = template_registry.filtered_by_ids(iban_only_ids)
 
             self._template_detector = TemplateDetector(template_registry)
 
@@ -159,7 +134,6 @@ class ExtractionOrchestrator:
             self._config.columns,
             self._config.enable_dynamic_boundary,
             template=template,
-            entitlements=self._entitlements,
         )
 
         # Log IBAN if found

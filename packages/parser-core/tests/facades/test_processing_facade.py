@@ -9,7 +9,6 @@ from unittest.mock import ANY, MagicMock, patch
 import pytest
 
 from bankstatements_core.config.app_config import AppConfig, ConfigurationError
-from bankstatements_core.entitlements import Entitlements
 from bankstatements_core.facades import BankStatementProcessingFacade
 
 
@@ -19,9 +18,7 @@ class TestBankStatementProcessingFacade:
     def test_initialization_with_config(self):
         """Test facade initialization with provided config."""
         config = MagicMock(spec=AppConfig)
-        facade = BankStatementProcessingFacade(
-            config, entitlements=Entitlements.paid_tier()
-        )
+        facade = BankStatementProcessingFacade(config)
 
         assert facade.config == config
         assert facade._processor is None
@@ -72,10 +69,7 @@ class TestBankStatementProcessingFacade:
                 output_formats=["csv", "json"],
             )
 
-            # Use PAID tier entitlements for tests with PAID features
-            facade = BankStatementProcessingFacade(
-                config, entitlements=Entitlements.paid_tier()
-            )
+            facade = BankStatementProcessingFacade(config)
 
             # Mock column config
             mock_get_columns.return_value = {"Date": (0, 100)}
@@ -97,7 +91,7 @@ class TestBankStatementProcessingFacade:
             # Verify methods were called
             mock_get_columns.assert_called_once()
             mock_factory.create_from_config.assert_called_once_with(
-                config, activity_log=ANY, entitlements=ANY
+                config, activity_log=ANY
             )
             mock_processor.run.assert_called_once()
 
@@ -122,9 +116,7 @@ class TestBankStatementProcessingFacade:
                 output_formats=["csv"],
             )
 
-            facade = BankStatementProcessingFacade(
-                config, entitlements=Entitlements.paid_tier()
-            )
+            facade = BankStatementProcessingFacade(config)
 
             # Simulate column config error
             mock_get_columns.side_effect = ValueError("Column config failed")
@@ -156,9 +148,7 @@ class TestBankStatementProcessingFacade:
                 output_formats=["csv"],
             )
 
-            facade = BankStatementProcessingFacade(
-                config, entitlements=Entitlements.paid_tier()
-            )
+            facade = BankStatementProcessingFacade(config)
 
             # Mock successful processing
             mock_get_columns.return_value = {"Date": (0, 100)}
@@ -186,9 +176,7 @@ class TestBankStatementProcessingFacade:
                 output_formats=["csv"],
             )
 
-            facade = BankStatementProcessingFacade(
-                config, entitlements=Entitlements.paid_tier()
-            )
+            facade = BankStatementProcessingFacade(config)
 
             # Simulate configuration error
             mock_get_columns.side_effect = ValueError("Config error")
@@ -216,9 +204,7 @@ class TestBankStatementProcessingFacade:
                 output_formats=["csv"],
             )
 
-            facade = BankStatementProcessingFacade(
-                config, entitlements=Entitlements.paid_tier()
-            )
+            facade = BankStatementProcessingFacade(config)
 
             # Mock file not found error
             mock_get_columns.return_value = {"Date": (0, 100)}
@@ -249,9 +235,7 @@ class TestBankStatementProcessingFacade:
                 output_formats=["csv"],
             )
 
-            facade = BankStatementProcessingFacade(
-                config, entitlements=Entitlements.paid_tier()
-            )
+            facade = BankStatementProcessingFacade(config)
 
             # Mock permission error
             mock_get_columns.return_value = {"Date": (0, 100)}
@@ -282,9 +266,7 @@ class TestBankStatementProcessingFacade:
                 output_formats=["csv"],
             )
 
-            facade = BankStatementProcessingFacade(
-                config, entitlements=Entitlements.paid_tier()
-            )
+            facade = BankStatementProcessingFacade(config)
 
             # Mock keyboard interrupt
             mock_get_columns.return_value = {"Date": (0, 100)}
@@ -315,9 +297,7 @@ class TestBankStatementProcessingFacade:
                 output_formats=["csv"],
             )
 
-            facade = BankStatementProcessingFacade(
-                config, entitlements=Entitlements.paid_tier()
-            )
+            facade = BankStatementProcessingFacade(config)
 
             # Mock unexpected error
             mock_get_columns.return_value = {"Date": (0, 100)}
@@ -354,9 +334,7 @@ class TestBankStatementProcessingFacade:
                 data_retention_days=30,
             )
 
-            facade = BankStatementProcessingFacade(
-                config, entitlements=Entitlements.paid_tier()
-            )
+            facade = BankStatementProcessingFacade(config)
 
             mock_get_columns.return_value = {"Date": (0, 100)}
             mock_processor = MagicMock()

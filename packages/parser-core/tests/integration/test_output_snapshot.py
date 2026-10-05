@@ -84,7 +84,6 @@ def test_output_snapshot(request: pytest.FixtureRequest) -> None:
 
     # Import here so the test is skippable without importing the full app
     from bankstatements_core.config.app_config import AppConfig
-    from bankstatements_core.entitlements import Entitlements
     from bankstatements_core.facades.processing_facade import (
         BankStatementProcessingFacade,
     )
@@ -99,7 +98,7 @@ def test_output_snapshot(request: pytest.FixtureRequest) -> None:
         generate_expense_analysis=True,
     )
 
-    facade = BankStatementProcessingFacade(config, Entitlements.free_tier())
+    facade = BankStatementProcessingFacade(config)
     summary = facade.process_all()
 
     current = _build_snapshot(OUTPUT_DIR)
