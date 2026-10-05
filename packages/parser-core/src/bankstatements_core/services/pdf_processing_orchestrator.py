@@ -226,12 +226,12 @@ class PDFProcessingOrchestrator:
 
         cc_list: list[dict[str, str]] = []
         for filename, card_number in pdf_card_numbers.items():
-            suffix = card_number.replace(" ", "").replace("*", "")[-4:]
+            digest = hashlib.sha256(card_number.encode("utf-8")).hexdigest()
             cc_list.append(
                 {
                     "pdf_filename": filename,
                     "card_masked": card_number,
-                    "card_suffix": suffix,
+                    "card_digest": digest,
                 }
             )
 
