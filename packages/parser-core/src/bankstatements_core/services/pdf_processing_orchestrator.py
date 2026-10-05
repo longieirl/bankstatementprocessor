@@ -110,6 +110,7 @@ class PDFProcessingOrchestrator:
         results: list[ExtractionResult] = []
         pages_read = 0
         pdf_ibans: dict[str, str] = {}
+        pdf_card_numbers: dict[str, str] = {}
         excluded_files: list[dict[str, Any]] = []
 
         # Process each PDF
@@ -149,6 +150,10 @@ class PDFProcessingOrchestrator:
                 if result.iban:
                     pdf_ibans[pdf.name] = result.iban
 
+                # Store card number if found
+                if result.card_number:
+                    pdf_card_numbers[pdf.name] = result.card_number
+
                 # Apply filters to extracted rows
                 filtered_rows = self.filter_service.apply_all_filters(
                     result.transactions
@@ -175,6 +180,10 @@ class PDFProcessingOrchestrator:
         # Save IBANs to output file
         if pdf_ibans:
             self._save_ibans(pdf_ibans)
+
+        # Save card numbers to output file
+        if pdf_card_numbers:
+            self._save_card_numbers(pdf_card_numbers)
 
         # Save excluded files to JSON log
         if excluded_files:
@@ -205,6 +214,28 @@ class PDFProcessingOrchestrator:
             )
 
         self.repository.save_json_file(ibans_path, iban_list)
+
+    def _save_card_numbers(self, pdf_card_numbers: dict[str, str]) -> None:
+        """Save extracted card numbers to JSON file.
+
+        Args:
+            pdf_card_numbers: Dictionary mapping PDF filenames to card numbers
+        """
+        cc_path = self.output_dir / "cc.json"
+        logger.info("Saving %d card numbers to: %s", len(pdf_card_numbers), cc_path)
+
+        cc_list: list[dict[str, str]] = []
+        for filename, card_number in pdf_card_numbers.items():
+            suffix = card_number.replace(" ", "").replace("*", "")[-4:]
+            cc_list.append(
+                {
+                    "pdf_filename": filename,
+                    "card_masked": card_number,
+                    "card_suffix": suffix,
+                }
+            )
+
+        self.repository.save_json_file(cc_path, cc_list)
 
     def _save_excluded_files(self, excluded_files: list[dict[str, Any]]) -> None:
         """Save excluded files log to JSON.
