@@ -8,10 +8,7 @@ from unittest.mock import MagicMock, patch
 from bankstatements_core.domain import ExtractionResult
 from bankstatements_core.domain.models.extraction_warning import (
     CODE_CREDIT_CARD_SKIPPED,
-    ExtractionWarning,
 )
-from bankstatements_core.entitlements import Entitlements
-from bankstatements_core.extraction.extraction_params import PDFExtractorOptions
 from bankstatements_core.extraction.pdf_extractor import PDFTableExtractor
 
 # Test columns configuration
@@ -341,96 +338,22 @@ class TestCreditCardDetection:
         )
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
-    def test_credit_card_early_return_produces_extraction_result_with_warning(
-        self, mock_pdfplumber
-    ):
-        """Test that credit card detection returns ExtractionResult with warning message."""
+    def test_credit_card_not_skipped(self, mock_pdfplumber):
+        """Credit card PDFs must NOT produce CODE_CREDIT_CARD_SKIPPED."""
         mock_pdf = MagicMock()
         mock_page = MagicMock()
         mock_page.width = 612
         mock_pdf.pages = [mock_page]
         mock_pdfplumber.return_value = mock_pdf
 
-        # Mock the cropped header area to return credit card text
         mock_header = MagicMock()
         mock_header.extract_text.return_value = "Statement for Card Number 1234"
         mock_page.crop.return_value = mock_header
 
         extractor = PDFTableExtractor(columns=TEST_COLUMNS)
-        result = extractor.extract(Path("/tmp/credit_card.pdf"))
-
-        assert isinstance(result, ExtractionResult)
-        assert len(result.transactions) == 0
-        assert result.iban is None
-        assert len(result.warnings) > 0
-        assert isinstance(result.warnings[0], ExtractionWarning)
-        assert result.warnings[0].code == CODE_CREDIT_CARD_SKIPPED
-        assert "credit card" in result.warnings[0].message.lower()
-
-    @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
-    def test_credit_card_not_skipped_on_paid_tier(self, mock_pdfplumber):
-        """Paid-tier entitlements (require_iban=False) must NOT trigger the early-return."""
-        mock_pdf = MagicMock()
-        mock_page = MagicMock()
-        mock_page.width = 612
-        mock_pdf.pages = [mock_page]
-        mock_pdfplumber.return_value = mock_pdf
-
-        mock_header = MagicMock()
-        mock_header.extract_text.return_value = "Statement for Card Number 1234"
-        mock_page.crop.return_value = mock_header
-
-        # Paid tier: require_iban=False → credit card PDFs should proceed
-        extractor = PDFTableExtractor(
-            columns=TEST_COLUMNS,
-            options=PDFExtractorOptions(entitlements=Entitlements.paid_tier()),
-        )
         result = extractor.extract(Path("/tmp/credit_card.pdf"))
 
         assert isinstance(result, ExtractionResult)
         assert not any(
             w.code == CODE_CREDIT_CARD_SKIPPED for w in result.warnings
-        ), "Paid tier must not produce CODE_CREDIT_CARD_SKIPPED"
-
-    @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
-    def test_credit_card_skipped_on_free_tier(self, mock_pdfplumber):
-        """Free-tier entitlements (require_iban=True) must skip credit card PDFs."""
-        mock_pdf = MagicMock()
-        mock_page = MagicMock()
-        mock_page.width = 612
-        mock_pdf.pages = [mock_page]
-        mock_pdfplumber.return_value = mock_pdf
-
-        mock_header = MagicMock()
-        mock_header.extract_text.return_value = "Statement for Card Number 1234"
-        mock_page.crop.return_value = mock_header
-
-        extractor = PDFTableExtractor(
-            columns=TEST_COLUMNS,
-            options=PDFExtractorOptions(entitlements=Entitlements.free_tier()),
-        )
-        result = extractor.extract(Path("/tmp/credit_card.pdf"))
-
-        assert isinstance(result, ExtractionResult)
-        assert len(result.transactions) == 0
-        assert any(w.code == CODE_CREDIT_CARD_SKIPPED for w in result.warnings)
-
-    @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
-    def test_credit_card_skipped_when_no_entitlements(self, mock_pdfplumber):
-        """No entitlements (None) must preserve backward-compat skip behaviour."""
-        mock_pdf = MagicMock()
-        mock_page = MagicMock()
-        mock_page.width = 612
-        mock_pdf.pages = [mock_page]
-        mock_pdfplumber.return_value = mock_pdf
-
-        mock_header = MagicMock()
-        mock_header.extract_text.return_value = "Statement for Card Number 1234"
-        mock_page.crop.return_value = mock_header
-
-        extractor = PDFTableExtractor(columns=TEST_COLUMNS)
-        result = extractor.extract(Path("/tmp/credit_card.pdf"))
-
-        assert isinstance(result, ExtractionResult)
-        assert len(result.transactions) == 0
-        assert any(w.code == CODE_CREDIT_CARD_SKIPPED for w in result.warnings)
+        ), "Credit card PDFs must not produce CODE_CREDIT_CARD_SKIPPED"

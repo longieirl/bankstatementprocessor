@@ -133,7 +133,7 @@ class TestPDFAnalyzer:
             finally:
                 pdf_path.unlink()
 
-    def test_entitlement_constraint_no_processor_factory(self):
+    def test_analyze_pdf_uses_direct_instantiation(self):
         """Test that analyze_pdf does NOT use ProcessorFactory."""
         import inspect
 
@@ -157,20 +157,6 @@ class TestPDFAnalyzer:
         assert (
             "PDFTableExtractor(" in source
         ), "analyze_pdf should use direct PDFTableExtractor instantiation"
-
-    def test_entitlement_constraint_no_entitlements_import(self):
-        """Test that analyze_pdf does NOT import Entitlements."""
-        import inspect
-
-        from bankstatements_core.commands import analyze_pdf
-
-        source = inspect.getsource(analyze_pdf)
-
-        # Verify no Entitlements import
-        assert (
-            "from bankstatements_core.entitlements import" not in source
-        ), "analyze_pdf must NOT import Entitlements module"
-        assert "Entitlements" not in source or "entitlement" in source.lower()
 
     @patch("bankstatements_core.commands.analyze_pdf.pdfplumber")
     def test_first_page_only_for_iban(self, mock_pdfplumber):

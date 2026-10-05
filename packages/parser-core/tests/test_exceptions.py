@@ -16,7 +16,6 @@ from bankstatements_core.exceptions import (
     ConfigurationError,
     DataValidationError,
     DuplicateDetectionError,
-    EntitlementError,
     InputValidationError,
     PDFExtractionError,
     PDFReadError,
@@ -71,10 +70,6 @@ class TestExceptionHierarchy:
         # Specific errors are also BankStatementErrors
         assert issubclass(DataValidationError, BankStatementError)
         assert issubclass(InputValidationError, BankStatementError)
-
-    def test_entitlement_error_hierarchy(self):
-        """EntitlementError inherits from BankStatementError."""
-        assert issubclass(EntitlementError, BankStatementError)
 
     def test_processing_error_hierarchy(self):
         """Processing errors inherit from BankStatementError."""
@@ -168,7 +163,6 @@ class TestExceptionCatching:
             PDFReadError,
             TemplateDetectionError,
             InputValidationError,
-            EntitlementError,
             DuplicateDetectionError,
         ]:
             try:
@@ -176,7 +170,7 @@ class TestExceptionCatching:
             except BankStatementError:
                 errors_raised.append(error_class.__name__)
 
-        assert len(errors_raised) == 6
+        assert len(errors_raised) == 5
 
 
 class TestExceptionChaining:
@@ -268,27 +262,6 @@ class TestExceptionUsagePatterns:
         assert "/nonexistent/file.pdf" in str(exc_info.value)
         assert isinstance(exc_info.value.__cause__, FileNotFoundError)
 
-    def test_entitlement_checking_pattern(self):
-        """EntitlementError for tier restrictions."""
-
-        def check_feature_access(tier: str, feature: str):
-            allowed_features = {"free": ["csv"], "premium": ["csv", "excel", "json"]}
-
-            if feature not in allowed_features.get(tier, []):
-                raise EntitlementError(
-                    f"Feature '{feature}' not available in {tier} tier. "
-                    f"Allowed: {', '.join(allowed_features[tier])}"
-                )
-
-        # Valid access
-        check_feature_access("premium", "excel")  # Should not raise
-
-        # Invalid access
-        with pytest.raises(EntitlementError) as exc_info:
-            check_feature_access("free", "excel")
-        assert "not available in free tier" in str(exc_info.value)
-        assert "excel" in str(exc_info.value).lower()
-
 
 class TestExceptionExports:
     """Test that all exceptions are exported in __all__."""
@@ -309,7 +282,6 @@ class TestExceptionExports:
             "ValidationError",
             "DataValidationError",
             "InputValidationError",
-            "EntitlementError",
             "ProcessingError",
             "DuplicateDetectionError",
             "TransactionProcessingError",
@@ -334,7 +306,6 @@ class TestExceptionExports:
             ValidationError,
             DataValidationError,
             InputValidationError,
-            EntitlementError,
             ProcessingError,
             DuplicateDetectionError,
             TransactionProcessingError,

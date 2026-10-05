@@ -209,8 +209,6 @@ class TestExtractionOrchestrator(unittest.TestCase):
         self, mock_registry_class
     ):
         """Two orchestrators sharing the same registry — second still sees all templates."""
-        from bankstatements_core.entitlements import Entitlements
-
         # Build two fake templates: one with IBAN patterns, one without
         t_with_iban = MagicMock()
         t_with_iban.id = "with_iban"
@@ -230,20 +228,13 @@ class TestExtractionOrchestrator(unittest.TestCase):
         mock_registry.filtered_by_ids.return_value = mock_registry
         mock_registry_class.from_default_config.return_value = mock_registry
 
-        free = Entitlements.free_tier()
-
         with patch(
             "bankstatements_core.services.extraction_orchestrator.TemplateDetector"
         ):
-            ExtractionOrchestrator(
-                extraction_config=self.extraction_config, entitlements=free
-            )
-            ExtractionOrchestrator(
-                extraction_config=self.extraction_config, entitlements=free
-            )
+            ExtractionOrchestrator(extraction_config=self.extraction_config)
+            ExtractionOrchestrator(extraction_config=self.extraction_config)
 
-        # filtered_by_ids() called, NOT template.enabled = False
-        mock_registry.filtered_by_ids.assert_called()
+        # Verify templates are not mutated (enabled flag unchanged)
         assert t_with_iban.enabled is True
         assert t_no_iban.enabled is True
 

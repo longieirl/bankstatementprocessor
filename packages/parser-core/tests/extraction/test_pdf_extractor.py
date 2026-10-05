@@ -610,10 +610,6 @@ class TestPDFTableExtractorCardNumber:
             r"\*{4}\s*\*{4}\s*\*{4}\s*[0-9]{4}",
         ]
 
-        # Paid tier entitlements
-        mock_entitlements = MagicMock()
-        mock_entitlements.require_iban = False
-
         # Header analyser: IS a CC statement
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
@@ -621,7 +617,6 @@ class TestPDFTableExtractorCardNumber:
                 enable_page_validation=False,
                 enable_header_check=False,
                 template=mock_template,
-                entitlements=mock_entitlements,
             ),
         )
         extractor._header_analyser = MagicMock()
@@ -645,16 +640,12 @@ class TestPDFTableExtractorCardNumber:
         mock_cropped.extract_words.return_value = []
         mock_page.crop.return_value = mock_cropped
 
-        mock_entitlements = MagicMock()
-        mock_entitlements.require_iban = False
-
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
             options=PDFExtractorOptions(
                 enable_page_validation=False,
                 enable_header_check=False,
                 template=None,
-                entitlements=mock_entitlements,
             ),
         )
         extractor._header_analyser = MagicMock()
@@ -695,16 +686,12 @@ class TestPDFTableExtractorCardNumber:
             r"\*{4}\s*\*{4}\s*\*{4}\s*[0-9]{4}",
         ]
 
-        mock_entitlements = MagicMock()
-        mock_entitlements.require_iban = False
-
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
             options=PDFExtractorOptions(
                 enable_page_validation=False,
                 enable_header_check=False,
                 template=mock_template,
-                entitlements=mock_entitlements,
             ),
         )
         extractor._header_analyser = MagicMock()
@@ -714,43 +701,6 @@ class TestPDFTableExtractorCardNumber:
         result = extractor.extract(Path("/tmp/cc_no_match.pdf"))
 
         assert result.card_number == "unknown"
-
-    @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
-    def test_extract_card_number_free_tier_returns_early(self, mock_pdfplumber):
-        """Free tier CC PDF: early return with CODE_CREDIT_CARD_SKIPPED, card_number is None."""
-        from bankstatements_core.domain.models.extraction_warning import (
-            CODE_CREDIT_CARD_SKIPPED,
-        )
-
-        mock_pdf = MagicMock()
-        mock_page = MagicMock()
-        mock_pdf.pages = [mock_page]
-        mock_pdfplumber.return_value = mock_pdf
-
-        mock_page.width = 600
-        mock_cropped = MagicMock()
-        mock_cropped.extract_words.return_value = []
-        mock_page.crop.return_value = mock_cropped
-
-        # Free tier: require_iban=True
-        mock_entitlements = MagicMock()
-        mock_entitlements.require_iban = True
-
-        extractor = PDFTableExtractor(
-            columns=TEST_COLUMNS,
-            options=PDFExtractorOptions(
-                enable_page_validation=False,
-                enable_header_check=False,
-                entitlements=mock_entitlements,
-            ),
-        )
-        extractor._header_analyser = MagicMock()
-        extractor._header_analyser.is_credit_card_statement.return_value = True
-
-        result = extractor.extract(Path("/tmp/cc_free_tier.pdf"))
-
-        assert result.card_number is None
-        assert any(w.code == CODE_CREDIT_CARD_SKIPPED for w in result.warnings)
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_extract_card_number_crop_raises_falls_back_to_extract_text(
@@ -783,16 +733,12 @@ class TestPDFTableExtractorCardNumber:
         mock_template.detection.get_card_number_patterns.return_value = [
             r"\*{4}\s*\*{4}\s*\*{4}\s*[0-9]{4}",
         ]
-        mock_entitlements = MagicMock()
-        mock_entitlements.require_iban = False
-
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
             options=PDFExtractorOptions(
                 enable_page_validation=False,
                 enable_header_check=False,
                 template=mock_template,
-                entitlements=mock_entitlements,
             ),
         )
         extractor._header_analyser = MagicMock()
@@ -829,16 +775,12 @@ class TestPDFTableExtractorCardNumber:
         # Provide ONLY an invalid regex (unmatched bracket) — no valid patterns
         mock_template.detection.get_card_number_patterns.return_value = ["[invalid"]
 
-        mock_entitlements = MagicMock()
-        mock_entitlements.require_iban = False
-
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,
             options=PDFExtractorOptions(
                 enable_page_validation=False,
                 enable_header_check=False,
                 template=mock_template,
-                entitlements=mock_entitlements,
             ),
         )
         extractor._header_analyser = MagicMock()

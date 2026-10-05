@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from bankstatements_core.entitlements import Entitlements
 from bankstatements_core.services.expense_analysis import ExpenseAnalysisService
 
 
@@ -12,13 +11,7 @@ class TestExpenseAnalysisService:
     def test_initialization(self):
         """Test service initialization."""
         service = ExpenseAnalysisService()
-        assert service.entitlements is None
-
-    def test_initialization_with_entitlements(self):
-        """Test service initialization with entitlements."""
-        entitlements = Entitlements.paid_tier()
-        service = ExpenseAnalysisService(entitlements=entitlements)
-        assert service.entitlements == entitlements
+        assert service is not None
 
     def test_analyze_empty_transactions(self):
         """Test analyzing empty transaction list."""
@@ -241,44 +234,6 @@ class TestExpenseAnalysisService:
         assert stats["total_credits"] == 500.00
         assert stats["mean_transaction_amount"] > 0
         assert "std_dev" in stats
-
-    def test_entitlement_enforcement_free_tier(self):
-        """Test FREE tier is allowed expense analysis (feature available to all)."""
-        entitlements = Entitlements.free_tier()
-        service = ExpenseAnalysisService(entitlements=entitlements)
-        transactions = [
-            {
-                "Date": "01 Jan 2023",
-                "Details": "Test",
-                "Debit €": "100.00",
-                "Credit €": "",
-                "Balance €": "1000.00",
-                "Filename": "test.pdf",
-            }
-        ]
-
-        # Should not raise error - expense analysis available to all users
-        result = service.analyze(transactions)
-        assert result["total_transactions_analyzed"] == 1
-
-    def test_entitlement_enforcement_paid_tier(self):
-        """Test PAID tier is allowed expense analysis (feature available to all)."""
-        entitlements = Entitlements.paid_tier()
-        service = ExpenseAnalysisService(entitlements=entitlements)
-        transactions = [
-            {
-                "Date": "01 Jan 2023",
-                "Details": "Test",
-                "Debit €": "100.00",
-                "Credit €": "",
-                "Balance €": "1000.00",
-                "Filename": "test.pdf",
-            }
-        ]
-
-        result = service.analyze(transactions)
-
-        assert result["total_transactions_analyzed"] == 1
 
     def test_handle_missing_debit_credit_fields(self):
         """Test handling transactions with missing amount fields."""

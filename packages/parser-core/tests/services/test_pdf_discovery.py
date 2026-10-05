@@ -5,9 +5,7 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock
 
-from bankstatements_core.entitlements import Entitlements
 from bankstatements_core.services.pdf_discovery import PDFDiscoveryService
 
 
@@ -91,53 +89,6 @@ class TestPDFDiscoveryService(unittest.TestCase):
 
         # Should find both files
         self.assertEqual(len(pdfs), 2)
-
-    def test_discover_pdfs_recursive_with_entitlements_allowed(self):
-        """Test recursive discovery with entitlements that allow it."""
-        # Create mock entitlements that allow recursive scan
-        mock_entitlements = MagicMock(spec=Entitlements)
-        mock_entitlements.check_recursive_scan.return_value = None  # No exception
-
-        service = PDFDiscoveryService(entitlements=mock_entitlements)
-
-        # Create subdirectory with PDFs
-        subdir = self.input_dir / "subdir"
-        subdir.mkdir()
-        (self.input_dir / "file1.pdf").write_text("top level")
-        (subdir / "file2.pdf").write_text("nested")
-
-        pdfs = service.discover_pdfs(self.input_dir, recursive=True)
-
-        # Should find both files
-        self.assertEqual(len(pdfs), 2)
-        mock_entitlements.check_recursive_scan.assert_called_once()
-
-    def test_discover_pdfs_recursive_with_entitlements_denied(self):
-        """Test recursive discovery with entitlements that deny it."""
-        from bankstatements_core.entitlements import EntitlementError
-
-        # Create mock entitlements that deny recursive scan
-        mock_entitlements = MagicMock(spec=Entitlements)
-        mock_entitlements.check_recursive_scan.side_effect = EntitlementError(
-            "Not allowed"
-        )
-
-        service = PDFDiscoveryService(entitlements=mock_entitlements)
-
-        # Create subdirectory with PDFs
-        subdir = self.input_dir / "subdir"
-        subdir.mkdir()
-        (self.input_dir / "file1.pdf").write_text("top level")
-        (subdir / "file2.pdf").write_text("nested")
-
-        with self.assertLogs(
-            "bankstatements_core.services.pdf_discovery", level="WARNING"
-        ):
-            pdfs = service.discover_pdfs(self.input_dir, recursive=True)
-
-        # Should only find top-level file (fallback to non-recursive)
-        self.assertEqual(len(pdfs), 1)
-        self.assertEqual(pdfs[0].name, "file1.pdf")
 
     def test_discover_pdfs_sorted(self):
         """Test that discovered PDFs are sorted."""
