@@ -6,7 +6,7 @@ pypdf>=6.14.2  # PDF utilities - security patches (updated 2026-03-02)
 pandas>=3.0.5  # Data processing
 python-dotenv>=1.2.3  # Environment configuration
 tabulate>=0.10.0  # Table formatting
-cryptography>=49.0.0  # Cryptographic operations - security patches (updated 2026-04-29)
+cryptography>=50.0.2  # Cryptographic operations - security patches (updated 2026-04-29)
 openpyxl>=3.1.5  # Excel export (.xlsx format)
 
 # Note: Network libraries (requests, urllib3) intentionally excluded
