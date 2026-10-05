@@ -50,13 +50,13 @@ Current version: **0.1.7**
 ```
 packages/
   parser-core/    bankstatements-core (PyPI) — PDF extraction, services, templates
-  parser-free/    bankstatements-free (free-tier CLI) — thin wrapper around parser-core
+  parser-cli/    bankstatements-cli (free-tier CLI) — thin wrapper around parser-core
 templates/        shared bank template JSON files
 custom_templates/ user-overridable templates
 skills/           Claude Code agent skills
 ```
 
-**Source of truth for Docker:** `packages/parser-core/` and `packages/parser-free/`.
+**Source of truth for Docker:** `packages/parser-core/` and `packages/parser-cli/`.
 `src/` at the repo root is a mirror/symlink for local test running only — never edit it.
 
 Real source: `packages/parser-core/src/bankstatements_core/`
@@ -86,7 +86,7 @@ pdf_table_extractor.py  # legacy shim — delegates to extraction/, treat as dep
 
 ```bash
 pip install -e packages/parser-core[dev,test]
-pip install -e packages/parser-free[test]
+pip install -e packages/parser-cli[test]
 ```
 
 ---
@@ -97,8 +97,8 @@ pip install -e packages/parser-free[test]
 # parser-core (run from repo root)
 pytest packages/parser-core/tests/ --cov=bankstatements_core --cov-fail-under=91
 
-# parser-free
-pytest packages/parser-free/tests/
+# parser-cli
+pytest packages/parser-cli/tests/
 
 # integration (run from repo root)
 python -m pytest packages/parser-core/tests/integration/ -m integration --no-cov
@@ -126,7 +126,7 @@ ruff check packages/parser-core/src packages/parser-core/tests
 mypy packages/parser-core/src
 ```
 
-For `parser-free`, run isort **from within `packages/parser-free/`** — CI sort order differs from root.
+For `parser-cli`, run isort **from within `packages/parser-cli/`** — CI sort order differs from root.
 
 **Black gotcha:** Black collapses multi-line `raise`/`return` onto one line if it fits in 88 chars. Always write them as single lines:
 - `raise ValueError(f"...")` not a multi-line form
@@ -155,7 +155,7 @@ Three files must always match — CI compares them and fails on mismatch:
 
 1. `packages/parser-core/pyproject.toml` → `version = "x.y.z"`
 2. `packages/parser-core/src/bankstatements_core/__version__.py`
-3. `packages/parser-free/pyproject.toml` → `version = "x.y.z"`
+3. `packages/parser-cli/pyproject.toml` → `version = "x.y.z"`
 
 ```bash
 make version-bump-patch   # bump x.x.N

@@ -22,7 +22,7 @@ extend-exclude = '''
 profile = "black"
 multi_line_output = 3
 line_length = 88
-known_first_party = ["bankstatements_core", "bankstatements_free"]
+known_first_party = ["bankstatements_core", "bankstatements_cli"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -49,7 +49,7 @@ skips = ["B101"]
 skips = ["*/tests/*", "*/test_*.py"]
 
 [tool.pyright]
-include = ["packages/parser-core/src", "packages/parser-free/src"]
+include = ["packages/parser-core/src", "packages/parser-cli/src"]
 exclude = ["**/__pycache__"]
 pythonVersion = "3.11"
 typeCheckingMode = "strict"

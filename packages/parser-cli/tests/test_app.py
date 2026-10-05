@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from bankstatements_core.patterns.repositories import reset_config_singleton
-from bankstatements_free.app import AppConfig, ConfigurationError, main
+from bankstatements_cli.app import AppConfig, ConfigurationError, main
 
 
 class TestApp(unittest.TestCase):
@@ -90,7 +90,7 @@ class TestApp(unittest.TestCase):
         # Call main function - patch config logger since log_configuration is in config module now
         with (
             patch("bankstatements_core.config.app_config.logger") as mock_config_logger,
-            patch("bankstatements_free.app.logger"),
+            patch("bankstatements_cli.app.logger"),
         ):
             main([])
 
@@ -137,7 +137,7 @@ class TestApp(unittest.TestCase):
         # Call main function - patch config logger since log_configuration is in config module now
         with (
             patch("bankstatements_core.config.app_config.logger") as mock_config_logger,
-            patch("bankstatements_free.app.logger"),
+            patch("bankstatements_cli.app.logger"),
         ):
             main([])
 
@@ -180,7 +180,7 @@ class TestApp(unittest.TestCase):
         # Call main function - patch config logger since log_configuration is in config module now
         with (
             patch("bankstatements_core.config.app_config.logger") as mock_config_logger,
-            patch("bankstatements_free.app.logger"),
+            patch("bankstatements_cli.app.logger"),
         ):
             main([])
 
@@ -254,7 +254,7 @@ class TestApp(unittest.TestCase):
         # Call main function - patch config logger since log_configuration is in config module now
         with (
             patch("bankstatements_core.config.app_config.logger") as mock_config_logger,
-            patch("bankstatements_free.app.logger"),
+            patch("bankstatements_cli.app.logger"),
         ):
             main([])
 
@@ -428,11 +428,11 @@ class TestAppConfig(unittest.TestCase):
 
     def test_setup_logging_with_invalid_level(self):
         """Test setup_logging handles invalid LOG_LEVEL"""
-        from bankstatements_free.app import setup_logging
+        from bankstatements_cli.app import setup_logging
 
         with (
             patch.dict("os.environ", {"LOG_LEVEL": "INVALID"}),
-            patch("bankstatements_free.app.logger") as mock_logger,
+            patch("bankstatements_cli.app.logger") as mock_logger,
         ):
             setup_logging()
             mock_logger.warning.assert_called_once()

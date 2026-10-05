@@ -1,4 +1,4 @@
-"""Main application entry point for bank statement processing (FREE tier)."""
+"""Main application entry point for bank statement processing."""
 
 from __future__ import annotations
 

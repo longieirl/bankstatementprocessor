@@ -7,7 +7,7 @@
 
 Core PDF bank statement parsing library — PDF extraction, services, and templates.
 
-Used as the foundation for [`bankstatements-free`](https://pypi.org/project/bankstatements-free/) and the premium distribution.
+Used as the foundation for [`bankstatements-cli`](https://pypi.org/project/bankstatements-cli/) and the premium distribution.
 
 ---
 

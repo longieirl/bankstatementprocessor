@@ -1,6 +1,6 @@
-# Boundary check — enforce that parser-free only imports from bankstatements-core
+# Boundary check — enforce that parser-cli only imports from bankstatements-core
 #
-# parser-free must only depend on bankstatements-core (public).
+# parser-cli must only depend on bankstatements-core (public).
 # Any import outside this boundary is a structural violation.
 #
 # Trigger: push/PR to main
@@ -11,31 +11,31 @@ on:
   push:
     branches: [ main ]
     paths:
-      - 'packages/parser-free/**'
+      - 'packages/parser-cli/**'
   pull_request:
     branches: [ main ]
     paths:
-      - 'packages/parser-free/**'
+      - 'packages/parser-cli/**'
 
 permissions:
   contents: read
 
 jobs:
   boundary-check:
-    name: Enforce package boundary — parser-free
+    name: Enforce package boundary — parser-cli
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
     - uses: actions/checkout@v7.0.1
 
-    - name: Check for premium imports in parser-free
+    - name: Check for premium imports in parser-cli
       run: |
-        echo "Scanning packages/parser-free/src/ for banned imports..."
+        echo "Scanning packages/parser-cli/src/ for banned imports..."
 
-        if grep -r "bankstatements_premium\|src\.licensing" packages/parser-free/src/; then
+        if grep -r "bankstatements_premium\|src\.licensing" packages/parser-cli/src/; then
           echo ""
-          echo "BOUNDARY VIOLATION: parser-free must only import from bankstatements_core."
+          echo "BOUNDARY VIOLATION: parser-cli must only import from bankstatements_core."
           exit 1
         fi
 

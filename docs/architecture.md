@@ -10,7 +10,7 @@ This document describes the structure of the `bankstatementprocessor` monorepo a
 bankstatementprocessor/
 ├── packages/
 │   ├── parser-core/          PyPI: bankstatements-core (v0.1.2)
-│   └── parser-free/          PyPI: bankstatements-free (v0.1.0)
+│   └── parser-cli/          PyPI: bankstatements-cli (v0.1.0)
 ├── templates/                shared IBAN-based bank templates
 └── .github/workflows/
     ├── ci.yml                lint + test both packages
@@ -35,7 +35,7 @@ The shared parsing library. Contains:
 
 This package has no dependency on any licensing code. The `paid_tier()` entitlement is defined here because it describes a feature set (`require_iban=False`), not access control — activating it requires a valid signed license issued externally.
 
-### `bankstatements-free`
+### `bankstatements-cli`
 
 A thin CLI wrapper. Contains a single `app.py` that:
 
@@ -163,7 +163,7 @@ The premium distribution is not part of this repository. For premium access, con
 
 ## Boundary Enforcement
 
-CI enforces that `parser-free` never imports code from outside `bankstatements-core`. A dedicated `boundary-check.yml` workflow scans `packages/parser-free/src/` on every PR and fails if any prohibited imports are found.
+CI enforces that `parser-cli` never imports code from outside `bankstatements-core`. A dedicated `boundary-check.yml` workflow scans `packages/parser-cli/src/` on every PR and fails if any prohibited imports are found.
 
 This ensures the structural boundary between the free and premium tiers is maintained automatically on every PR.
 
@@ -174,7 +174,7 @@ This ensures the structural boundary between the free and premium tiers is maint
 | Package | Source | Tag convention |
 |---|---|---|
 | `bankstatements-core` | `packages/parser-core/pyproject.toml` | `core-v0.1.0` |
-| `bankstatements-free` | `packages/parser-free/pyproject.toml` | `free-v0.1.0` |
+| `bankstatements-cli` | `packages/parser-cli/pyproject.toml` | `free-v0.1.0` |
 
 Core and free versions are independent. A core release does not require a free release and vice versa.
 

@@ -21,7 +21,7 @@ from bankstatements_core.patterns.strategies import (
     ExcelOutputStrategy,
     JSONOutputStrategy,
 )
-from bankstatements_free.app import AppConfig, ConfigurationError
+from bankstatements_cli.app import AppConfig, ConfigurationError
 
 # Check if openpyxl is available (PAID tier dependency)
 try:

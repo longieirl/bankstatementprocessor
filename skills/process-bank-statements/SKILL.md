@@ -7,7 +7,7 @@ description: Use when asked to process PDF bank statements, extract transactions
 
 ## Overview
 
-Uses the `bankstatements-free` pip package (`bankstatements` CLI) to extract transactions from PDF bank statements and produce CSV, Excel, or JSON output. Configuration is passed via environment variables — no config file needed.
+Uses the `bankstatements-cli` pip package (`bankstatements` CLI) to extract transactions from PDF bank statements and produce CSV, Excel, or JSON output. Configuration is passed via environment variables — no config file needed.
 
 FREE tier supports: all output formats (csv, json, excel), recursive scanning, monthly summaries, expense analysis. Requires PDFs to contain IBANs (bank statements only — credit card PDFs are not supported in the free tier).
 
@@ -16,13 +16,13 @@ FREE tier supports: all output formats (csv, json, excel), recursive scanning, m
 ## Phase 0: Check Installation
 
 ```bash
-pip show bankstatements-free
+pip show bankstatements-cli
 ```
 
 If not installed, ask:
-> "bankstatements-free is not installed. How would you like to install it?
-> a) `pip install bankstatements-free` — latest release from PyPI
-> b) `pip install -e packages/parser-free` — local dev install from this repo"
+> "bankstatements-cli is not installed. How would you like to install it?
+> a) `pip install bankstatements-cli` — latest release from PyPI
+> b) `pip install -e packages/parser-cli` — local dev install from this repo"
 
 Wait for choice, then run the selected command. Verify after:
 
@@ -128,7 +128,7 @@ bankstatements --init --with-samples
 ### Dev Install (from this repo)
 
 ```bash
-pip install -e packages/parser-free
+pip install -e packages/parser-cli
 ```
 
 ---
@@ -137,7 +137,7 @@ pip install -e packages/parser-free
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `command not found: bankstatements` | Not installed or wrong venv | `pip install bankstatements-free` or activate correct venv |
+| `command not found: bankstatements` | Not installed or wrong venv | `pip install bankstatements-cli` or activate correct venv |
 | 0 PDFs extracted | No bank template matched | Re-run with `LOG_LEVEL=DEBUG` to see template detection |
 | 0 PDFs extracted | Credit card PDFs | Free tier requires IBANs — credit card statements not supported |
 | `Invalid output format 'xlsx'` | Wrong format name | Use `excel` not `xlsx` in `OUTPUT_FORMATS` |

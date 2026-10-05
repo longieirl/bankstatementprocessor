@@ -1,5 +1,5 @@
 # check=skip=SecretsUsedInArgOrEnv
-# Multi-stage Docker build for bankstatements-free
+# Multi-stage Docker build for bankstatements-cli
 # Stage 1: Builder - installs dependencies
 # Stage 2: Production - minimal runtime image
 
@@ -23,10 +23,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install --no-cache-dir --upgrade pip wheel setuptools build
 
 COPY packages/parser-core/ ./packages/parser-core/
-COPY packages/parser-free/ ./packages/parser-free/
+COPY packages/parser-cli/ ./packages/parser-cli/
 
 RUN pip install --no-cache-dir ./packages/parser-core
-RUN pip install --no-cache-dir ./packages/parser-free
+RUN pip install --no-cache-dir ./packages/parser-cli
 # hadolint ignore=DL3013
 RUN pip install --no-cache-dir --upgrade "msgpack>=1.2.1"
 
@@ -78,12 +78,12 @@ ENV SEGMENT_WRITE_KEY=""
 LABEL org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.title="bankstatements-free" \
-      org.opencontainers.image.description="Bank Statement PDF Processor (Free)" \
+      org.opencontainers.image.title="bankstatements-cli" \
+      org.opencontainers.image.description="Bank Statement PDF Processor (CLI)" \
       org.opencontainers.image.source="https://github.com/longieirl/bankstatementprocessor"
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import bankstatements_free; import bankstatements_core" || exit 1
+    CMD python -c "import bankstatements_cli; import bankstatements_core" || exit 1
 
 USER appuser
 
