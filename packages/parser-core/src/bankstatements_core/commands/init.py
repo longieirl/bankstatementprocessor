@@ -136,7 +136,7 @@ input/
     └── 2024-02.pdf
 ```
 
-For recursive scanning (PAID tier), organize statements in subdirectories.
+For recursive scanning, organize statements in subdirectories.
 """
                     input_readme.write_text(readme_content)
                     if verbose:

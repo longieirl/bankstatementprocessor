@@ -77,8 +77,8 @@ class TestPDFDiscoveryService(unittest.TestCase):
 
         self.assertIn("not a directory", str(context.exception))
 
-    def test_discover_pdfs_recursive_no_entitlements(self):
-        """Test recursive discovery without entitlements."""
+    def test_discover_pdfs_recursive_allowed(self):
+        """Test recursive discovery."""
         # Create subdirectory with PDFs
         subdir = self.input_dir / "subdir"
         subdir.mkdir()

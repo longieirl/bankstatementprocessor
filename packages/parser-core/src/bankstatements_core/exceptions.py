@@ -334,7 +334,6 @@ __all__ = [
     "ConfigurationError",
     "DataValidationError",
     "DuplicateDetectionError",
-    # Entitlements
     "InputValidationError",
     # PDF Extraction
     "PDFExtractionError",

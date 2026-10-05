@@ -114,7 +114,7 @@ class TemplateGenerator:
                 "  ⚠️  No IBAN detected - template will have empty iban_patterns"
             )
             logger.warning(
-                "  ⚠️  FREE tier requires IBAN patterns. To use this template with FREE tier:"
+                "  ⚠️  Templates without IBAN patterns will only match if IBAN detection is not required."
             )
             logger.warning(
                 "     1. Manually add IBAN pattern to template JSON (e.g., 'IE.*' for Irish banks)"
@@ -122,7 +122,6 @@ class TemplateGenerator:
             logger.warning(
                 "     2. OR: Use CUSTOM_TEMPLATES_DIR instead of BANK_TEMPLATES_DIR"
             )
-            logger.warning("     3. OR: Upgrade to PAID tier (no IBAN requirement)")
 
         # Update column headers for detection
         template["detection"]["column_headers"] = list(columns.keys())
