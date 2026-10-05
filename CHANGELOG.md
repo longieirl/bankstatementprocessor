@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking changes
+- `BankStatementProcessor.__init__()` no longer accepts `entitlements` parameter — `TypeError` on next install for any caller passing it
+- `ServiceRegistry.from_config()` no longer accepts `entitlements` parameter
+- `ProcessorFactory` functions no longer accept `entitlements` parameter
+- `EntitlementError` removed from `exceptions` module
+- `create_output_strategy()` no longer accepts `entitlements` parameter
+
+### Changes
+- Removed entitlements/tier system — all output formats, CC processing, recursive scanning, monthly summaries, and expense analysis are now unconditionally available
+- Credit card PDF processing enabled in open-source repo (previously PAID tier only)
+- `entitlements.py` deleted
+
 ---
 
 ## [0.1.7] — 2026-08-31
