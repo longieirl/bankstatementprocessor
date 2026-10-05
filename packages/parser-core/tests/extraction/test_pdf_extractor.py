@@ -759,3 +759,103 @@ class TestPDFTableExtractorCardNumber:
         # the CC statement is detected but no valid pattern matched
         result = extractor.extract(Path("/tmp/cc.pdf"))
         assert result.card_number == "unknown"
+
+    def test_extract_card_number_extract_text_raises(self):
+        """_extract_card_number returns None when page.extract_text() raises."""
+        extractor = PDFTableExtractor(columns=TEST_COLUMNS)
+        mock_template = MagicMock()
+        mock_template.detection.get_card_number_patterns.return_value = [r"\d{4}"]
+        extractor.template = mock_template
+
+        page = MagicMock()
+        page.extract_text.side_effect = ValueError("bad pdf")
+
+        assert extractor._extract_card_number(page) is None
+
+    def test_extract_card_number_empty_text_returns_none(self):
+        """_extract_card_number returns None when extract_text returns empty string."""
+        extractor = PDFTableExtractor(columns=TEST_COLUMNS)
+        mock_template = MagicMock()
+        mock_template.detection.get_card_number_patterns.return_value = [r"\d{4}"]
+        extractor.template = mock_template
+
+        page = MagicMock()
+        page.extract_text.return_value = ""
+
+        assert extractor._extract_card_number(page) is None
+
+    def test_extract_card_number_fallback_regex_matches(self):
+        """_extract_card_number falls back to generic masked-card regex."""
+        extractor = PDFTableExtractor(columns=TEST_COLUMNS)
+        mock_template = MagicMock()
+        mock_template.detection.get_card_number_patterns.return_value = []
+        extractor.template = mock_template
+
+        page = MagicMock()
+        page.extract_text.return_value = "card 4402 60** **** 9459 statement"
+
+        result = extractor._extract_card_number(page)
+        assert result == "4402 60** **** 9459"
+
+    @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
+    def test_page_validation_failure_skips_page(self, mock_pdfplumber):
+        """Pages failing structural validation are skipped (returns empty transactions)."""
+        mock_pdf = MagicMock()
+        mock_page = MagicMock()
+        mock_pdf.pages = [mock_page]
+        mock_pdfplumber.return_value = mock_pdf
+
+        mock_page.width = 600
+        mock_page.height = 800
+        mock_cropped = MagicMock()
+        mock_page.crop.return_value = mock_cropped
+        mock_cropped.extract_text.return_value = "IE29AIBK93115212345678"
+        mock_cropped.extract_words.return_value = [
+            {"text": "OnlyOneWord", "x0": 60, "top": 350}
+        ]
+
+        extractor = PDFTableExtractor(
+            columns=TEST_COLUMNS,
+            options=PDFExtractorOptions(
+                enable_page_validation=True,
+                enable_header_check=False,
+            ),
+        )
+        result = extractor.extract(Path("/tmp/test.pdf"))
+
+        assert result.page_count == 1
+        assert result.transactions == []
+
+    @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
+    def test_dynamic_boundary_exceeds_static_clamped(self, mock_pdfplumber):
+        """When dynamic boundary exceeds static, static boundary is used."""
+        mock_pdf = MagicMock()
+        mock_page = MagicMock()
+        mock_pdf.pages = [mock_page]
+        mock_pdfplumber.return_value = mock_pdf
+
+        mock_page.width = 600
+        mock_page.height = 800
+        mock_cropped = MagicMock()
+        mock_page.crop.return_value = mock_cropped
+        mock_cropped.extract_text.return_value = "IE29AIBK93115212345678"
+        # All words below table_bottom_y=500 so dynamic detector returns > 500
+        mock_cropped.extract_words.return_value = [
+            {"text": "01", "x0": 30, "top": 100},
+            {"text": "Jan", "x0": 35, "top": 100},
+            {"text": "Purchase", "x0": 60, "top": 100},
+            {"text": "50.00", "x0": 210, "top": 100},
+        ]
+
+        extractor = PDFTableExtractor(
+            columns=TEST_COLUMNS,
+            options=PDFExtractorOptions(
+                enable_dynamic_boundary=True,
+                enable_page_validation=False,
+                enable_header_check=False,
+                table_bottom_y=500,
+            ),
+        )
+        result = extractor.extract(Path("/tmp/test.pdf"))
+
+        assert result.page_count == 1

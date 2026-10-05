@@ -1369,5 +1369,39 @@ class TestCCGroupingInProcessor(unittest.TestCase):
         self.assertEqual(data["summary"]["total_excluded"], 2)
 
 
+class TestBuildGroupingInputsFilenameBackfill(unittest.TestCase):
+    """Tests for _build_grouping_inputs filename backfill for CC transactions."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.input_dir = Path(self.temp_dir.name) / "input"
+        self.output_dir = Path(self.temp_dir.name) / "output"
+        self.input_dir.mkdir(exist_ok=True)
+        self.output_dir.mkdir(exist_ok=True)
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_cc_transaction_filename_backfilled_from_source_file(self):
+        """Transaction with empty filename gets source_file.name during CC grouping."""
+        txn = dicts_to_transactions(
+            [{"Date": "01 Jan 2024", "Details": "Purchase", "Filename": ""}]
+        )[0]
+        txn.filename = ""
+
+        result = ExtractionResult(
+            transactions=[txn],
+            page_count=1,
+            iban=None,
+            source_file=Path("/tmp/cc.pdf"),
+            card_number="9459",
+        )
+
+        processor = create_test_processor(self.input_dir, self.output_dir)
+        processor._build_grouping_inputs([result])
+
+        self.assertEqual(txn.filename, "cc.pdf")
+
+
 if __name__ == "__main__":
     unittest.main()
