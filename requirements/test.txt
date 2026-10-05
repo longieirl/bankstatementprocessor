@@ -7,24 +7,24 @@
 # Test framework
 pytest==9.1.1
 pytest-cov==7.1.0
-pytest-mock==3.15.1
+pytest-mock==3.16.0
 pytest-asyncio==1.4.0
 pytest-xdist==3.8.0  # Parallel testing
 
 # Test data factories
 factory-boy==3.3.3
-faker==40.37.0
+faker==40.40.0
 
 # HTTP testing
 responses==0.26.3
 httpretty==1.1.4
 
 # Code coverage
-coverage==7.15.4
+coverage==7.16.2
 
 # Performance testing
 pytest-benchmark==5.3.0
-locust==2.46.4  # Load testing
+locust==2.46.6  # Load testing
 
 # Test reporting
 pytest-html==4.2.0
