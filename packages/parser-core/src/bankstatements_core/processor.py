@@ -408,7 +408,9 @@ class BankStatementProcessor:
 
         # Step 3b: Process each card group (CC)
         for card_suffix, card_txns in txns_by_card.items():
-            result = self._process_transaction_group(card_suffix, card_txns, "Credit Card")
+            result = self._process_transaction_group(
+                card_suffix, card_txns, "Credit Card"
+            )
 
             logger.debug(
                 "Card %s: Adding %s unique, %s duplicates to totals",

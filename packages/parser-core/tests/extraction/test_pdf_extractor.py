@@ -690,9 +690,7 @@ class TestPDFTableExtractorCardNumber:
         assert result.card_number == "unknown"
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
-    def test_extract_card_number_from_page_text(
-        self, mock_pdfplumber
-    ):
+    def test_extract_card_number_from_page_text(self, mock_pdfplumber):
         """page.extract_text() used directly for card number extraction."""
         mock_pdf = MagicMock()
         mock_page = MagicMock()

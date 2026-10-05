@@ -173,7 +173,9 @@ class TestPageSkipping:
             ]
             mock_cropped.extract_words.return_value = mock_words
 
-        mock_page1.crop.return_value.extract_text.return_value = "IE29AIBK93115212345678"
+        mock_page1.crop.return_value.extract_text.return_value = (
+            "IE29AIBK93115212345678"
+        )
 
         extractor = PDFTableExtractor(
             columns=TEST_COLUMNS,

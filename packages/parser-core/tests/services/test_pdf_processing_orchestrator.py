@@ -115,7 +115,9 @@ class TestSaveCardNumbers(unittest.TestCase):
         entry = payload[0]
 
         self.assertEqual(entry["pdf_filename"], "cc_statement.pdf")
-        self.assertEqual(entry["card_masked"], "4402********9459")  # 16 chars stripped → 8 middle stars
+        self.assertEqual(
+            entry["card_masked"], "4402********9459"
+        )  # 16 chars stripped → 8 middle stars
         self.assertEqual(len(entry["card_digest"]), 64)
         self.assertEqual(
             entry["card_digest"], hashlib.sha256(card_number.encode()).hexdigest()
