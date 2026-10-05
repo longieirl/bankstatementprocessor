@@ -17,7 +17,6 @@ Exception Hierarchy:
     ├── ValidationError (validation failures)
     │   ├── DataValidationError (invalid transaction data)
     │   └── InputValidationError (invalid input parameters)
-    ├── EntitlementError (tier/license restrictions)
     └── ProcessingError (processing failures)
         ├── DuplicateDetectionError (duplicate detection failures)
         └── TransactionProcessingError (transaction processing failures)
@@ -268,32 +267,6 @@ class InputValidationError(ValidationError):
 
 
 # ==============================================================================
-# Entitlement Errors
-# ==============================================================================
-
-
-class EntitlementError(BankStatementError):
-    """
-    Raised when an operation is not allowed by the current entitlement tier.
-
-    This includes:
-        - Attempting to use premium features without license
-        - Exceeding tier limits (file count, output formats)
-        - Expired or invalid license
-
-    Example:
-        if format_name not in self.allowed_output_formats:
-            raise EntitlementError(
-                f"Output format '{format_name}' is not available in "
-                f"{self.tier} tier. Allowed formats: "
-                f"{', '.join(sorted(self.allowed_output_formats))}"
-            )
-    """
-
-    pass
-
-
-# ==============================================================================
 # Processing Errors
 # ==============================================================================
 
@@ -362,7 +335,6 @@ __all__ = [
     "DataValidationError",
     "DuplicateDetectionError",
     # Entitlements
-    "EntitlementError",
     "InputValidationError",
     # PDF Extraction
     "PDFExtractionError",

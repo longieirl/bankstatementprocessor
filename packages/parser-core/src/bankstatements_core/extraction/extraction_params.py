@@ -72,4 +72,3 @@ class PDFExtractorOptions:
     header_check_top_y: int | None = None
     extraction_config: Any | None = None
     template: BankTemplate | None = field(default=None)
-    entitlements: Any | None = None

@@ -4,7 +4,6 @@ This command analyzes PDF bank statements to detect table structures and IBANs,
 generating template configurations for bank statement processing.
 
 IMPORTANT CONSTRAINTS:
-- NO PAID FEATURES: Does not use ProcessorFactory or any entitlement-restricted features
 - FIRST PAGE ONLY for IBAN: Only analyzes first page for IBAN extraction
 - SINGLE FILE OUTPUT: Only writes template JSON (creates or overwrites)
 """
@@ -76,9 +75,6 @@ class PDFAnalyzer:
             raise FileNotFoundError(f"PDF file not found: {self.pdf_path}")
 
         logger.info("🔍 Analyzing PDF: %s", self.pdf_path)
-        logger.info(
-            "⚠️  Analysis utility operates outside entitlement system (no paid features)"
-        )
 
         try:
             with pdfplumber.open(self.pdf_path) as pdf:
@@ -278,7 +274,7 @@ class PDFAnalyzer:
         logger.info("  Loading template: %s", template_path.stem)
 
         try:
-            # Load template manually (no TemplateRegistry to avoid entitlement checks)
+            # Load template manually
             with open(template_path) as f:
                 template_data = json.load(f)
 
@@ -288,7 +284,6 @@ class PDFAnalyzer:
             table_bottom_y = extraction_config.get("table_bottom_y", 0)
 
             # CRITICAL: Direct instantiation, NOT ProcessorFactory
-            # This bypasses entitlement system
             extractor = PDFTableExtractor(
                 columns=columns,
                 options=PDFExtractorOptions(

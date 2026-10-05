@@ -38,7 +38,6 @@ class MonthlySummaryService:
         self,
         debit_columns: list[str],
         credit_columns: list[str],
-        entitlements: Any = None,
     ):
         """
         Initialize monthly summary service.
@@ -46,7 +45,6 @@ class MonthlySummaryService:
         Args:
             debit_columns: List of column names containing debit amounts (ignored when using Transaction model)
             credit_columns: List of column names containing credit amounts (ignored when using Transaction model)
-            entitlements: Optional entitlements for enforcement (None = no enforcement)
 
         Note:
             debit_columns and credit_columns are kept for backward compatibility but are not used
@@ -54,14 +52,10 @@ class MonthlySummaryService:
         """
         self.debit_columns = debit_columns
         self.credit_columns = credit_columns
-        self.entitlements = entitlements
 
     def generate(self, transactions: list[dict]) -> dict[str, Any]:
         """
         Generate monthly summary from transactions.
-
-        Enforces entitlements if provided - monthly summaries are only
-        available in PAID tier.
 
         Args:
             transactions: List of transaction dictionaries
@@ -73,17 +67,10 @@ class MonthlySummaryService:
             - total_months: Number of months with transactions
             - monthly_data: List of monthly statistics
 
-        Raises:
-            EntitlementError: If monthly summary is not allowed for the tier
-
         Note:
             Uses Transaction domain model internally for type-safe date handling
             and Decimal precision, while supporting multiple debit/credit columns.
         """
-        # Enforce entitlements at entry point (defense in depth)
-        if self.entitlements is not None:
-            self.entitlements.check_monthly_summary()
-            logger.info("Monthly summary generation authorized")
         logger.info(
             "Generating monthly summary - Debit columns: %s, Credit columns: %s",
             self.debit_columns,

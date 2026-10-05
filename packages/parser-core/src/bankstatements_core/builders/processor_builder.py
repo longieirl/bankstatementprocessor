@@ -51,7 +51,6 @@ class BankStatementProcessorBuilder:
         self._duplicate_strategy: Any | None = None
         self._repository: Any | None = None
         self._activity_log: Any | None = None
-        self._entitlements: Any | None = None
 
     def with_input_dir(self, path: Path) -> BankStatementProcessorBuilder:
         """
@@ -144,8 +143,6 @@ class BankStatementProcessorBuilder:
     ) -> BankStatementProcessorBuilder:
         """
         Enable or disable recursive directory scanning for PDFs.
-
-        Requires PAID tier entitlement.
 
         Args:
             enabled: Whether to scan subdirectories recursively
@@ -251,19 +248,6 @@ class BankStatementProcessorBuilder:
             Self for method chaining
         """
         self._activity_log = activity_log
-        return self
-
-    def with_entitlements(self, entitlements: Any) -> BankStatementProcessorBuilder:
-        """
-        Set entitlements for tier-based feature access control.
-
-        Args:
-            entitlements: Entitlements instance (FREE or PAID tier)
-
-        Returns:
-            Self for method chaining
-        """
-        self._entitlements = entitlements
         return self
 
     def with_processor_config(
@@ -392,7 +376,6 @@ class BankStatementProcessorBuilder:
 
         registry = ServiceRegistry.from_config(
             config,
-            entitlements=self._entitlements,
             duplicate_detector=duplicate_detector,
             sorting_service=sorting_service,
         )
@@ -403,6 +386,5 @@ class BankStatementProcessorBuilder:
             duplicate_strategy=self._duplicate_strategy,
             repository=self._repository,
             activity_log=self._activity_log,
-            entitlements=self._entitlements,
             registry=registry,
         )

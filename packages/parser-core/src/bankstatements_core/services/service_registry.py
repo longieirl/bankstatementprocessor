@@ -5,7 +5,7 @@ the enrichment/classification pipeline.
 
 Usage (primary path)::
 
-    registry = ServiceRegistry.from_config(processor_config, entitlements)
+    registry = ServiceRegistry.from_config(processor_config)
     unique, dupes = registry.process_transaction_group(rows, template)
     grouped = registry.group_by_iban(rows, pdf_ibans)
 
@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from bankstatements_core.config.processor_config import ProcessorConfig
@@ -29,7 +29,6 @@ if TYPE_CHECKING:
         IIBANGrouping,
         ITransactionSorting,
     )
-    from bankstatements_core.entitlements import Entitlements
     from bankstatements_core.templates.template_model import BankTemplate
 
 logger = logging.getLogger(__name__)
@@ -45,7 +44,6 @@ class _ServiceContext:
     column_names: list[str]
     debit_columns: list[str]
     credit_columns: list[str]
-    entitlements: Any  # Entitlements | None
 
 
 class ServiceRegistry:
@@ -75,10 +73,9 @@ class ServiceRegistry:
     # ------------------------------------------------------------------
 
     @classmethod
-    def from_config(  # noqa: PLR0913
+    def from_config(
         cls,
         config: ProcessorConfig,
-        entitlements: Entitlements | None = None,
         duplicate_detector: IDuplicateDetector | None = None,
         sorting_service: ITransactionSorting | None = None,
         grouping_service: IIBANGrouping | None = None,
@@ -89,7 +86,6 @@ class ServiceRegistry:
         Args:
             config: Processor configuration carrying column, sorting, and
                 processing settings.
-            entitlements: Optional tier-based entitlements.
             duplicate_detector: Override duplicate detector (default: AllFields).
             sorting_service: Override sorting service (default: chronological
                 if config.processing.sort_by_date, else no-sort).
@@ -132,7 +128,6 @@ class ServiceRegistry:
             column_names=column_names,
             debit_columns=debit_columns,
             credit_columns=credit_columns,
-            entitlements=entitlements,
         )
 
         if duplicate_detector is None:

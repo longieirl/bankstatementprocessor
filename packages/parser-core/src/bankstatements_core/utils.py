@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 # Environment parsing - delegate to existing EnvironmentParser
 from bankstatements_core.config.environment_parser import EnvironmentParser
@@ -31,9 +30,6 @@ from bankstatements_core.domain.dataframe_utils import (
 
 # File discovery - delegate to existing PDFDiscoveryService
 from bankstatements_core.services.pdf_discovery import PDFDiscoveryService
-
-if TYPE_CHECKING:
-    from bankstatements_core.entitlements import Entitlements
 
 logger = logging.getLogger(__name__)
 
@@ -125,38 +121,18 @@ def parse_bool_env(var_name: str, default: bool = False) -> bool:
     return EnvironmentParser.parse_bool(var_name, default)
 
 
-def discover_pdfs(
-    input_dir: Path, recursive: bool, entitlements: Entitlements
-) -> list[Path]:
+def discover_pdfs(input_dir: Path, recursive: bool) -> list[Path]:
     """
-    Discover PDF files with entitlement enforcement for recursive scanning.
+    Discover PDF files in the given directory.
 
     Delegates to PDFDiscoveryService.discover() for backward compatibility.
-
-    This function enforces tier-based access control for recursive directory
-    scanning. FREE tier users can only scan the top-level directory, while
-    PAID tier users can recursively scan subdirectories.
 
     Args:
         input_dir: Directory to scan for PDF files
         recursive: Whether recursive scan is requested
-        entitlements: Entitlements to enforce
 
     Returns:
         Sorted list of PDF file paths
-
-    Raises:
-        EntitlementError: If recursive scan requested but not allowed
-
-    Examples:
-        >>> from bankstatements_core.entitlements import Entitlements
-        >>> from pathlib import Path
-        >>> # FREE tier - recursive blocked
-        >>> ent = Entitlements.free_tier()
-        >>> pdfs = discover_pdfs(Path("input"), recursive=False, entitlements=ent)
-        >>> # PAID tier - recursive allowed
-        >>> ent = Entitlements.paid_tier()
-        >>> pdfs = discover_pdfs(Path("input"), recursive=True, entitlements=ent)
     """
-    service = PDFDiscoveryService(entitlements)
+    service = PDFDiscoveryService()
     return service.discover_pdfs(input_dir, recursive)

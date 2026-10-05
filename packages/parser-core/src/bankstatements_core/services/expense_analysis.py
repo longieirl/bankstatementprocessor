@@ -11,15 +11,11 @@ import statistics
 from collections import defaultdict
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
 from bankstatements_core.domain import Transaction, dicts_to_transactions
 from bankstatements_core.domain.currency import strip_currency_symbols
-from bankstatements_core.entitlements import EntitlementError
 from bankstatements_core.services.date_parser import DateParserService
-
-if TYPE_CHECKING:
-    from bankstatements_core.entitlements import Entitlements
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +30,6 @@ class ExpenseAnalysisService:
     - Recurring charges (subscriptions, monthly bills)
     - High-value transaction anomalies (statistical outliers)
 
-    Available to all users. Entitlement infrastructure maintained for
-    potential future feature restrictions.
-
     Example:
         >>> service = ExpenseAnalysisService()
         >>> transactions = [
@@ -47,21 +40,12 @@ class ExpenseAnalysisService:
         >>> print(insights["insights"]["recurring_charges"])
     """
 
-    def __init__(self, entitlements: Entitlements | None = None):
-        """
-        Initialize expense analysis service.
-
-        Args:
-            entitlements: Optional entitlements for enforcement (None = no enforcement)
-        """
-        self.entitlements = entitlements
+    def __init__(self) -> None:
+        """Initialize expense analysis service."""
 
     def analyze(self, transactions: list[dict]) -> dict[str, Any]:
         """
         Analyze transactions and generate expense insights.
-
-        Checks entitlements if provided (currently available to all users).
-        Entitlement infrastructure maintained for potential future restrictions.
 
         Args:
             transactions: List of transaction dictionaries
@@ -77,18 +61,10 @@ class ExpenseAnalysisService:
                 statistics: dict
               }
 
-        Raises:
-            EntitlementError: If expense analysis is not allowed (currently always allowed)
-
         Note:
             Returns empty insights on error (logs warning, doesn't fail).
         """
         try:
-            # Enforce entitlements at entry point (defense in depth)
-            if self.entitlements is not None:
-                self.entitlements.check_expense_analysis()
-                logger.info("Expense analysis authorized")
-
             if not transactions:
                 logger.info("No transactions to analyze")
                 return self._empty_insights()
@@ -120,9 +96,6 @@ class ExpenseAnalysisService:
                 },
             }
 
-        except EntitlementError:
-            # Re-raise tier restriction errors (fail fast)
-            raise
         except Exception as e:
             # Unexpected errors: log warning and return empty insights
             logger.warning(

@@ -17,7 +17,6 @@ from typing import TYPE_CHECKING, Any
 
 from bankstatements_core.config.processor_config import ExtractionConfig
 from bankstatements_core.domain import ExtractionResult
-from bankstatements_core.entitlements import Entitlements
 
 if TYPE_CHECKING:
     from bankstatements_core.domain.protocols.services import (
@@ -51,7 +50,6 @@ class PDFProcessingOrchestrator:
         column_names: list[str],
         output_dir: Path,
         repository: FileSystemTransactionRepository,
-        entitlements: Entitlements | None = None,
         pdf_discovery: IPDFDiscovery | None = None,
         extraction_orchestrator: ExtractionOrchestrator | None = None,
         filter_service: ITransactionFilter | None = None,
@@ -63,7 +61,6 @@ class PDFProcessingOrchestrator:
             column_names: List of column names for filtering
             output_dir: Directory to save IBAN and exclusion logs
             repository: Transaction repository for file I/O operations
-            entitlements: Optional entitlements for feature restrictions (e.g., recursive scanning)
             pdf_discovery: Service for discovering PDF files (optional, creates default if None)
             extraction_orchestrator: Service for extracting data from PDFs (optional, creates default if None)
             filter_service: Service for filtering transactions (optional, creates default if None)
@@ -82,26 +79,14 @@ class PDFProcessingOrchestrator:
         self.column_names = column_names
         self.output_dir = output_dir
         self.repository = repository
-        self.entitlements = entitlements
         # Initialize services with provided instances or create defaults
-        self.pdf_discovery = pdf_discovery or PDFDiscoveryService(
-            entitlements=entitlements
-        )
+        self.pdf_discovery = pdf_discovery or PDFDiscoveryService()
         self.extraction_orchestrator = (
             extraction_orchestrator
             or ExtractionOrchestrator(
-                extraction_config=extraction_config, entitlements=entitlements
+                extraction_config=extraction_config,
             )
         )
-        if (
-            extraction_orchestrator is not None
-            and extraction_orchestrator._entitlements != entitlements
-        ):
-            raise ValueError(
-                "ExtractionOrchestrator entitlements must match PDFProcessingOrchestrator "
-                "entitlements. Pass a consistent entitlements object to both, or omit "
-                "extraction_orchestrator to have it created automatically."
-            )
         self.filter_service = filter_service or TransactionFilterService(column_names)
 
     def process_all_pdfs(
@@ -141,20 +126,8 @@ class PDFProcessingOrchestrator:
                     and len(result.transactions) == 0
                     and result.page_count > 0
                 ):
-                    require_iban = (
-                        self.entitlements.require_iban
-                        if self.entitlements is not None
-                        else True
-                    )
-                    if require_iban:
-                        reason = (
-                            "Could not be processed - no IBAN found "
-                            "(likely credit card statement)"
-                        )
-                        log_detail = "No IBAN found, no data extracted"
-                    else:
-                        reason = "Could not be processed - no transactions extracted"
-                        log_detail = "No transactions extracted"
+                    reason = "Could not be processed - no transactions extracted"
+                    log_detail = "No transactions extracted"
                     excluded_files.append(
                         {
                             "filename": pdf.name,

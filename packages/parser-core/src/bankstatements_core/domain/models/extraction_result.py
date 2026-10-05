@@ -23,7 +23,7 @@ class ExtractionResult:
             In-memory only — not written to output files.
         card_number: Card number extracted from credit card statement header,
             or None for bank statements. Set to "unknown" when CC PDF is
-            detected on paid tier but no card number pattern matches.
+            detected but no card number pattern matches.
         statement_year: Year inferred from a document-level date field (e.g.
             "Payment Due Date: 3 Mar 2026" → 2026). Used to resolve yearless
             transaction dates (e.g. "3 Feb") at sort time. None when the year

@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Any
 
 from bankstatements_core.config.app_config import AppConfig, ConfigurationError
 from bankstatements_core.config.column_config import get_columns_config
-from bankstatements_core.entitlements import EntitlementError, Entitlements
 
 if TYPE_CHECKING:
     from bankstatements_core.processor import BankStatementProcessor
@@ -34,28 +33,20 @@ class BankStatementProcessingFacade:
     def __init__(
         self,
         config: AppConfig | None = None,
-        entitlements: Entitlements | None = None,
     ):
         """
         Initialize the processing facade.
 
         Args:
             config: Optional configuration. If None, loads from environment.
-            entitlements: Optional entitlements. If None, uses FREE tier.
         """
         self.config = config
-        self.entitlements = entitlements or Entitlements.free_tier()
         self._processor: BankStatementProcessor | None = None
 
     @classmethod
-    def from_environment(
-        cls, entitlements: Entitlements | None = None
-    ) -> BankStatementProcessingFacade:
+    def from_environment(cls) -> BankStatementProcessingFacade:
         """
         Create facade from environment variables.
-
-        Args:
-            entitlements: Optional entitlements. If None, uses FREE tier.
 
         Returns:
             Configured facade instance
@@ -72,7 +63,7 @@ class BankStatementProcessingFacade:
         try:
             config = get_config_singleton()
             logger.info("Loaded configuration from environment")
-            return cls(config, entitlements)
+            return cls(config)
         except ConfigurationError:
             # Re-raise ConfigurationError to be handled by caller
             raise
@@ -110,33 +101,6 @@ class BankStatementProcessingFacade:
         # Log configuration
         self.config.log_configuration()
 
-        # Enforce entitlements for configured features
-        logger.info("Enforcing %s tier entitlements", self.entitlements.tier)
-
-        # Check recursive scan entitlement
-        if self.config.recursive_scan:
-            try:
-                self.entitlements.check_recursive_scan()
-            except EntitlementError as e:
-                logger.error(str(e))
-                raise ConfigurationError(str(e)) from e
-
-        # Check monthly summary entitlement
-        if self.config.generate_monthly_summary:
-            try:
-                self.entitlements.check_monthly_summary()
-            except EntitlementError as e:
-                logger.error(str(e))
-                raise ConfigurationError(str(e)) from e
-
-        # Check output format entitlements
-        for format_name in self.config.output_formats:
-            try:
-                self.entitlements.check_output_format(format_name)
-            except EntitlementError as e:
-                logger.error(str(e))
-                raise ConfigurationError(str(e)) from e
-
         # Load column configuration
         try:
             columns = get_columns_config()
@@ -160,7 +124,7 @@ class BankStatementProcessingFacade:
         )
 
         self._processor = ProcessorFactory.create_from_config(
-            self.config, activity_log=activity_log, entitlements=self.entitlements
+            self.config, activity_log=activity_log
         )
         logger.info("Created processor via factory")
 
@@ -183,7 +147,7 @@ class BankStatementProcessingFacade:
 
         return summary
 
-    def process_with_error_handling(self) -> int:  # noqa: PLR0911
+    def process_with_error_handling(self) -> int:
         """
         Process all files with comprehensive error handling.
 
@@ -216,10 +180,6 @@ class BankStatementProcessingFacade:
         except PermissionError as e:
             logger.error("Permission denied: %s", e)
             return 3
-
-        except EntitlementError as e:
-            logger.error("Entitlement error: %s", e)
-            return 5
 
         except KeyboardInterrupt:
             logger.info("Processing interrupted by user")

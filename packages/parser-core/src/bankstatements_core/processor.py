@@ -120,7 +120,7 @@ class BankStatementProcessor:
     # pylint: disable=too-many-instance-attributes
     # Builder/processor class — 27 attributes reflect the full configurable surface
     # area of the processing pipeline. Not reducible without breaking the public API.
-    def __init__(  # noqa: PLR0913, PLR0915
+    def __init__(  # noqa: PLR0913
         # pylint: disable=too-many-statements
         self,
         config: ProcessorConfig,
@@ -128,7 +128,6 @@ class BankStatementProcessor:
         duplicate_strategy: Any | None = None,
         repository: Any | None = None,
         activity_log: Any | None = None,
-        entitlements: Any | None = None,
         template_registry: Any | None = None,
         registry: ServiceRegistry | None = None,
     ):
@@ -145,8 +144,6 @@ class BankStatementProcessor:
                 (default: None - uses FileSystemTransactionRepository)
             activity_log: ProcessingActivityLog instance for GDPR audit trail
                 (default: None - no activity logging)
-            entitlements: Entitlements instance for tier-based feature access control
-                (default: None - allows all features)
             template_registry: TemplateRegistry instance for template lookup
                 (default: None - no template-based classification)
         """
@@ -176,7 +173,6 @@ class BankStatementProcessor:
         self.generate_expense_analysis = config.processing.generate_expense_analysis
         self.recursive_scan = config.processing.recursive_scan
         self.column_names = get_column_names(self.columns)
-        self.entitlements = entitlements
 
         # Strategy pattern: Output format strategies (defaults based on config)
         if output_strategies is None:
@@ -218,13 +214,11 @@ class BankStatementProcessor:
         debit_columns = find_matching_columns(self.column_names, ["debit"])
         credit_columns = find_matching_columns(self.column_names, ["credit"])
         self._monthly_summary_service = MonthlySummaryService(
-            debit_columns, credit_columns, entitlements=self.entitlements
+            debit_columns, credit_columns
         )
 
         # Service: Expense analysis service
-        self._expense_analysis_service = ExpenseAnalysisService(
-            entitlements=self.entitlements
-        )
+        self._expense_analysis_service = ExpenseAnalysisService()
 
         # Service: Transaction filter service
         self._filter_service = TransactionFilterService(self.column_names)
@@ -251,7 +245,6 @@ class BankStatementProcessor:
             column_names=self.column_names,
             output_dir=self.output_dir,
             repository=self.repository,
-            entitlements=self.entitlements,
         )
 
         # ServiceRegistry: single wiring point for transaction processing
@@ -260,7 +253,6 @@ class BankStatementProcessor:
         else:
             self._registry = ServiceRegistry.from_config(
                 config,
-                entitlements=entitlements,
                 duplicate_detector=self._duplicate_service,
                 sorting_service=self._sorting_service,
             )
@@ -378,12 +370,9 @@ class BankStatementProcessor:
         # Step 2a-post: Route "unknown" IBAN group to excluded_files.json
         self._exclude_unknown_iban_group(txns_by_iban)
 
-        # Step 2b: Group CC transactions by card suffix (paid tier only)
+        # Step 2b: Group CC transactions by card suffix
         txns_by_card: dict[str, list[Transaction]] = {}
-        is_paid_tier = (
-            self.entitlements is not None and not self.entitlements.require_iban
-        )
-        if is_paid_tier and all_cc_txns:
+        if all_cc_txns:
             txns_by_card = self._registry.group_by_card(all_cc_txns, pdf_card_numbers)
             logger.debug(
                 "Grouped %s CC transactions into %s card groups",
