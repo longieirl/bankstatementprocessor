@@ -63,7 +63,7 @@ class OutputConfig:
 
     output_formats: list[str] = field(
         default_factory=lambda: ["csv", "json", "excel"]
-    )  # All formats available in FREE tier
+    )  # Default: CSV, JSON, Excel
 
 
 @dataclass

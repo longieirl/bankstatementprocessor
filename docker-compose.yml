@@ -37,7 +37,7 @@ services:
       - ENABLE_DYNAMIC_BOUNDARY=${ENABLE_DYNAMIC_BOUNDARY:-false}
       - SORT_BY_DATE=${SORT_BY_DATE:-true}
       - RECURSIVE_SCAN=${RECURSIVE_SCAN:-true}
-      # Output configuration - expense analysis enabled by default (monthly summary requires PAID tier)
+      # Output configuration
       - OUTPUT_FORMATS=${OUTPUT_FORMATS:-csv,json}
       - GENERATE_MONTHLY_SUMMARY=${GENERATE_MONTHLY_SUMMARY:-true}
       - GENERATE_EXPENSE_ANALYSIS=${GENERATE_EXPENSE_ANALYSIS:-true}

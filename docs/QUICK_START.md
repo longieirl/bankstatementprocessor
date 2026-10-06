@@ -71,7 +71,7 @@ Duplicate transactions: 0
 
 Output CSV file: `./output/bank_statements_9015.csv`
 
-## Features (FREE Tier)
+## Features
 
 ✅ Extract transactions from PDF bank statements
 ✅ Automatic IBAN detection
@@ -126,16 +126,6 @@ make docker-local
 
 - See [DOCKER_COMMANDS.md](DOCKER_COMMANDS.md) for detailed Docker usage
 - See [DOCKER_TROUBLESHOOTING.md](DOCKER_TROUBLESHOOTING.md) for troubleshooting
-
-## PAID Tier Features
-
-PAID tier removes the IBAN requirement, allowing you to process:
-- Credit card statements (without IBAN patterns)
-- Other financial documents without IBAN
-
-All other features (CSV, JSON, Excel, monthly summaries, recursive scanning) are available in FREE tier.
-
-See documentation for license generation instructions.
 
 ---
 

@@ -15,7 +15,7 @@
 | Package | PyPI | Description |
 |---|---|---|
 | `packages/parser-core/` | `bankstatements-core` | Shared parsing library — PDF extraction, services, templates |
-| `packages/parser-cli/` | `bankstatements-cli` | Free-tier CLI — thin wrapper around `bankstatements-core` |
+| `packages/parser-cli/` | `bankstatements-cli` | CLI — thin wrapper around `bankstatements-core` |
 
 ---
 
@@ -42,16 +42,12 @@ bankstatements --input ./input --output ./output --output-formats csv,json,excel
 - CSV, JSON, and Excel export
 - Batch processing with recursive directory scanning
 - SHA-256 duplicate detection
-- Transaction type classification (purchase, payment, refund, fee, transfer)
+- Transaction type classification (income, expense, refund, transfer, cash_withdrawal, cash_deposit)
 - Monthly transaction summaries and expense analysis
 - IBAN extraction and grouping
-- Multi-document type support (bank statements, credit cards, loans)
+- Credit card statement support
 - GDPR-compliant local processing — no data leaves your machine
 - Template-based statement detection (AIB Ireland, Revolut, and more)
-
-**Premium features** (available in the private `bankstatements-premium` distribution):
-- Credit card and loan statement support (no IBAN required)
-- Process templates without IBAN patterns
 
 ---
 
@@ -75,7 +71,7 @@ bankstatementprocessor/
 │   ├── parser-core/          bankstatements-core (PyPI library)
 │   │   ├── src/bankstatements_core/
 │   │   └── tests/
-│   └── parser-cli/          bankstatements-cli (free-tier CLI)
+│   └── parser-cli/          bankstatements-cli (CLI)
 │       ├── src/bankstatements_cli/
 │       └── tests/
 ├── templates/                shared bank template JSON files
@@ -90,7 +86,7 @@ bankstatementprocessor/
 
 ## Docker
 
-**Free tier (this repo):** a `Dockerfile` and `docker-compose.yml` are provided for local development. They build both `bankstatements-core` and `bankstatements-cli` from source — no remote image is pulled and no license is required.
+**Open source (this repo):** a `Dockerfile` and `docker-compose.yml` are provided for local development. They build both `bankstatements-core` and `bankstatements-cli` from source — no remote image is pulled.
 
 ```bash
 git clone https://github.com/longieirl/bankstatementprocessor.git
@@ -101,7 +97,7 @@ docker-compose up --build
 
 Place PDFs in `./input/` before running. Results are written to `./output/`.
 
-**Premium tier:** production Docker images are published to the GitHub Container Registry.
+**Production image:** published to the GitHub Container Registry.
 
 ```bash
 docker pull ghcr.io/longieirl/bankstatements-premium:latest

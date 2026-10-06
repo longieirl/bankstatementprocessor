@@ -146,7 +146,7 @@ class TestExcelOutputWithDocumentType:
 
     def test_excel_includes_document_type_column(self, sample_transactions, tmp_path):
         """Test that Excel output includes document_type column."""
-        pytest.importorskip("openpyxl", reason="openpyxl not installed (PAID tier)")
+        pytest.importorskip("openpyxl", reason="openpyxl not installed")
 
         from bankstatements_core.patterns.strategies import ExcelOutputStrategy
 
@@ -178,7 +178,7 @@ class TestExcelOutputWithDocumentType:
 
     def test_excel_preserves_document_type_values(self, sample_transactions, tmp_path):
         """Test that Excel output preserves correct document_type values."""
-        pytest.importorskip("openpyxl", reason="openpyxl not installed (PAID tier)")
+        pytest.importorskip("openpyxl", reason="openpyxl not installed")
 
         from bankstatements_core.patterns.strategies import ExcelOutputStrategy
 

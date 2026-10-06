@@ -9,7 +9,7 @@ description: Use when asked to process PDF bank statements, extract transactions
 
 Uses the `bankstatements-cli` pip package (`bankstatements` CLI) to extract transactions from PDF bank statements and produce CSV, Excel, or JSON output. Configuration is passed via environment variables — no config file needed.
 
-FREE tier supports: all output formats (csv, json, excel), recursive scanning, monthly summaries, expense analysis. Requires PDFs to contain IBANs (bank statements only — credit card PDFs are not supported in the free tier).
+Supports all output formats (csv, json, excel), recursive scanning, monthly summaries, expense analysis, and credit card statements. Bank statement PDFs require IBAN detection.
 
 ---
 
@@ -107,7 +107,7 @@ If monthly summary or expense analysis files were also generated, offer to revie
 |---|---|---|
 | `INPUT_DIR` | `input` | PDF source directory (relative to CWD or `PROJECT_ROOT`) |
 | `OUTPUT_DIR` | `output` | Output destination (created automatically) |
-| `OUTPUT_FORMATS` | `csv` | `csv`, `excel`, `json` — comma-separated, all free tier |
+| `OUTPUT_FORMATS` | `csv` | `csv`, `excel`, `json` — comma-separated |
 | `RECURSIVE_SCAN` | `true` | Scan subdirectories for PDFs |
 | `SORT_BY_DATE` | `true` | Sort transactions by date in output |
 | `GENERATE_MONTHLY_SUMMARY` | `true` | Produce per-month breakdown file |
@@ -139,7 +139,7 @@ pip install -e packages/parser-cli
 |---|---|---|
 | `command not found: bankstatements` | Not installed or wrong venv | `pip install bankstatements-cli` or activate correct venv |
 | 0 PDFs extracted | No bank template matched | Re-run with `LOG_LEVEL=DEBUG` to see template detection |
-| 0 PDFs extracted | Credit card PDFs | Free tier requires IBANs — credit card statements not supported |
+| 0 PDFs extracted | Credit card PDFs | Credit card statements require a matching template — check template detection with `LOG_LEVEL=DEBUG` |
 | `Invalid output format 'xlsx'` | Wrong format name | Use `excel` not `xlsx` in `OUTPUT_FORMATS` |
 | `ConfigurationError: TABLE_TOP_Y must be less than TABLE_BOTTOM_Y` | Env var conflict | Unset `TABLE_TOP_Y`/`TABLE_BOTTOM_Y` to use defaults (300/720) |
 | Duplicate transactions | Same PDF in multiple subdirs | Check `INPUT_DIR` for duplicate filenames |

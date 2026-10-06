@@ -4,8 +4,6 @@ This guide explains how to add your own custom bank statement templates without 
 
 ## Quick Start
 
-> **FREE Tier Note:** In the FREE tier, only templates with IBAN patterns can be used. Templates without IBAN patterns (e.g., generic fallback templates) will be automatically disabled and logged. This ensures that all processed PDFs have valid IBANs for proper transaction tracking.
-
 1. Create a directory for your custom templates:
    ```bash
    mkdir custom_templates
@@ -114,8 +112,7 @@ Detection determines which PDFs match this template. The system tries detection 
 
 **Best Practices:**
 - Use **specific IBAN patterns** (include bank code) to avoid false positives
-- **FREE Tier:** MUST include at least one IBAN pattern (empty array will disable template)
-- **PAID Tier:** Can use empty `[]` for generic/fallback templates without IBAN requirement
+- Include IBAN patterns for bank statement templates (empty array disables the template)
 - Include multiple variations in `header_keywords` (with/without spaces, abbreviations)
 - Match at least 70% of `column_headers` for detection to succeed
 
@@ -370,21 +367,20 @@ If extraction is incorrect:
 
 ## Troubleshooting
 
-### Template Disabled in FREE Tier
+### Template Not Detected by IBAN
 
 **Problem**: Template is ignored with message "no IBAN patterns configured".
 
-**Cause**: FREE tier requires all templates to have IBAN patterns for proper transaction tracking.
+**Cause**: Bank statement templates require IBAN patterns for transaction grouping and identity.
 
 **Solutions**:
 1. Add IBAN pattern to your template's `detection.iban_patterns` array
 2. Use bank-specific pattern (e.g., `"IE[0-9]{2}MYBK[0-9A-Z]+"`)
-3. If you need generic templates without IBAN, upgrade to PAID tier
-4. Check logs for specific template names that were disabled
+3. Check logs for specific template names that were disabled
 
 **Example Log Message:**
 ```
-WARNING - FREE tier requires IBAN patterns for PDF processing.
+WARNING - No IBAN patterns configured.
 Ignoring 1 template(s) without IBAN patterns: Default Bank Statement
 INFO - Template 'Default Bank Statement' (id: default) disabled: no IBAN patterns configured
 ```
@@ -399,7 +395,7 @@ INFO - Template 'Default Bank Statement' (id: default) disabled: no IBAN pattern
 3. Verify at least 70% of column headers match
 4. Check template is `"enabled": true`
 5. Review logs for detection attempts
-6. **FREE Tier**: Verify template has IBAN patterns configured
+6. Verify template has IBAN patterns configured (bank statements only)
 
 ### Missing Transactions
 

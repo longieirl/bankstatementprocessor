@@ -23,7 +23,7 @@ from bankstatements_core.patterns.strategies import (
     JSONOutputStrategy,
 )
 
-# Check if openpyxl is available (PAID tier dependency)
+# Check if openpyxl is available
 try:
     import openpyxl
 
@@ -33,7 +33,7 @@ except ImportError:
 
 
 @pytest.mark.skipif(
-    not OPENPYXL_AVAILABLE, reason="openpyxl not installed (PAID tier dependency)"
+    not OPENPYXL_AVAILABLE, reason="openpyxl not installed"
 )
 class TestExcelOutputStrategy(unittest.TestCase):
     """Test the ExcelOutputStrategy implementation."""
@@ -278,7 +278,7 @@ class TestOutputFormatConfiguration(unittest.TestCase):
         """Test default output formats when not configured."""
         with patch.dict("os.environ", {}, clear=True):
             config = AppConfig.from_env()
-            # Default should be csv only (FREE tier compatible)
+            # Default should be csv only
             self.assertIn("csv", config.output_formats)
             self.assertEqual(len(config.output_formats), 1)
 
@@ -368,7 +368,7 @@ class TestOutputFormatIntegration(unittest.TestCase):
             config = AppConfig.from_env()
             processor = ProcessorFactory.create_from_config(config)
 
-            # Default should be CSV only (FREE tier)
+            # Default should be CSV only
             self.assertIn("csv", processor.output_strategies)
             self.assertEqual(len(processor.output_strategies), 1)
 
@@ -425,7 +425,7 @@ class TestStrategyBackwardCompatibility(unittest.TestCase):
             config = AppConfig.from_env()
             processor = ProcessorFactory.create_from_config(config)
 
-            # Should have CSV only by default (FREE tier)
+            # Should have CSV only by default
             self.assertEqual(len(processor.output_strategies), 1)
             self.assertIn("csv", processor.output_strategies)
 

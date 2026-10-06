@@ -44,7 +44,7 @@ class AppConfig:
     generate_expense_analysis: bool = True
     output_formats: list[str] = field(
         default_factory=lambda: ["csv", "json", "excel"]
-    )  # All formats available in FREE tier
+    )  # Default: CSV only
     data_retention_days: int = 0  # 0 = no limit
     auto_cleanup_on_exit: bool = False
     logs_dir: Path = field(default_factory=lambda: Path("logs"))
@@ -154,8 +154,7 @@ class AppConfig:
             # we should not use the default (this is an error case)
             output_formats_env = os.getenv("OUTPUT_FORMATS")
             if output_formats_env is None:
-                # Not set at all - use FREE tier compatible default (CSV only)
-                # This ensures out-of-the-box FREE tier usage works without configuration
+                # Not set — default to CSV only
                 output_formats = ["csv"]
             else:
                 # Explicitly set - parse it (could be empty list if string is empty)

@@ -8,7 +8,7 @@ Thank you for your interest in contributing! This is a monorepo — all shared P
 bankstatementprocessor/
 ├── packages/
 │   ├── parser-core/      bankstatements-core — the shared parsing library
-│   └── parser-cli/      bankstatements-cli — thin free-tier CLI wrapper
+│   └── parser-cli/      bankstatements-cli — thin CLI wrapper
 ├── templates/            shared bank template JSON files
 └── docs/
 ```
