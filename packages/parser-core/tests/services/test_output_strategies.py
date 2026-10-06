@@ -27,9 +27,7 @@ except ImportError:
     OPENPYXL_AVAILABLE = False
 
 
-@pytest.mark.skipif(
-    not OPENPYXL_AVAILABLE, reason="openpyxl not installed"
-)
+@pytest.mark.skipif(not OPENPYXL_AVAILABLE, reason="openpyxl not installed")
 class TestExcelOutputStrategy(unittest.TestCase):
     def setUp(self):
         self.strategy = ExcelOutputStrategy()

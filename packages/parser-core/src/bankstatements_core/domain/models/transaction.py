@@ -60,6 +60,7 @@ class Transaction:
     extraction_warnings: list[ExtractionWarning] = field(default_factory=list)
     document_type: str = ""
     transaction_type: str = ""
+    transfer_group_id: str = ""
 
     def is_debit(self) -> bool:
         """Check if transaction is a debit (money out).
@@ -243,6 +244,7 @@ class Transaction:
             "extraction_warnings",
             "document_type",
             "transaction_type",
+            "transfer_group_id",
         }
         additional_fields = {
             k: str(v)
@@ -273,6 +275,7 @@ class Transaction:
             extraction_warnings = []
         document_type = str(data.get("document_type") or "")
         transaction_type = str(data.get("transaction_type") or "")
+        transfer_group_id = str(data.get("transfer_group_id") or "")
 
         return cls(
             date=date or "",
@@ -287,6 +290,7 @@ class Transaction:
             extraction_warnings=extraction_warnings,
             document_type=document_type,
             transaction_type=transaction_type,
+            transfer_group_id=transfer_group_id,
         )
 
     @staticmethod
@@ -364,7 +368,9 @@ class Transaction:
             "Details": self.details,
             f"Debit{suffix}": self.debit,
             f"Credit{suffix}": self.credit,
-            f"Balance{suffix}": self.balance,
+            f"Balance{suffix}": (
+                strip_currency_symbols(self.balance) if self.balance else self.balance
+            ),
             "Filename": self.filename,
         }
 
@@ -382,6 +388,7 @@ class Transaction:
         )
         result["document_type"] = self.document_type
         result["transaction_type"] = self.transaction_type
+        result["transfer_group_id"] = self.transfer_group_id
 
         # Add any additional fields
         result.update(self.additional_fields)
