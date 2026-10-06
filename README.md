@@ -15,14 +15,14 @@
 | Package | PyPI | Description |
 |---|---|---|
 | `packages/parser-core/` | `bankstatements-core` | Shared parsing library — PDF extraction, services, templates |
-| `packages/parser-free/` | `bankstatements-free` | Free-tier CLI — thin wrapper around `bankstatements-core` |
+| `packages/parser-cli/` | `bankstatements-cli` | Free-tier CLI — thin wrapper around `bankstatements-core` |
 
 ---
 
 ## Quick Start
 
 ```bash
-pip install bankstatements-free
+pip install bankstatements-cli
 
 # Place PDF statements in an input directory
 bankstatements --input ./input --output ./output
@@ -75,14 +75,14 @@ bankstatementprocessor/
 │   ├── parser-core/          bankstatements-core (PyPI library)
 │   │   ├── src/bankstatements_core/
 │   │   └── tests/
-│   └── parser-free/          bankstatements-free (free-tier CLI)
-│       ├── src/bankstatements_free/
+│   └── parser-cli/          bankstatements-cli (free-tier CLI)
+│       ├── src/bankstatements_cli/
 │       └── tests/
 ├── templates/                shared bank template JSON files
 ├── docs/                     documentation
 └── .github/workflows/
     ├── ci.yml                lint + test both packages
-    ├── boundary-check.yml    enforce parser-free cannot import premium code
+    ├── boundary-check.yml    enforce parser-cli cannot import premium code
     └── release-core.yml      publish bankstatements-core to PyPI on core-v* tags
 ```
 
@@ -90,7 +90,7 @@ bankstatementprocessor/
 
 ## Docker
 
-**Free tier (this repo):** a `Dockerfile` and `docker-compose.yml` are provided for local development. They build both `bankstatements-core` and `bankstatements-free` from source — no remote image is pulled and no license is required.
+**Free tier (this repo):** a `Dockerfile` and `docker-compose.yml` are provided for local development. They build both `bankstatements-core` and `bankstatements-cli` from source — no remote image is pulled and no license is required.
 
 ```bash
 git clone https://github.com/longieirl/bankstatementprocessor.git
@@ -135,8 +135,8 @@ Place PDFs in `./input/`; results are written to `./output/`.
 # Install parser-core in editable mode
 pip install -e packages/parser-core[dev,test]
 
-# Install parser-free in editable mode (depends on parser-core)
-pip install -e packages/parser-free[test]
+# Install parser-cli in editable mode (depends on parser-core)
+pip install -e packages/parser-cli[test]
 ```
 
 **Common commands:**
@@ -145,8 +145,8 @@ pip install -e packages/parser-free[test]
 # Run tests (from packages/parser-core/)
 pytest packages/parser-core/tests/ --cov=bankstatements_core --cov-fail-under=91
 
-# Run tests (from packages/parser-free/)
-pytest packages/parser-free/tests/
+# Run tests (from packages/parser-cli/)
+pytest packages/parser-cli/tests/
 
 # Format + lint
 black src tests

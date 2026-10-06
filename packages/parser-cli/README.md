@@ -1,7 +1,7 @@
-# bankstatements-free
+# bankstatements-cli
 
 [![CI](https://github.com/longieirl/bankstatementprocessor/actions/workflows/ci.yml/badge.svg)](https://github.com/longieirl/bankstatementprocessor/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/bankstatements-free)](https://pypi.org/project/bankstatements-free/)
+[![PyPI](https://img.shields.io/pypi/v/bankstatements-cli)](https://pypi.org/project/bankstatements-cli/)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -14,7 +14,7 @@ Built on [`bankstatements-core`](https://pypi.org/project/bankstatements-core/).
 ## Installation
 
 ```bash
-pip install bankstatements-free
+pip install bankstatements-cli
 ```
 
 ## Quick Start

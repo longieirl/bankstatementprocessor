@@ -1,7 +1,7 @@
 [project]
-name = "bankstatements-free"
+name = "bankstatements-cli"
 version = "0.1.7"
-description = "Free-tier CLI for bankstatements-core PDF bank statement processor"
+description = "CLI for bankstatements-core PDF bank statement processor"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "Apache-2.0"}
@@ -31,7 +31,7 @@ test = [
 ]
 
 [project.scripts]
-bankstatements = "bankstatements_free.app:main"
+bankstatements = "bankstatements_cli.app:main"
 
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]
@@ -67,7 +67,7 @@ target-version = ['py311', 'py312', 'py313']
 profile = "black"
 multi_line_output = 3
 line_length = 88
-known_first_party = ["bankstatements_free", "bankstatements_core"]
+known_first_party = ["bankstatements_cli", "bankstatements_core"]
 
 [tool.ruff]
 line-length = 88
@@ -96,4 +96,4 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "tests/**/*.py" = ["F401", "PLC0415"]
-"src/bankstatements_free/app.py" = ["T201"]  # CLI entrypoint: intentional user-facing print output
+"src/bankstatements_cli/app.py" = ["T201"]  # CLI entrypoint: intentional user-facing print output

@@ -8,12 +8,12 @@ Thank you for your interest in contributing! This is a monorepo — all shared P
 bankstatementprocessor/
 ├── packages/
 │   ├── parser-core/      bankstatements-core — the shared parsing library
-│   └── parser-free/      bankstatements-free — thin free-tier CLI wrapper
+│   └── parser-cli/      bankstatements-cli — thin free-tier CLI wrapper
 ├── templates/            shared bank template JSON files
 └── docs/
 ```
 
-**Contributions to parsing logic, services, extraction, or templates belong in `packages/parser-core/`.** The `parser-free` package is intentionally minimal — it only wires `bankstatements-core` to a CLI entry point.
+**Contributions to parsing logic, services, extraction, or templates belong in `packages/parser-core/`.** The `parser-cli` package is intentionally minimal — it only wires `bankstatements-core` to a CLI entry point.
 
 ---
 
@@ -34,8 +34,8 @@ cd bankstatementprocessor
 # Install parser-core in editable mode (includes all parsing deps)
 pip install -e "packages/parser-core[dev,test]"
 
-# Install parser-free in editable mode (depends on parser-core above)
-pip install -e "packages/parser-free[test]"
+# Install parser-cli in editable mode (depends on parser-core above)
+pip install -e "packages/parser-cli[test]"
 
 # Activate local git hooks (blocks direct pushes to main)
 git config core.hooksPath .githooks
@@ -128,7 +128,7 @@ pytest packages/parser-core/tests/ -k "test_function_name"
 pytest packages/parser-core/tests/ -n auto
 
 # Free CLI tests
-pytest packages/parser-free/tests/ -v
+pytest packages/parser-cli/tests/ -v
 ```
 
 ### Integration Tests
@@ -188,10 +188,10 @@ Quick summary:
 Your PR must pass:
 
 - **lint-core** — ruff, MyPy on `parser-core`
-- **lint-free** — ruff on `parser-free`
+- **lint-free** — ruff on `parser-cli`
 - **test-core** — pytest with 91%+ coverage on `bankstatements-core`
-- **test-free** — pytest on `parser-free`
-- **boundary-check** — CI fails if `parser-free` imports `bankstatements_premium` or `src.licensing`
+- **test-free** — pytest on `parser-cli`
+- **boundary-check** — CI fails if `parser-cli` imports `bankstatements_premium` or `src.licensing`
 - **security** — Bandit on both packages
 
 ### Review Process

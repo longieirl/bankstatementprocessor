@@ -8,8 +8,8 @@ from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 
+from bankstatements_cli.app import AppConfig, ConfigurationError
 from bankstatements_core.facades import BankStatementProcessingFacade
-from bankstatements_free.app import AppConfig, ConfigurationError
 
 
 class TestBankStatementProcessingFacade:

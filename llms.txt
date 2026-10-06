@@ -1,10 +1,10 @@
 # Bank Statement Processor
 
-> Open-source Python tool that extracts transactions from PDF bank statements and outputs CSV, Excel, or JSON. Free tier (`bankstatements-free` on PyPI) covers all output formats, recursive scanning, monthly summaries, and expense analysis. Requires IBANs in PDFs (bank statements only — credit card PDFs require the paid tier).
+> Open-source Python tool that extracts transactions from PDF bank statements and outputs CSV, Excel, or JSON. Free tier (`bankstatements-cli` on PyPI) covers all output formats, recursive scanning, monthly summaries, and expense analysis. Requires IBANs in PDFs (bank statements only — credit card PDFs require the paid tier).
 
 Two packages live in this repo:
 - `bankstatements-core` (`packages/parser-core/`) — PDF extraction engine, services, templates
-- `bankstatements-free` (`packages/parser-free/`) — thin CLI wrapper around core; installs as `bankstatements` command
+- `bankstatements-cli` (`packages/parser-cli/`) — thin CLI wrapper around core; installs as `bankstatements` command
 
 Configuration is entirely via environment variables (`INPUT_DIR`, `OUTPUT_DIR`, `OUTPUT_FORMATS`). No config file required.
 

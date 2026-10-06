@@ -11,9 +11,9 @@ from unittest.mock import MagicMock, patch
 
 import pandas as pd
 
+from bankstatements_cli.app import main
 from bankstatements_core.patterns.repositories import reset_config_singleton
 from bankstatements_core.processor import calculate_column_totals
-from bankstatements_free.app import main
 
 
 class TestAppErrorHandling(unittest.TestCase):
@@ -26,14 +26,14 @@ class TestAppErrorHandling(unittest.TestCase):
     @patch("bankstatements_core.patterns.repositories.get_config_singleton")
     def test_main_configuration_error(self, mock_get_config):
         """Test main handles ConfigurationError"""
-        from bankstatements_free.app import ConfigurationError
+        from bankstatements_cli.app import ConfigurationError
 
         mock_get_config.side_effect = ConfigurationError("Invalid configuration")
 
         exit_code = main([])
         self.assertEqual(exit_code, 1)
 
-    @patch("bankstatements_free.app.get_columns_config")
+    @patch("bankstatements_cli.app.get_columns_config")
     @patch("bankstatements_core.patterns.factories.ProcessorFactory.create_from_config")
     def test_main_file_not_found_error(self, mock_factory, mock_get_columns):
         """Test main handles FileNotFoundError"""
@@ -45,7 +45,7 @@ class TestAppErrorHandling(unittest.TestCase):
         exit_code = main([])
         self.assertEqual(exit_code, 2)
 
-    @patch("bankstatements_free.app.get_columns_config")
+    @patch("bankstatements_cli.app.get_columns_config")
     @patch("bankstatements_core.patterns.factories.ProcessorFactory.create_from_config")
     def test_main_permission_error(self, mock_factory, mock_get_columns):
         """Test main handles PermissionError"""
@@ -57,7 +57,7 @@ class TestAppErrorHandling(unittest.TestCase):
         exit_code = main([])
         self.assertEqual(exit_code, 3)
 
-    @patch("bankstatements_free.app.get_columns_config")
+    @patch("bankstatements_cli.app.get_columns_config")
     @patch("bankstatements_core.patterns.factories.ProcessorFactory.create_from_config")
     def test_main_keyboard_interrupt(self, mock_factory, mock_get_columns):
         """Test main handles KeyboardInterrupt"""
@@ -73,7 +73,7 @@ class TestAppErrorHandling(unittest.TestCase):
     @patch.dict("os.environ", {"INPUT_DIR": "input", "OUTPUT_DIR": "output"})
     def test_appconfig_from_env_generic_exception(self, mock_path):
         """Test AppConfig.from_env handles generic exceptions"""
-        from bankstatements_free.app import AppConfig, ConfigurationError
+        from bankstatements_cli.app import AppConfig, ConfigurationError
 
         # Make Path() raise a generic exception
         mock_path.side_effect = RuntimeError("Unexpected error")
