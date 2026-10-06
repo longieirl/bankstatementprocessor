@@ -42,6 +42,7 @@ class AppConfig:
     totals_columns: list[str] = field(default_factory=list)
     generate_monthly_summary: bool = True
     generate_expense_analysis: bool = True
+    recurring_intelligence: bool = True
     output_formats: list[str] = field(
         default_factory=lambda: ["csv", "json", "excel"]
     )  # Default: CSV only
@@ -137,6 +138,9 @@ class AppConfig:
             generate_expense_analysis = EnvironmentParser.parse_bool(
                 "GENERATE_EXPENSE_ANALYSIS", True
             )
+            recurring_intelligence = EnvironmentParser.parse_bool(
+                "RECURRING_INTELLIGENCE", True
+            )
 
             # Parse totals configuration
             totals_config = os.getenv("TOTALS_COLUMNS", "debit,credit")
@@ -212,6 +216,7 @@ class AppConfig:
                 totals_columns=totals_columns,
                 generate_monthly_summary=generate_monthly_summary,
                 generate_expense_analysis=generate_expense_analysis,
+                recurring_intelligence=recurring_intelligence,
                 output_formats=output_formats,
                 data_retention_days=data_retention_days,
                 auto_cleanup_on_exit=auto_cleanup_on_exit,
@@ -250,6 +255,10 @@ class AppConfig:
         logger.info(
             "Expense analysis generation: %s",
             "ENABLED" if self.generate_expense_analysis else "DISABLED",
+        )
+        logger.info(
+            "Recurring intelligence: %s",
+            "ENABLED" if self.recurring_intelligence else "DISABLED",
         )
         logger.info("Output formats: %s", ", ".join(self.output_formats))
         logger.info(

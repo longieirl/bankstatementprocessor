@@ -120,7 +120,7 @@ class BankStatementProcessor:
     # pylint: disable=too-many-instance-attributes
     # Builder/processor class — 27 attributes reflect the full configurable surface
     # area of the processing pipeline. Not reducible without breaking the public API.
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, PLR0915
         # pylint: disable=too-many-statements
         self,
         config: ProcessorConfig,
@@ -171,6 +171,7 @@ class BankStatementProcessor:
         )
         self.generate_monthly_summary = config.processing.generate_monthly_summary
         self.generate_expense_analysis = config.processing.generate_expense_analysis
+        self._recurring_intelligence = config.processing.recurring_intelligence
         self.recursive_scan = config.processing.recursive_scan
         self.column_names = get_column_names(self.columns)
 
@@ -218,7 +219,9 @@ class BankStatementProcessor:
         )
 
         # Service: Expense analysis service
-        self._expense_analysis_service = ExpenseAnalysisService()
+        self._expense_analysis_service = ExpenseAnalysisService(
+            recurring_intelligence=self._recurring_intelligence
+        )
 
         # Service: Transaction filter service
         self._filter_service = TransactionFilterService(self.column_names)
@@ -358,6 +361,13 @@ class BankStatementProcessor:
         all_bank_txns, pdf_ibans, all_cc_txns, pdf_card_numbers = (
             self._build_grouping_inputs(extraction_results)
         )
+
+        # Step 1b: Detect internal transfers across all accounts
+        from bankstatements_core.services.transfer_detection import (  # noqa: PLC0415
+            TransferDetectionService,
+        )
+
+        TransferDetectionService().detect_transfers(all_bank_txns + all_cc_txns)
 
         # Step 2a: Group bank transactions by IBAN (delegated to registry)
         txns_by_iban = self._registry.group_by_iban(all_bank_txns, pdf_ibans)

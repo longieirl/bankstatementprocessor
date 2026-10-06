@@ -112,6 +112,7 @@ If monthly summary or expense analysis files were also generated, offer to revie
 | `SORT_BY_DATE` | `true` | Sort transactions by date in output |
 | `GENERATE_MONTHLY_SUMMARY` | `true` | Produce per-month breakdown file |
 | `GENERATE_EXPENSE_ANALYSIS` | `true` | Produce expense analysis report |
+| `RECURRING_INTELLIGENCE` | `true` | Enrich recurring charges with frequency, next expected date, annualised cost, amount variation, first/last occurrence, subscription detection, and confidence score. Set `false` to revert to basic monthly-only detection. |
 | `PROJECT_ROOT` | CWD | Base dir for resolving relative paths |
 | `LOG_LEVEL` | `INFO` | Set to `DEBUG` to trace template matching |
 

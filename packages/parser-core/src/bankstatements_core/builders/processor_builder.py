@@ -47,6 +47,7 @@ class BankStatementProcessorBuilder:
         self._totals_columns: list[str] | None = None
         self._generate_monthly_summary: bool = True
         self._generate_expense_analysis: bool = True
+        self._recurring_intelligence: bool = True
         self._output_strategies: dict[str, Any] | None = None
         self._duplicate_strategy: Any | None = None
         self._repository: Any | None = None
@@ -196,6 +197,24 @@ class BankStatementProcessorBuilder:
         self._generate_expense_analysis = enabled
         return self
 
+    def with_recurring_intelligence(
+        self, enabled: bool = True
+    ) -> BankStatementProcessorBuilder:
+        """
+        Enable or disable recurring payment intelligence enrichment.
+
+        When disabled, recurring charge detection falls back to monthly-only
+        detection with the basic field set.
+
+        Args:
+            enabled: Whether to enrich recurring charges with intelligence fields
+
+        Returns:
+            Self for method chaining
+        """
+        self._recurring_intelligence = enabled
+        return self
+
     def with_output_strategies(
         self, strategies: dict[str, Any]
     ) -> BankStatementProcessorBuilder:
@@ -273,6 +292,7 @@ class BankStatementProcessorBuilder:
         self._totals_columns = config.processing.totals_columns
         self._generate_monthly_summary = config.processing.generate_monthly_summary
         self._generate_expense_analysis = config.processing.generate_expense_analysis
+        self._recurring_intelligence = config.processing.recurring_intelligence
         return self
 
     def _get_output_formats(self) -> list[str]:
@@ -318,6 +338,7 @@ class BankStatementProcessorBuilder:
                 totals_columns=self._totals_columns,
                 generate_monthly_summary=self._generate_monthly_summary,
                 generate_expense_analysis=self._generate_expense_analysis,
+                recurring_intelligence=self._recurring_intelligence,
             ),
             output=OutputConfig(
                 output_formats=self._get_output_formats(),

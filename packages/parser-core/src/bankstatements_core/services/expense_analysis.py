@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 import statistics
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any, cast
 
@@ -20,6 +20,89 @@ from bankstatements_core.services.date_parser import DateParserService
 logger = logging.getLogger(__name__)
 
 _date_parser_service = DateParserService()
+
+# (lower_days, upper_days, label, periods_per_year)
+_FREQUENCY_BANDS: list[tuple[int, int, str, float]] = [
+    (5, 9, "weekly", 52.0),
+    (12, 16, "fortnightly", 26.0),
+    (25, 35, "monthly", 12.0),
+    (82, 97, "quarterly", 4.0),
+    (355, 375, "annual", 1.0),
+]
+
+_SUBSCRIPTION_KEYWORDS = {
+    "netflix",
+    "spotify",
+    "disney",
+    "apple one",
+    "apple music",
+    "apple tv",
+    "amazon prime",
+    "youtube premium",
+    "youtube music",
+    "hbo",
+    "paramount",
+    "deezer",
+    "tidal",
+    "pandora",
+    "duolingo",
+    "dropbox",
+    "icloud",
+    "microsoft 365",
+    "office 365",
+    "google one",
+    "adobe",
+    "canva",
+    "notion",
+    "slack",
+    "zoom",
+    "chatgpt",
+    "openai",
+    "linkedin premium",
+    "github",
+}
+
+
+def _classify_frequency(avg_interval: float) -> str | None:
+    for low, high, label, _ in _FREQUENCY_BANDS:
+        if low <= avg_interval <= high:
+            return label
+    return None
+
+
+def _periods_per_year(frequency: str) -> float:
+    for _, _, label, periods in _FREQUENCY_BANDS:
+        if label == frequency:
+            return periods
+    return 12.0
+
+
+def _is_subscription(description: str, frequency: str) -> bool:
+    if frequency not in ("monthly", "annual", "weekly", "fortnightly"):
+        return False
+    desc_lower = description.lower()
+    return any(kw in desc_lower for kw in _SUBSCRIPTION_KEYWORDS)
+
+
+def _compute_confidence(
+    intervals: list[int],
+    amount_floats: list[float],
+    avg_interval: float,
+    avg_amount: float,
+) -> float:
+    interval_cv = (
+        statistics.stdev(intervals) / avg_interval
+        if len(intervals) > 1 and avg_interval > 0
+        else 0.0
+    )
+    amount_cv = (
+        statistics.stdev(amount_floats) / avg_amount
+        if len(amount_floats) > 1 and avg_amount > 0
+        else 0.0
+    )
+    occurrence_boost = min(len(intervals) / 12.0, 1.0) * 0.1
+    raw = 1.0 - interval_cv * 0.5 - amount_cv * 0.5 + occurrence_boost
+    return round(max(0.0, min(1.0, raw)), 2)
 
 
 class ExpenseAnalysisService:
@@ -40,8 +123,17 @@ class ExpenseAnalysisService:
         >>> print(insights["insights"]["recurring_charges"])
     """
 
-    def __init__(self) -> None:
-        """Initialize expense analysis service."""
+    def __init__(self, recurring_intelligence: bool = True) -> None:
+        """Initialize expense analysis service.
+
+        Args:
+            recurring_intelligence: When True (default), recurring charges include
+                multi-frequency detection (weekly/fortnightly/monthly/quarterly/annual),
+                next expected date, annualised cost, amount variation, first/last
+                occurrence, subscription detection, and confidence scoring.
+                When False, only monthly charges are detected with the basic field set.
+        """
+        self.recurring_intelligence = recurring_intelligence
 
     def analyze(self, transactions: list[dict]) -> dict[str, Any]:
         """
@@ -105,7 +197,7 @@ class ExpenseAnalysisService:
             )
             return self._empty_insights(error=str(e))
 
-    def _detect_recurring_charges(  # noqa: C901, PLR0912
+    def _detect_recurring_charges(  # noqa: C901, PLR0912, PLR0915
         self, tx_objects: list[Transaction]
     ) -> list[dict[str, Any]]:
         """
@@ -114,6 +206,7 @@ class ExpenseAnalysisService:
         A recurring charge is identified when:
         - Exact same description appears 2+ times
         - No normalization - exact string match required
+        - Intervals fall within a recognised frequency band
 
         Args:
             tx_objects: List of Transaction domain objects
@@ -181,27 +274,67 @@ class ExpenseAnalysisService:
                 continue
 
             avg_interval = sum(intervals) / len(intervals)
+            frequency = _classify_frequency(avg_interval)
+            if frequency is None:
+                continue
 
-            # Check if intervals are in 25-35 day range (monthly-ish)
-            if 25 <= avg_interval <= 35:
+            tx_list = [
+                {
+                    "date": tx.date,
+                    "amount": round(float(self._get_transaction_amount(tx) or 0), 2),
+                }
+                for tx in txs_sorted
+            ]
+
+            if not self.recurring_intelligence:
+                # Legacy mode: monthly-only, basic fields
+                if frequency != "monthly":
+                    continue
                 recurring.append(
                     {
                         "description": description,
                         "average_amount": round(float(avg_amount), 2),
                         "frequency": "monthly",
                         "occurrences": len(txs_sorted),
-                        "transactions": [
-                            {
-                                "date": tx.date,
-                                "amount": round(
-                                    float(self._get_transaction_amount(tx) or 0), 2
-                                ),
-                            }
-                            for tx in txs_sorted
-                        ],
+                        "transactions": tx_list,
                         "average_interval_days": round(avg_interval, 1),
                     }
                 )
+                continue
+
+            amount_floats = [float(a) for a in amounts]
+            amount_variation = (
+                round(statistics.stdev(amount_floats), 2)
+                if len(amount_floats) > 1
+                else 0.0
+            )
+            annualised_cost = round(float(avg_amount) * _periods_per_year(frequency), 2)
+            confidence = _compute_confidence(
+                intervals, amount_floats, avg_interval, float(avg_amount)
+            )
+
+            last_date = _date_parser_service.parse_transaction_date(txs_sorted[-1].date)
+            next_expected = (last_date + timedelta(days=round(avg_interval))).strftime(
+                "%d %b %Y"
+            )
+
+            recurring.append(
+                {
+                    "description": description,
+                    "frequency": frequency,
+                    "average_amount": round(float(avg_amount), 2),
+                    "amount_variation": amount_variation,
+                    "first_occurrence": txs_sorted[0].date,
+                    "last_occurrence": txs_sorted[-1].date,
+                    "annualised_cost": annualised_cost,
+                    "next_expected": next_expected,
+                    "is_subscription": _is_subscription(description, frequency),
+                    "confidence": confidence,
+                    "occurrences": len(txs_sorted),
+                    "transactions": tx_list,
+                    "average_interval_days": round(avg_interval, 1),
+                }
+            )
 
         logger.info("Detected %s recurring charges", len(recurring))
         return recurring

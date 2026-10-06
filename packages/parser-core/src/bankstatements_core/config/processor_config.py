@@ -43,6 +43,9 @@ class ProcessingConfig:
         totals_columns: Optional list of column names to calculate totals for
         generate_monthly_summary: Whether to generate monthly summary reports
         generate_expense_analysis: Whether to generate expense analysis reports
+        recurring_intelligence: Whether to enrich recurring charges with frequency
+            classification, next-expected date, annualised cost, subscription
+            detection, and confidence scoring (default: True)
         recursive_scan: Whether to scan subdirectories recursively for PDF files
     """
 
@@ -50,6 +53,7 @@ class ProcessingConfig:
     totals_columns: list[str] | None = None
     generate_monthly_summary: bool = True
     generate_expense_analysis: bool = True
+    recurring_intelligence: bool = True
     recursive_scan: bool = True
 
 
