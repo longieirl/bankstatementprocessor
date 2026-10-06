@@ -52,10 +52,7 @@ class TestApp(unittest.TestCase):
         self.assertFalse(config.enable_dynamic_boundary)
         self.assertTrue(config.sort_by_date)
         self.assertEqual(config.totals_columns, ["debit", "credit"])
-        self.assertTrue(
-            config.generate_monthly_summary
-        )  # Available for both FREE and PAID tiers
-
+        self.assertTrue(config.generate_monthly_summary)
         # Verify processor.run() was called
         mock_processor.run.assert_called_once()
 
@@ -106,7 +103,7 @@ class TestApp(unittest.TestCase):
         self.assertTrue(config.enable_dynamic_boundary)  # Should be True from env var
         self.assertTrue(config.sort_by_date)
         self.assertEqual(config.totals_columns, ["debit", "credit"])
-        self.assertTrue(config.generate_monthly_summary)  # Available to FREE tier
+        self.assertTrue(config.generate_monthly_summary)
 
         # Verify logging includes dynamic boundary status (from config module logger)
         mock_config_logger.info.assert_any_call(
@@ -155,7 +152,7 @@ class TestApp(unittest.TestCase):
         self.assertFalse(config.enable_dynamic_boundary)
         self.assertTrue(config.sort_by_date)
         self.assertEqual(config.totals_columns, ["debit", "credit"])
-        self.assertTrue(config.generate_monthly_summary)  # Available to FREE tier
+        self.assertTrue(config.generate_monthly_summary)
 
         # Verify logging of custom boundaries (from AppConfig.log_configuration in config module)
         mock_config_logger.info.assert_any_call("Table bounds: Y=%d to %d", 250, 750)
@@ -196,7 +193,7 @@ class TestApp(unittest.TestCase):
         self.assertFalse(config.enable_dynamic_boundary)
         self.assertFalse(config.sort_by_date)  # Should be False from env var
         self.assertEqual(config.totals_columns, ["debit", "credit"])
-        self.assertTrue(config.generate_monthly_summary)  # Available to FREE tier
+        self.assertTrue(config.generate_monthly_summary)
 
         # Verify logging includes chronological sorting status (from config module logger)
         mock_config_logger.info.assert_any_call(
@@ -300,7 +297,7 @@ class TestAppConfig(unittest.TestCase):
             self.assertFalse(config.enable_dynamic_boundary)
             self.assertTrue(config.sort_by_date)
             self.assertEqual(config.totals_columns, ["debit", "credit"])
-            self.assertTrue(config.generate_monthly_summary)  # Available to FREE tier
+            self.assertTrue(config.generate_monthly_summary)
 
     def test_appconfig_from_env_custom_values(self):
         """Test AppConfig loads custom environment variables correctly"""

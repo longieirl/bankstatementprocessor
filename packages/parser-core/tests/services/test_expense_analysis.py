@@ -117,7 +117,7 @@ class TestExpenseAnalysisService:
         assert len(result["insights"]["recurring_charges"]) == 0
 
     def test_no_recurring_charges_for_irregular_intervals(self):
-        """Test that irregular intervals don't match as recurring."""
+        """Test that intervals between bands (e.g. 11 days) don't match as recurring."""
         service = ExpenseAnalysisService()
         transactions = [
             {
@@ -129,7 +129,7 @@ class TestExpenseAnalysisService:
                 "Filename": "test.pdf",
             },
             {
-                "Date": "10 Jan 2023",  # Only 9 days (< 25)
+                "Date": "12 Jan 2023",  # 11 days — between weekly (5-9) and fortnightly (12-16)
                 "Details": "TEST CHARGE",
                 "Debit €": "50.00",
                 "Credit €": "",
@@ -933,4 +933,217 @@ class TestExpenseAnalysisService:
         assert result["total_transactions_analyzed"] == 2
         assert result["insights"]["recurring_charges"] == []
         assert result["insights"]["repeated_vendors"] == []
-        assert result["insights"]["repeated_vendors"] == []
+
+
+def _tx(date: str, details: str, debit: str) -> dict:
+    return {
+        "Date": date,
+        "Details": details,
+        "Debit €": debit,
+        "Credit €": "",
+        "Balance €": "1000.00",
+        "Filename": "test.pdf",
+    }
+
+
+class TestRecurringChargesEnrichment:
+    """Tests for enriched recurring charge fields added in the intelligence extension."""
+
+    def _netflix_txns(self) -> list[dict]:
+        return [
+            _tx("01 Jan 2023", "NETFLIX SUBSCRIPTION", "17.99"),
+            _tx("01 Feb 2023", "NETFLIX SUBSCRIPTION", "17.99"),
+            _tx("01 Mar 2023", "NETFLIX SUBSCRIPTION", "17.99"),
+            _tx("01 Apr 2023", "NETFLIX SUBSCRIPTION", "17.99"),
+        ]
+
+    def test_new_fields_present(self):
+        result = ExpenseAnalysisService().analyze(self._netflix_txns())
+        rec = result["insights"]["recurring_charges"][0]
+        for key in (
+            "frequency",
+            "average_amount",
+            "amount_variation",
+            "first_occurrence",
+            "last_occurrence",
+            "annualised_cost",
+            "next_expected",
+            "is_subscription",
+            "confidence",
+        ):
+            assert key in rec, f"Missing key: {key}"
+
+    def test_first_and_last_occurrence(self):
+        result = ExpenseAnalysisService().analyze(self._netflix_txns())
+        rec = result["insights"]["recurring_charges"][0]
+        assert rec["first_occurrence"] == "01 Jan 2023"
+        assert rec["last_occurrence"] == "01 Apr 2023"
+
+    def test_annualised_cost_monthly(self):
+        result = ExpenseAnalysisService().analyze(self._netflix_txns())
+        rec = result["insights"]["recurring_charges"][0]
+        assert rec["frequency"] == "monthly"
+        assert abs(rec["annualised_cost"] - 17.99 * 12) < 0.02
+
+    def test_amount_variation_zero_for_identical_amounts(self):
+        result = ExpenseAnalysisService().analyze(self._netflix_txns())
+        rec = result["insights"]["recurring_charges"][0]
+        assert rec["amount_variation"] == 0.0
+
+    def test_next_expected_date(self):
+        result = ExpenseAnalysisService().analyze(self._netflix_txns())
+        rec = result["insights"]["recurring_charges"][0]
+        # Last = 01 Apr 2023, avg_interval = (31+28+31)/3 = 30 days → 01 May 2023
+        assert rec["next_expected"] == "01 May 2023"
+
+    def test_is_subscription_true_for_netflix(self):
+        result = ExpenseAnalysisService().analyze(self._netflix_txns())
+        rec = result["insights"]["recurring_charges"][0]
+        assert rec["is_subscription"] is True
+
+    def test_is_subscription_false_for_non_subscription(self):
+        txns = [
+            _tx("01 Jan 2023", "LANDLORD RENT", "1200.00"),
+            _tx("01 Feb 2023", "LANDLORD RENT", "1200.00"),
+            _tx("01 Mar 2023", "LANDLORD RENT", "1200.00"),
+        ]
+        result = ExpenseAnalysisService().analyze(txns)
+        rec = result["insights"]["recurring_charges"][0]
+        assert rec["is_subscription"] is False
+
+    def test_confidence_high_for_consistent_payments(self):
+        result = ExpenseAnalysisService().analyze(self._netflix_txns())
+        rec = result["insights"]["recurring_charges"][0]
+        assert rec["confidence"] >= 0.85
+
+    def test_confidence_between_0_and_1(self):
+        txns = [
+            _tx("01 Jan 2023", "GYM MEMBERSHIP", "45.00"),
+            _tx("30 Jan 2023", "GYM MEMBERSHIP", "46.00"),  # ~4% variation
+        ]
+        result = ExpenseAnalysisService().analyze(txns)
+        recurring = result["insights"]["recurring_charges"]
+        if recurring:
+            assert 0.0 <= recurring[0]["confidence"] <= 1.0
+
+    def test_weekly_frequency_detected(self):
+        txns = [
+            _tx("01 Jan 2023", "COFFEE CLUB", "5.00"),
+            _tx("08 Jan 2023", "COFFEE CLUB", "5.00"),
+            _tx("15 Jan 2023", "COFFEE CLUB", "5.00"),
+        ]
+        result = ExpenseAnalysisService().analyze(txns)
+        rec = result["insights"]["recurring_charges"][0]
+        assert rec["frequency"] == "weekly"
+        assert abs(rec["annualised_cost"] - 5.00 * 52) < 0.02
+
+    def test_quarterly_frequency_detected(self):
+        txns = [
+            _tx("01 Jan 2023", "INSURANCE PREMIUM", "300.00"),
+            _tx("01 Apr 2023", "INSURANCE PREMIUM", "300.00"),
+            _tx("01 Jul 2023", "INSURANCE PREMIUM", "300.00"),
+        ]
+        result = ExpenseAnalysisService().analyze(txns)
+        rec = result["insights"]["recurring_charges"][0]
+        assert rec["frequency"] == "quarterly"
+        assert abs(rec["annualised_cost"] - 300.00 * 4) < 0.02
+
+    def test_annual_frequency_detected(self):
+        txns = [
+            _tx("01 Jan 2022", "DOMAIN RENEWAL", "15.00"),
+            _tx("01 Jan 2023", "DOMAIN RENEWAL", "15.00"),
+        ]
+        result = ExpenseAnalysisService().analyze(txns)
+        rec = result["insights"]["recurring_charges"][0]
+        assert rec["frequency"] == "annual"
+        assert rec["annualised_cost"] == 15.00
+
+    def test_fortnightly_frequency_detected(self):
+        txns = [
+            _tx("01 Jan 2023", "PAYROLL DEDUCTION", "50.00"),
+            _tx("15 Jan 2023", "PAYROLL DEDUCTION", "50.00"),
+            _tx("29 Jan 2023", "PAYROLL DEDUCTION", "50.00"),
+        ]
+        result = ExpenseAnalysisService().analyze(txns)
+        rec = result["insights"]["recurring_charges"][0]
+        assert rec["frequency"] == "fortnightly"
+        assert abs(rec["annualised_cost"] - 50.00 * 26) < 0.02
+
+    def test_gap_interval_not_detected(self):
+        """11-day interval falls between weekly and fortnightly — not detected."""
+        txns = [
+            _tx("01 Jan 2023", "MYSTERY CHARGE", "10.00"),
+            _tx("12 Jan 2023", "MYSTERY CHARGE", "10.00"),
+        ]
+        result = ExpenseAnalysisService().analyze(txns)
+        assert result["insights"]["recurring_charges"] == []
+
+
+class TestRecurringIntelligenceToggle:
+    """Tests for recurring_intelligence=False legacy mode."""
+
+    def _monthly_txns(self) -> list[dict]:
+        return [
+            _tx("01 Jan 2023", "SPOTIFY", "9.99"),
+            _tx("01 Feb 2023", "SPOTIFY", "9.99"),
+            _tx("01 Mar 2023", "SPOTIFY", "9.99"),
+        ]
+
+    def test_legacy_mode_monthly_detected(self):
+        svc = ExpenseAnalysisService(recurring_intelligence=False)
+        result = svc.analyze(self._monthly_txns())
+        recurring = result["insights"]["recurring_charges"]
+        assert len(recurring) == 1
+        assert recurring[0]["frequency"] == "monthly"
+
+    def test_legacy_mode_basic_fields_only(self):
+        svc = ExpenseAnalysisService(recurring_intelligence=False)
+        result = svc.analyze(self._monthly_txns())
+        rec = result["insights"]["recurring_charges"][0]
+        for key in (
+            "description",
+            "average_amount",
+            "frequency",
+            "occurrences",
+            "transactions",
+            "average_interval_days",
+        ):
+            assert key in rec
+        for enriched_key in (
+            "amount_variation",
+            "first_occurrence",
+            "last_occurrence",
+            "annualised_cost",
+            "next_expected",
+            "is_subscription",
+            "confidence",
+        ):
+            assert enriched_key not in rec
+
+    def test_legacy_mode_weekly_not_detected(self):
+        svc = ExpenseAnalysisService(recurring_intelligence=False)
+        txns = [
+            _tx("01 Jan 2023", "COFFEE CLUB", "5.00"),
+            _tx("08 Jan 2023", "COFFEE CLUB", "5.00"),
+            _tx("15 Jan 2023", "COFFEE CLUB", "5.00"),
+        ]
+        result = svc.analyze(txns)
+        assert result["insights"]["recurring_charges"] == []
+
+    def test_legacy_mode_quarterly_not_detected(self):
+        svc = ExpenseAnalysisService(recurring_intelligence=False)
+        txns = [
+            _tx("01 Jan 2023", "INSURANCE", "300.00"),
+            _tx("01 Apr 2023", "INSURANCE", "300.00"),
+            _tx("01 Jul 2023", "INSURANCE", "300.00"),
+        ]
+        result = svc.analyze(txns)
+        assert result["insights"]["recurring_charges"] == []
+
+    def test_default_is_intelligence_on(self):
+        svc = ExpenseAnalysisService()
+        assert svc.recurring_intelligence is True
+
+    def test_toggle_off_explicit(self):
+        svc = ExpenseAnalysisService(recurring_intelligence=False)
+        assert svc.recurring_intelligence is False

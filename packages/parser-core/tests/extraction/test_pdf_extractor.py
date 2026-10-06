@@ -582,8 +582,8 @@ class TestPDFTableExtractorCardNumber:
     """Tests for card number extraction in PDFTableExtractor (CC-07)."""
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
-    def test_extract_card_number_paid_tier(self, mock_pdfplumber):
-        """Paid tier CC PDF: card_number extracted from template patterns."""
+    def test_extract_card_number_from_template_patterns(self, mock_pdfplumber):
+        """CC PDF: card_number extracted from template patterns."""
         mock_pdf = MagicMock()
         mock_page = MagicMock()
         mock_pdf.pages = [mock_page]
@@ -625,7 +625,7 @@ class TestPDFTableExtractorCardNumber:
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_extract_card_number_no_template(self, mock_pdfplumber):
-        """Paid tier CC PDF with no template: card_number == 'unknown'."""
+        """CC PDF with no template: card_number == 'unknown'."""
         mock_pdf = MagicMock()
         mock_page = MagicMock()
         mock_pdf.pages = [mock_page]
@@ -654,7 +654,7 @@ class TestPDFTableExtractorCardNumber:
 
     @patch("bankstatements_core.adapters.pdfplumber_adapter.pdfplumber.open")
     def test_extract_card_number_no_match_falls_back_to_unknown(self, mock_pdfplumber):
-        """Paid tier CC PDF where pattern doesn't match: card_number == 'unknown'."""
+        """CC PDF where pattern doesn't match: card_number == 'unknown'."""
         mock_pdf = MagicMock()
         mock_page = MagicMock()
         mock_pdf.pages = [mock_page]

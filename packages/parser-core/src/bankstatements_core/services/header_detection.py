@@ -8,6 +8,7 @@ and detection.
 from __future__ import annotations
 
 import logging
+import re
 from typing import TYPE_CHECKING
 
 from bankstatements_core.extraction.word_utils import group_words_by_y
@@ -143,9 +144,11 @@ class HeaderDetectionService:
             row_words = rows_by_y[y_coord]
             row_text = " ".join([w.get("text", "") for w in row_words]).lower()
 
-            # Count how many header keywords appear in this row
+            # Count how many header keywords appear as whole words in this row
             header_matches = sum(
-                1 for keyword in self.HEADER_KEYWORDS if keyword in row_text
+                1
+                for keyword in self.HEADER_KEYWORDS
+                if re.search(r"\b" + re.escape(keyword) + r"\b", row_text)
             )
 
             logger.debug(

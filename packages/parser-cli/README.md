@@ -5,7 +5,7 @@
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-Free-tier CLI for parsing PDF bank statements into structured CSV, JSON, and Excel — locally, with no cloud services.
+CLI for parsing PDF bank statements into structured CSV, JSON, and Excel — locally, with no cloud services.
 
 Built on [`bankstatements-core`](https://pypi.org/project/bankstatements-core/).
 
@@ -33,7 +33,7 @@ bankstatements --input ./input --output ./output --output-formats csv,json,excel
 - Export to CSV, JSON, and Excel
 - Batch processing with recursive directory scanning
 - SHA-256 duplicate detection
-- Transaction type classification (purchase, payment, refund, fee, transfer)
+- Transaction type classification (income, expense, refund, transfer, cash_withdrawal, cash_deposit)
 - Monthly summaries and expense analysis
 - IBAN extraction and grouping
 - GDPR-compliant local processing — no data leaves your machine

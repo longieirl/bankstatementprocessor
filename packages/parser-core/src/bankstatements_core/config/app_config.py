@@ -42,9 +42,10 @@ class AppConfig:
     totals_columns: list[str] = field(default_factory=list)
     generate_monthly_summary: bool = True
     generate_expense_analysis: bool = True
+    recurring_intelligence: bool = True
     output_formats: list[str] = field(
         default_factory=lambda: ["csv", "json", "excel"]
-    )  # All formats available in FREE tier
+    )  # Default: CSV only
     data_retention_days: int = 0  # 0 = no limit
     auto_cleanup_on_exit: bool = False
     logs_dir: Path = field(default_factory=lambda: Path("logs"))
@@ -137,6 +138,9 @@ class AppConfig:
             generate_expense_analysis = EnvironmentParser.parse_bool(
                 "GENERATE_EXPENSE_ANALYSIS", True
             )
+            recurring_intelligence = EnvironmentParser.parse_bool(
+                "RECURRING_INTELLIGENCE", True
+            )
 
             # Parse totals configuration
             totals_config = os.getenv("TOTALS_COLUMNS", "debit,credit")
@@ -154,8 +158,7 @@ class AppConfig:
             # we should not use the default (this is an error case)
             output_formats_env = os.getenv("OUTPUT_FORMATS")
             if output_formats_env is None:
-                # Not set at all - use FREE tier compatible default (CSV only)
-                # This ensures out-of-the-box FREE tier usage works without configuration
+                # Not set — default to CSV only
                 output_formats = ["csv"]
             else:
                 # Explicitly set - parse it (could be empty list if string is empty)
@@ -213,6 +216,7 @@ class AppConfig:
                 totals_columns=totals_columns,
                 generate_monthly_summary=generate_monthly_summary,
                 generate_expense_analysis=generate_expense_analysis,
+                recurring_intelligence=recurring_intelligence,
                 output_formats=output_formats,
                 data_retention_days=data_retention_days,
                 auto_cleanup_on_exit=auto_cleanup_on_exit,
@@ -251,6 +255,10 @@ class AppConfig:
         logger.info(
             "Expense analysis generation: %s",
             "ENABLED" if self.generate_expense_analysis else "DISABLED",
+        )
+        logger.info(
+            "Recurring intelligence: %s",
+            "ENABLED" if self.recurring_intelligence else "DISABLED",
         )
         logger.info("Output formats: %s", ", ".join(self.output_formats))
         logger.info(

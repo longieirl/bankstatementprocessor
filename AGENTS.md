@@ -35,7 +35,7 @@ The local repository copy is authoritative for this project.
 
 ## Repo Overview
 
-This is the **free-tier** open-source repo. The private `bankstatements-premium` repo holds the paid-tier Docker image published to GHCR. Do not conflate the two.
+This is the open-source repo. The private `bankstatements-premium` repo holds the production Docker image published to GHCR. Do not conflate the two.
 
 - **Local Docker image name:** `bankstatementsprocessor` (built from `Dockerfile`)
 - **Production image:** `ghcr.io/longieirl/bankstatements-premium:latest` (private repo only)
@@ -50,7 +50,7 @@ Current version: **0.1.7**
 ```
 packages/
   parser-core/    bankstatements-core (PyPI) — PDF extraction, services, templates
-  parser-cli/    bankstatements-cli (free-tier CLI) — thin wrapper around parser-core
+  parser-cli/    bankstatements-cli (CLI) — thin wrapper around parser-core
 templates/        shared bank template JSON files
 custom_templates/ user-overridable templates
 skills/           Claude Code agent skills
@@ -75,7 +75,7 @@ facades/         ProcessingFacade
 patterns/        factories, repositories, strategies
 services/        all business logic services
 templates/       bank JSON templates + detectors
-entitlements.py
+entitlements.py  # deleted — was the tier gating system (removed in PR #260)
 processor.py
 pdf_table_extractor.py  # legacy shim — delegates to extraction/, treat as deprecated
 ```

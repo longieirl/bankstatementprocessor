@@ -30,19 +30,14 @@ The shared parsing library. Contains:
 - **`config/`** — `AppConfig` dataclass validated from environment variables; `ProcessorConfig` for programmatic use
 - **`patterns/`** — Strategy, Factory, Repository implementations
 - **`facades/`** — `BankStatementProcessingFacade` (main orchestrator entry point)
-- **`entitlements.py`** — `Entitlements` frozen dataclass (`free_tier()` and `paid_tier()`)
+- **`entitlements.py`** — deleted (removed in v0.2.0; was the tier gating system)
 - **`processor.py`** — `BankStatementProcessor` (PDF extraction → filter → dedup → sort → output)
 
-This package has no dependency on any licensing code. The `paid_tier()` entitlement is defined here because it describes a feature set (`require_iban=False`), not access control — activating it requires a valid signed license issued externally.
+This package has no dependency on any licensing code.
 
 ### `bankstatements-cli`
 
-A thin CLI wrapper. Contains a single `app.py` that:
-
-1. Calls `Entitlements.free_tier()` (hardcoded — no license check)
-2. Delegates entirely to `BankStatementProcessingFacade` from `bankstatements-core`
-
-The free tier processes bank statements that include an IBAN pattern. Credit card and loan statements (which have no IBAN) require the premium distribution.
+A thin CLI wrapper. Contains a single `app.py` that delegates entirely to `BankStatementProcessingFacade` from `bankstatements-core`.
 
 ---
 
@@ -106,28 +101,6 @@ CUSTOM_TEMPLATES_DIR → unset: no custom templates
 
 ---
 
-## Entitlements
-
-`Entitlements` is a frozen dataclass checked at feature boundaries inside `bankstatements-core`:
-
-```python
-@dataclass(frozen=True)
-class Entitlements:
-    require_iban: bool   # True → only process PDFs with IBAN; False → process all
-
-    @classmethod
-    def free_tier(cls) -> "Entitlements":
-        return cls(require_iban=True)
-
-    @classmethod
-    def paid_tier(cls) -> "Entitlements":
-        return cls(require_iban=False)
-```
-
-The free-tier CLI always calls `free_tier()`. The premium distribution validates a signed license file and calls `paid_tier()` when the license is valid.
-
----
-
 ## ServiceRegistry
 
 `ServiceRegistry` centralises all transaction-processing service wiring. It is the single construction point for `DuplicateDetectionService`, `TransactionSortingService`, and `IBANGroupingService`.
@@ -151,13 +124,7 @@ registry = ServiceRegistry.from_config(
 
 ## Premium Distribution
 
-A separate premium distribution extends the open-source packages with:
-
-- Additional bank templates (credit card, loan statements) not present in this repository
-- Support for processing statements without IBAN patterns
-- License-gated access to `paid_tier()` entitlements
-
-The premium distribution is not part of this repository. For premium access, contact the maintainer via a GitHub issue with label `license-inquiry`.
+A separate private distribution (`bankstatements-premium`) extends the open-source packages with additional bank templates and support for processing statements without IBAN patterns. It is not part of this repository.
 
 ---
 
@@ -165,7 +132,7 @@ The premium distribution is not part of this repository. For premium access, con
 
 CI enforces that `parser-cli` never imports code from outside `bankstatements-core`. A dedicated `boundary-check.yml` workflow scans `packages/parser-cli/src/` on every PR and fails if any prohibited imports are found.
 
-This ensures the structural boundary between the free and premium tiers is maintained automatically on every PR.
+This ensures the structural boundary between the open-source and premium distributions is maintained automatically on every PR.
 
 ---
 
@@ -174,8 +141,8 @@ This ensures the structural boundary between the free and premium tiers is maint
 | Package | Source | Tag convention |
 |---|---|---|
 | `bankstatements-core` | `packages/parser-core/pyproject.toml` | `core-v0.1.0` |
-| `bankstatements-cli` | `packages/parser-cli/pyproject.toml` | `free-v0.1.0` |
+| `bankstatements-cli` | `packages/parser-cli/pyproject.toml` | `cli-v0.1.0` |
 
-Core and free versions are independent. A core release does not require a free release and vice versa.
+Core and CLI versions are independent. A core release does not require a CLI release and vice versa.
 
 `bankstatements-premium` follows a separate versioning scheme (`v1.x.x`) and is not published to PyPI.

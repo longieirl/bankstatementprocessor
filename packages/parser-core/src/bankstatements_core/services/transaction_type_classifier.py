@@ -1,8 +1,14 @@
 """Transaction type classification using Chain of Responsibility pattern.
 
-This module provides transaction type classification (purchase, payment, fee, refund, etc.)
-by applying a chain of specialized classifiers. Each classifier handles one specific
-classification strategy and can pass to the next classifier if it doesn't match.
+This module classifies transactions into one of six types:
+  income, expense, transfer, refund, cash_withdrawal, cash_deposit
+
+Classification chain (highest to lowest priority):
+  1. TemplateKeywordClassifier  — bank-specific keyword overrides
+  2. CashClassifier             — ATM / cash deposit patterns
+  3. Document-specific          — CreditCardPatternClassifier or BankStatementPatternClassifier
+  4. AmountBasedClassifier      — heuristic fallback
+  5. DefaultClassifier          — catch-all
 """
 
 from __future__ import annotations
@@ -28,20 +34,12 @@ class TransactionTypeClassifier(ABC):
     """
 
     def __init__(self) -> None:
-        """Initialize classifier with no next classifier."""
         self._next_classifier: TransactionTypeClassifier | None = None
 
     def set_next(
         self, classifier: TransactionTypeClassifier
     ) -> TransactionTypeClassifier:
-        """Set the next classifier in the chain.
-
-        Args:
-            classifier: The next classifier to call if this one doesn't match
-
-        Returns:
-            The classifier that was set (for fluent interface)
-        """
+        """Set the next classifier in the chain and return it (fluent interface)."""
         self._next_classifier = classifier
         return classifier
 
@@ -50,13 +48,8 @@ class TransactionTypeClassifier(ABC):
     ) -> str:
         """Classify transaction type, delegating to next classifier if needed.
 
-        Args:
-            transaction: Transaction object
-            template: Optional bank template with transaction type keywords
-
-        Returns:
-            Transaction type string: "purchase", "payment", "fee", "refund",
-            "transfer", "interest", "other"
+        Returns one of: income, expense, transfer, refund, cash_withdrawal,
+        cash_deposit, or expense as the final fallback.
         """
         result = self._do_classify(transaction, template)
         if result:
@@ -65,7 +58,7 @@ class TransactionTypeClassifier(ABC):
         if self._next_classifier:
             return self._next_classifier.classify(transaction, template)
 
-        return "other"  # Default fallback
+        return "expense"
 
     @abstractmethod
     def _do_classify(
@@ -73,24 +66,17 @@ class TransactionTypeClassifier(ABC):
     ) -> str | None:
         """Attempt to classify the transaction.
 
-        Returns:
-            Transaction type if this classifier can classify the transaction,
-            None if it should pass to the next classifier
+        Returns the type string if matched, None to pass to the next classifier.
         """
         pass
 
 
 class TemplateKeywordClassifier(TransactionTypeClassifier):
-    """Classifier that uses template-defined transaction type keywords.
-
-    This classifier has highest priority as it uses bank-specific patterns
-    defined in the template configuration.
-    """
+    """Classifies using template-defined transaction type keywords (highest priority)."""
 
     def _do_classify(
         self, transaction: Transaction, template: BankTemplate | None
     ) -> str | None:
-        """Classify using template transaction_types keyword mappings."""
         if not template or not template.processing.transaction_types:
             return None
 
@@ -98,7 +84,6 @@ class TemplateKeywordClassifier(TransactionTypeClassifier):
         if not details:
             return None
 
-        # Check each transaction type's keywords
         for txn_type, keywords in template.processing.transaction_types.items():
             for keyword in keywords:
                 if keyword.upper() in details:
@@ -110,13 +95,56 @@ class TemplateKeywordClassifier(TransactionTypeClassifier):
         return None
 
 
+class CashClassifier(TransactionTypeClassifier):
+    """Classifies ATM withdrawals and cash deposits/lodgements."""
+
+    WITHDRAWAL_PATTERNS = [  # noqa: RUF012
+        "ATM WITHDRAWAL",
+        "CASH WITHDRAWAL",
+        "CASHPOINT",
+        "WITHDRAWAL ATM",
+        "CASH MACHINE",
+        "AUTOMATED TELLER",
+    ]
+
+    DEPOSIT_PATTERNS = [  # noqa: RUF012
+        "LODGEMENT",
+        "LODGMENT",
+        "CASH DEPOSIT",
+        "CASH LODGEMENT",
+        "DEPOSIT ATM",
+        "CASH IN",
+    ]
+
+    def _do_classify(
+        self, transaction: Transaction, template: BankTemplate | None
+    ) -> str | None:
+        details = transaction.details.upper()
+        if not details:
+            return None
+
+        # Check deposits first — "CASH DEPOSIT ATM" must not match ATM-withdrawal patterns
+        if any(pattern in details for pattern in self.DEPOSIT_PATTERNS):
+            return "cash_deposit"
+
+        if any(pattern in details for pattern in self.WITHDRAWAL_PATTERNS):
+            return "cash_withdrawal"
+
+        return None
+
+
 class CreditCardPatternClassifier(TransactionTypeClassifier):
-    """Classifier for credit card specific transaction patterns.
+    """Classifies credit card specific transaction patterns.
 
     Only runs when document_type is "credit_card_statement".
     """
 
-    # Credit card transaction patterns
+    REFUND_PATTERNS = [  # noqa: RUF012
+        "REFUND",
+        "REVERSAL",
+        "CHARGEBACK",
+    ]
+
     PURCHASE_PATTERNS = [  # noqa: RUF012
         "PURCHASE",
         "SALE",
@@ -129,35 +157,25 @@ class CreditCardPatternClassifier(TransactionTypeClassifier):
     ]
 
     PAYMENT_PATTERNS = [  # noqa: RUF012
-        "PAYMENT",
         "PAYMENT RECEIVED",
-        "DIRECT DEBIT",
         "PAYMENT THANK YOU",
         "AUTOPAY",
+        "DIRECT DEBIT",
     ]
 
     FEE_PATTERNS = [  # noqa: RUF012
-        "FEE",
-        "CHARGE",
-        "INTEREST",
         "ANNUAL FEE",
         "LATE FEE",
         "FOREIGN TRANSACTION FEE",
         "CASH ADVANCE FEE",
         "OVERLIMIT FEE",
-    ]
-
-    REFUND_PATTERNS = [  # noqa: RUF012
-        "REFUND",
-        "REVERSAL",
-        "CREDIT",
-        "CHARGEBACK",
+        "INTEREST CHARGED",
+        "FINANCE CHARGE",
     ]
 
     def _do_classify(  # noqa: PLR0911
         self, transaction: Transaction, template: BankTemplate | None
     ) -> str | None:
-        """Classify credit card transactions."""
         if transaction.document_type != "credit_card_statement":
             return None
 
@@ -165,68 +183,81 @@ class CreditCardPatternClassifier(TransactionTypeClassifier):
         if not details:
             return None
 
-        # Check patterns in priority order
-        if any(pattern in details for pattern in self.PURCHASE_PATTERNS):
-            return "purchase"
-
-        if any(pattern in details for pattern in self.PAYMENT_PATTERNS):
-            return "payment"
-
-        if any(pattern in details for pattern in self.FEE_PATTERNS):
-            return "fee"
-
         if any(pattern in details for pattern in self.REFUND_PATTERNS):
             return "refund"
+
+        if any(pattern in details for pattern in self.PURCHASE_PATTERNS):
+            return "expense"
+
+        if any(pattern in details for pattern in self.PAYMENT_PATTERNS):
+            return "transfer"
+
+        if any(pattern in details for pattern in self.FEE_PATTERNS):
+            return "expense"
 
         return None
 
 
 class BankStatementPatternClassifier(TransactionTypeClassifier):
-    """Classifier for bank statement specific transaction patterns.
+    """Classifies bank statement specific transaction patterns.
 
     Only runs when document_type is "bank_statement".
     """
 
-    # Bank statement transaction patterns
+    REFUND_PATTERNS = [  # noqa: RUF012
+        "REFUND",
+        "REVERSAL",
+        "CHARGEBACK",
+    ]
+
+    INCOME_PATTERNS = [  # noqa: RUF012
+        "SALARY",
+        "WAGES",
+        "PAYROLL",
+        "DIVIDEND",
+        "BONUS",
+        "PENSION",
+        "WELFARE",
+        "BURSARY",
+        "GRANT",
+    ]
+
     TRANSFER_PATTERNS = [  # noqa: RUF012
         "TRANSFER",
         "TRF",
         "SEPA",
-        "SEPA CREDIT",
-        "SEPA DEBIT",
         "WIRE",
         "ONLINE TRANSFER",
         "MOBILE TRANSFER",
     ]
 
-    PAYMENT_PATTERNS = [  # noqa: RUF012
+    EXPENSE_PATTERNS = [  # noqa: RUF012
         "STANDING ORDER",
         "DIRECT DEBIT",
-        "DD",
-        "SO",
         "BILL PAYMENT",
-    ]
-
-    INTEREST_PATTERNS = [  # noqa: RUF012
-        "INTEREST",
-        "INT CREDIT",
-        "INTEREST CREDIT",
-        "INTEREST PAID",
-    ]
-
-    FEE_PATTERNS = [  # noqa: RUF012
-        "CHARGE",
-        "FEE",
         "MAINTENANCE FEE",
         "TRANSACTION FEE",
         "ATM FEE",
         "OVERDRAFT FEE",
+        "ACCOUNT FEE",
+        "SERVICE CHARGE",
     ]
 
-    def _do_classify(  # noqa: PLR0911
+    INTEREST_INCOME_PATTERNS = [  # noqa: RUF012
+        "INTEREST CREDIT",
+        "INT CREDIT",
+        "INTEREST PAID",
+    ]
+
+    INTEREST_EXPENSE_PATTERNS = [  # noqa: RUF012
+        "OVERDRAFT INTEREST",
+        "INTEREST CHARGED",
+        "DEBIT INTEREST",
+    ]
+
+    def _do_classify(  # noqa: PLR0911  # pylint: disable=too-many-return-statements
         self, transaction: Transaction, template: BankTemplate | None
     ) -> str | None:
-        """Classify bank statement transactions."""
         if transaction.document_type != "bank_statement":
             return None
 
@@ -234,70 +265,61 @@ class BankStatementPatternClassifier(TransactionTypeClassifier):
         if not details:
             return None
 
-        # Check patterns in priority order
+        if any(pattern in details for pattern in self.REFUND_PATTERNS):
+            return "refund"
+
+        if any(pattern in details for pattern in self.INCOME_PATTERNS):
+            return "income"
+
         if any(pattern in details for pattern in self.TRANSFER_PATTERNS):
             return "transfer"
 
-        if any(pattern in details for pattern in self.PAYMENT_PATTERNS):
-            return "payment"
+        if any(pattern in details for pattern in self.INTEREST_INCOME_PATTERNS):
+            return "income"
 
-        if any(pattern in details for pattern in self.INTEREST_PATTERNS):
-            return "interest"
+        if any(pattern in details for pattern in self.INTEREST_EXPENSE_PATTERNS):
+            return "expense"
 
-        if any(pattern in details for pattern in self.FEE_PATTERNS):
-            return "fee"
+        if any(pattern in details for pattern in self.EXPENSE_PATTERNS):
+            return "expense"
 
         return None
 
 
 class AmountBasedClassifier(TransactionTypeClassifier):
-    """Classifier using amount patterns as heuristics.
+    """Classifies using debit/credit direction as a last-resort heuristic.
 
-    This is a lower priority classifier that uses debit/credit patterns
-    when keywords don't match.
+    By the time this classifier runs, explicit patterns for transfer, refund,
+    cash, and income have already been checked. Unmatched credits are treated
+    as income; unmatched debits as expenses.
     """
 
     def _do_classify(
         self, transaction: Transaction, template: BankTemplate | None
     ) -> str | None:
-        """Classify based on amount patterns."""
         debit_amount = to_float(str(transaction.debit)) if transaction.debit else None
         credit_amount = (
             to_float(str(transaction.credit)) if transaction.credit else None
         )
 
-        # Credit only (money in) - likely refund or transfer
         if credit_amount and credit_amount > 0 and not debit_amount:
             if transaction.document_type == "credit_card_statement":
-                return "refund"  # Credits on credit cards are usually refunds
-            return "transfer"  # Credits on bank accounts are usually transfers
+                return "refund"
+            return "income"
 
-        # Debit only (money out) - likely purchase or payment
         if debit_amount and debit_amount > 0 and not credit_amount:
-            if transaction.document_type == "credit_card_statement":
-                return "purchase"  # Debits on credit cards are usually purchases
-            return "payment"  # Debits on bank accounts are usually payments
-
-        # Zero or no amount - likely fee or interest
-        if (not debit_amount or debit_amount == 0) and (
-            not credit_amount or credit_amount == 0
-        ):
-            return "fee"
+            return "expense"
 
         return None
 
 
 class DefaultClassifier(TransactionTypeClassifier):
-    """Default classifier that returns 'other' for unclassifiable transactions.
-
-    This should be the last classifier in the chain.
-    """
+    """Catch-all classifier — returns 'expense' for any unclassified transaction."""
 
     def _do_classify(
         self, transaction: Transaction, template: BankTemplate | None
     ) -> str | None:
-        """Always return 'other' as default classification."""
-        return "other"
+        return "expense"
 
 
 def create_transaction_type_classifier_chain(
@@ -305,40 +327,37 @@ def create_transaction_type_classifier_chain(
 ) -> TransactionTypeClassifier:
     """Build classifier chain based on document type.
 
-    The chain is built in priority order:
-    1. TemplateKeywordClassifier (highest priority - bank-specific)
-    2. Document-specific classifier (CreditCard or BankStatement)
-    3. AmountBasedClassifier (heuristic fallback)
-    4. DefaultClassifier (catch-all)
+    Chain (in priority order):
+      1. TemplateKeywordClassifier  — bank-specific overrides
+      2. CashClassifier             — ATM / lodgement patterns
+      3. CreditCardPatternClassifier or BankStatementPatternClassifier
+      4. AmountBasedClassifier      — direction heuristic
+      5. DefaultClassifier          — catch-all
 
     Args:
-        document_type: Type of document ("credit_card_statement", "bank_statement", etc.)
+        document_type: "credit_card_statement", "bank_statement", or other/None
 
     Returns:
-        The head of the classifier chain
+        Head of the classifier chain
     """
-    # Start with template classifier (highest priority)
     template_classifier = TemplateKeywordClassifier()
+    cash_classifier = CashClassifier()
+    amount_classifier = AmountBasedClassifier()
+    default_classifier = DefaultClassifier()
 
-    # Add document-specific classifier
-    document_classifier: TransactionTypeClassifier | None
+    template_classifier.set_next(cash_classifier)
+
     if document_type == "credit_card_statement":
-        document_classifier = CreditCardPatternClassifier()
+        doc_classifier: TransactionTypeClassifier = CreditCardPatternClassifier()
+        cash_classifier.set_next(doc_classifier)
+        doc_classifier.set_next(amount_classifier)
     elif document_type == "bank_statement":
-        document_classifier = BankStatementPatternClassifier()
+        doc_classifier = BankStatementPatternClassifier()
+        cash_classifier.set_next(doc_classifier)
+        doc_classifier.set_next(amount_classifier)
     else:
-        # No document-specific classifier for unknown types
-        document_classifier = None
+        cash_classifier.set_next(amount_classifier)
 
-    # Build chain
-    if document_classifier:
-        template_classifier.set_next(document_classifier)
-        document_classifier.set_next(AmountBasedClassifier()).set_next(
-            DefaultClassifier()
-        )
-    else:
-        template_classifier.set_next(AmountBasedClassifier()).set_next(
-            DefaultClassifier()
-        )
+    amount_classifier.set_next(default_classifier)
 
     return template_classifier

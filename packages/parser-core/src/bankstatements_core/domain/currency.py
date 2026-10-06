@@ -33,7 +33,8 @@ def strip_currency_symbols(value: str) -> str:
         Cleaned string with symbols and commas removed (e.g. "1234.56")
     """
     cleaned = re.sub(r"[€$£¥\s]", "", value)
-    return cleaned.replace(",", "")
+    cleaned = cleaned.replace(",", "")
+    return re.sub(r"(?i)(dr|cr)$", "", cleaned)
 
 
 def to_float(
