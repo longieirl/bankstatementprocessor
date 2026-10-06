@@ -255,7 +255,7 @@ class BankStatementPatternClassifier(TransactionTypeClassifier):
         "DEBIT INTEREST",
     ]
 
-    def _do_classify(  # noqa: PLR0911
+    def _do_classify(  # noqa: PLR0911  # pylint: disable=too-many-return-statements
         self, transaction: Transaction, template: BankTemplate | None
     ) -> str | None:
         if transaction.document_type != "bank_statement":
