@@ -8,6 +8,7 @@ from bankstatements_core.domain.models.transaction import Transaction
 from bankstatements_core.services.transaction_type_classifier import (
     AmountBasedClassifier,
     BankStatementPatternClassifier,
+    CashClassifier,
     CreditCardPatternClassifier,
     DefaultClassifier,
     TemplateKeywordClassifier,
@@ -39,13 +40,11 @@ def credit_card_template():
         document_type="credit_card_statement",
     )
 
-    # Add transaction type keywords
     template.processing = replace(
         template.processing,
         transaction_types={
-            "purchase": ["POS", "CONTACTLESS", "ONLINE"],
-            "payment": ["PAYMENT RECEIVED", "DIRECT DEBIT"],
-            "fee": ["ANNUAL FEE", "LATE FEE"],
+            "expense": ["POS", "CONTACTLESS", "ONLINE", "ANNUAL FEE", "LATE FEE"],
+            "transfer": ["PAYMENT RECEIVED", "DIRECT DEBIT"],
             "refund": ["REFUND", "CREDIT"],
         },
     )
@@ -74,13 +73,12 @@ def bank_template():
         document_type="bank_statement",
     )
 
-    # Add transaction type keywords
     template.processing = replace(
         template.processing,
         transaction_types={
             "transfer": ["SEPA", "TRANSFER"],
-            "payment": ["DIRECT DEBIT", "STANDING ORDER"],
-            "interest": ["INTEREST CREDIT"],
+            "expense": ["DIRECT DEBIT", "STANDING ORDER"],
+            "income": ["INTEREST CREDIT"],
         },
     )
 
@@ -93,8 +91,8 @@ def bank_template():
 class TestTemplateKeywordClassifier:
     """Test template-based classification with keyword matching."""
 
-    def test_classify_purchase_with_template_keywords(self, credit_card_template):
-        """Should classify as purchase when Details contains template keyword."""
+    def test_classify_expense_with_template_keyword(self, credit_card_template):
+        """Should classify as expense when Details contains template POS keyword."""
         classifier = TemplateKeywordClassifier()
         transaction = Transaction.from_dict(
             {"Date": "01/12/2023", "Details": "POS TESCO STORES", "Debit_AMT": "45.23"}
@@ -102,22 +100,22 @@ class TestTemplateKeywordClassifier:
 
         result = classifier.classify(transaction, credit_card_template)
 
-        assert result == "purchase"
+        assert result == "expense"
 
-    def test_classify_payment_with_template_keywords(self, credit_card_template):
-        """Should classify as payment when Details contains payment keyword."""
+    def test_classify_refund_with_template_keywords(self, credit_card_template):
+        """Should classify as refund when Details contains refund keyword."""
         classifier = TemplateKeywordClassifier()
         transaction = Transaction.from_dict(
             {
-                "Date": "02/12/2023",
-                "Details": "PAYMENT RECEIVED",
-                "Credit_AMT": "500.00",
+                "Date": "10/12/2023",
+                "Details": "REFUND AMAZON.COM",
+                "Credit_AMT": "15.00",
             }
         )
 
         result = classifier.classify(transaction, credit_card_template)
 
-        assert result == "payment"
+        assert result == "refund"
 
     def test_case_insensitive_matching(self, credit_card_template):
         """Should match keywords case-insensitively."""
@@ -132,7 +130,7 @@ class TestTemplateKeywordClassifier:
 
         result = classifier.classify(transaction, credit_card_template)
 
-        assert result == "purchase"
+        assert result == "expense"
 
     def test_returns_none_when_no_match(self, credit_card_template):
         """Should return None when no keyword matches."""
@@ -187,14 +185,117 @@ class TestTemplateKeywordClassifier:
         assert result is None
 
 
+# ---- CashClassifier Tests ----
+
+
+class TestCashClassifier:
+    """Test ATM and cash deposit/lodgement classification."""
+
+    def test_atm_withdrawal_classified_as_cash_withdrawal(self):
+        """Should classify ATM WITHDRAWAL as cash_withdrawal."""
+        classifier = CashClassifier()
+        transaction = Transaction.from_dict(
+            {
+                "Date": "01/12/2023",
+                "Details": "ATM WITHDRAWAL O CONNELL ST",
+                "Debit_AMT": "100.00",
+                "document_type": "bank_statement",
+            }
+        )
+
+        result = classifier.classify(transaction, None)
+
+        assert result == "cash_withdrawal"
+
+    def test_cash_machine_classified_as_cash_withdrawal(self):
+        """Should classify CASH MACHINE as cash_withdrawal."""
+        classifier = CashClassifier()
+        transaction = Transaction.from_dict(
+            {
+                "Date": "01/12/2023",
+                "Details": "CASH MACHINE DAME STREET",
+                "Debit_AMT": "50.00",
+                "document_type": "bank_statement",
+            }
+        )
+
+        result = classifier.classify(transaction, None)
+
+        assert result == "cash_withdrawal"
+
+    def test_lodgement_classified_as_cash_deposit(self):
+        """Should classify LODGEMENT as cash_deposit."""
+        classifier = CashClassifier()
+        transaction = Transaction.from_dict(
+            {
+                "Date": "01/12/2023",
+                "Details": "LODGEMENT BRANCH",
+                "Credit_AMT": "200.00",
+                "document_type": "bank_statement",
+            }
+        )
+
+        result = classifier.classify(transaction, None)
+
+        assert result == "cash_deposit"
+
+    def test_cash_deposit_classified_as_cash_deposit(self):
+        """Should classify CASH DEPOSIT as cash_deposit."""
+        classifier = CashClassifier()
+        transaction = Transaction.from_dict(
+            {
+                "Date": "05/12/2023",
+                "Details": "CASH DEPOSIT ATM",
+                "Credit_AMT": "150.00",
+                "document_type": "bank_statement",
+            }
+        )
+
+        result = classifier.classify(transaction, None)
+
+        assert result == "cash_deposit"
+
+    def test_non_cash_returns_none(self):
+        """Should return None for regular transactions."""
+        classifier = CashClassifier()
+        transaction = Transaction.from_dict(
+            {
+                "Date": "01/12/2023",
+                "Details": "TESCO STORES",
+                "Debit_AMT": "45.23",
+                "document_type": "bank_statement",
+            }
+        )
+
+        result = classifier._do_classify(transaction, None)
+
+        assert result is None
+
+    def test_cashpoint_classified_as_cash_withdrawal(self):
+        """Should classify CASHPOINT as cash_withdrawal."""
+        classifier = CashClassifier()
+        transaction = Transaction.from_dict(
+            {
+                "Date": "02/12/2023",
+                "Details": "CASHPOINT GRAFTON ST",
+                "Debit_AMT": "60.00",
+                "document_type": "bank_statement",
+            }
+        )
+
+        result = classifier.classify(transaction, None)
+
+        assert result == "cash_withdrawal"
+
+
 # ---- CreditCardPatternClassifier Tests ----
 
 
 class TestCreditCardPatternClassifier:
     """Test credit card specific pattern classification."""
 
-    def test_classify_pos_purchase(self):
-        """Should classify POS transactions as purchase."""
+    def test_classify_pos_as_expense(self):
+        """Should classify POS transactions as expense."""
         classifier = CreditCardPatternClassifier()
         transaction = Transaction.from_dict(
             {
@@ -207,10 +308,10 @@ class TestCreditCardPatternClassifier:
 
         result = classifier.classify(transaction, None)
 
-        assert result == "purchase"
+        assert result == "expense"
 
-    def test_classify_online_purchase(self):
-        """Should classify ONLINE transactions as purchase."""
+    def test_classify_online_as_expense(self):
+        """Should classify ONLINE transactions as expense."""
         classifier = CreditCardPatternClassifier()
         transaction = Transaction.from_dict(
             {
@@ -223,10 +324,10 @@ class TestCreditCardPatternClassifier:
 
         result = classifier.classify(transaction, None)
 
-        assert result == "purchase"
+        assert result == "expense"
 
-    def test_classify_payment_received(self):
-        """Should classify payment received as payment."""
+    def test_classify_payment_received_as_transfer(self):
+        """Should classify payment received as transfer."""
         classifier = CreditCardPatternClassifier()
         transaction = Transaction.from_dict(
             {
@@ -239,10 +340,10 @@ class TestCreditCardPatternClassifier:
 
         result = classifier.classify(transaction, None)
 
-        assert result == "payment"
+        assert result == "transfer"
 
-    def test_classify_annual_fee(self):
-        """Should classify annual fee as fee."""
+    def test_classify_annual_fee_as_expense(self):
+        """Should classify annual fee as expense."""
         classifier = CreditCardPatternClassifier()
         transaction = Transaction.from_dict(
             {
@@ -255,7 +356,7 @@ class TestCreditCardPatternClassifier:
 
         result = classifier.classify(transaction, None)
 
-        assert result == "fee"
+        assert result == "expense"
 
     def test_classify_refund(self):
         """Should classify refund transactions as refund."""
@@ -265,6 +366,22 @@ class TestCreditCardPatternClassifier:
                 "Date": "10/12/2023",
                 "Details": "REFUND AMAZON.COM",
                 "Credit_AMT": "15.00",
+                "document_type": "credit_card_statement",
+            }
+        )
+
+        result = classifier.classify(transaction, None)
+
+        assert result == "refund"
+
+    def test_classify_reversal_as_refund(self):
+        """Should classify REVERSAL as refund."""
+        classifier = CreditCardPatternClassifier()
+        transaction = Transaction.from_dict(
+            {
+                "Date": "12/12/2023",
+                "Details": "REVERSAL CHARGE",
+                "Credit_AMT": "30.00",
                 "document_type": "credit_card_statement",
             }
         )
@@ -296,7 +413,7 @@ class TestCreditCardPatternClassifier:
 class TestBankStatementPatternClassifier:
     """Test bank statement specific pattern classification."""
 
-    def test_classify_sepa_transfer(self):
+    def test_classify_sepa_as_transfer(self):
         """Should classify SEPA transactions as transfer."""
         classifier = BankStatementPatternClassifier()
         transaction = Transaction.from_dict(
@@ -312,8 +429,8 @@ class TestBankStatementPatternClassifier:
 
         assert result == "transfer"
 
-    def test_classify_direct_debit(self):
-        """Should classify direct debit as payment."""
+    def test_classify_direct_debit_as_expense(self):
+        """Should classify direct debit as expense."""
         classifier = BankStatementPatternClassifier()
         transaction = Transaction.from_dict(
             {
@@ -326,10 +443,10 @@ class TestBankStatementPatternClassifier:
 
         result = classifier.classify(transaction, None)
 
-        assert result == "payment"
+        assert result == "expense"
 
-    def test_classify_standing_order(self):
-        """Should classify standing order as payment."""
+    def test_classify_standing_order_as_expense(self):
+        """Should classify standing order as expense."""
         classifier = BankStatementPatternClassifier()
         transaction = Transaction.from_dict(
             {
@@ -342,10 +459,10 @@ class TestBankStatementPatternClassifier:
 
         result = classifier.classify(transaction, None)
 
-        assert result == "payment"
+        assert result == "expense"
 
-    def test_classify_interest_credit(self):
-        """Should classify interest credit as interest."""
+    def test_classify_interest_credit_as_income(self):
+        """Should classify interest credit as income."""
         classifier = BankStatementPatternClassifier()
         transaction = Transaction.from_dict(
             {
@@ -358,7 +475,87 @@ class TestBankStatementPatternClassifier:
 
         result = classifier.classify(transaction, None)
 
-        assert result == "interest"
+        assert result == "income"
+
+    def test_classify_overdraft_interest_as_expense(self):
+        """Should classify overdraft interest as expense."""
+        classifier = BankStatementPatternClassifier()
+        transaction = Transaction.from_dict(
+            {
+                "Date": "31/12/2023",
+                "Details": "OVERDRAFT INTEREST",
+                "Debit_AMT": "5.00",
+                "document_type": "bank_statement",
+            }
+        )
+
+        result = classifier.classify(transaction, None)
+
+        assert result == "expense"
+
+    def test_classify_salary_as_income(self):
+        """Should classify SALARY credit as income."""
+        classifier = BankStatementPatternClassifier()
+        transaction = Transaction.from_dict(
+            {
+                "Date": "28/12/2023",
+                "Details": "SALARY ACME CORP",
+                "Credit_AMT": "3500.00",
+                "document_type": "bank_statement",
+            }
+        )
+
+        result = classifier.classify(transaction, None)
+
+        assert result == "income"
+
+    def test_classify_wages_as_income(self):
+        """Should classify WAGES credit as income."""
+        classifier = BankStatementPatternClassifier()
+        transaction = Transaction.from_dict(
+            {
+                "Date": "28/12/2023",
+                "Details": "WAGES WEEKLY",
+                "Credit_AMT": "800.00",
+                "document_type": "bank_statement",
+            }
+        )
+
+        result = classifier.classify(transaction, None)
+
+        assert result == "income"
+
+    def test_classify_dividend_as_income(self):
+        """Should classify DIVIDEND credit as income."""
+        classifier = BankStatementPatternClassifier()
+        transaction = Transaction.from_dict(
+            {
+                "Date": "15/12/2023",
+                "Details": "DIVIDEND PAYMENT SHARES",
+                "Credit_AMT": "120.00",
+                "document_type": "bank_statement",
+            }
+        )
+
+        result = classifier.classify(transaction, None)
+
+        assert result == "income"
+
+    def test_classify_refund_as_refund(self):
+        """Should classify REFUND credit as refund."""
+        classifier = BankStatementPatternClassifier()
+        transaction = Transaction.from_dict(
+            {
+                "Date": "10/12/2023",
+                "Details": "REFUND ONLINE SHOP",
+                "Credit_AMT": "25.00",
+                "document_type": "bank_statement",
+            }
+        )
+
+        result = classifier.classify(transaction, None)
+
+        assert result == "refund"
 
     def test_only_runs_for_bank_statements(self):
         """Should not classify non-bank statements."""
@@ -383,8 +580,8 @@ class TestBankStatementPatternClassifier:
 class TestAmountBasedClassifier:
     """Test amount-based heuristic classification."""
 
-    def test_debit_only_credit_card_classified_as_purchase(self):
-        """Should classify debit-only credit card transaction as purchase."""
+    def test_debit_only_credit_card_classified_as_expense(self):
+        """Should classify debit-only credit card transaction as expense."""
         classifier = AmountBasedClassifier()
         transaction = Transaction.from_dict(
             {
@@ -398,7 +595,7 @@ class TestAmountBasedClassifier:
 
         result = classifier.classify(transaction, None)
 
-        assert result == "purchase"
+        assert result == "expense"
 
     def test_credit_only_credit_card_classified_as_refund(self):
         """Should classify credit-only credit card transaction as refund."""
@@ -417,8 +614,8 @@ class TestAmountBasedClassifier:
 
         assert result == "refund"
 
-    def test_debit_only_bank_statement_classified_as_payment(self):
-        """Should classify debit-only bank statement as payment."""
+    def test_debit_only_bank_statement_classified_as_expense(self):
+        """Should classify debit-only bank statement transaction as expense."""
         classifier = AmountBasedClassifier()
         transaction = Transaction.from_dict(
             {
@@ -432,15 +629,15 @@ class TestAmountBasedClassifier:
 
         result = classifier.classify(transaction, None)
 
-        assert result == "payment"
+        assert result == "expense"
 
-    def test_credit_only_bank_statement_classified_as_transfer(self):
-        """Should classify credit-only bank statement as transfer."""
+    def test_credit_only_bank_statement_classified_as_income(self):
+        """Should classify unmatched bank credit as income (last resort after pattern checks)."""
         classifier = AmountBasedClassifier()
         transaction = Transaction.from_dict(
             {
                 "Date": "01/12/2023",
-                "Details": "INCOMING TRANSFER",
+                "Details": "MYSTERY CREDIT",
                 "Debit_AMT": None,
                 "Credit_AMT": "100.00",
                 "document_type": "bank_statement",
@@ -449,10 +646,10 @@ class TestAmountBasedClassifier:
 
         result = classifier.classify(transaction, None)
 
-        assert result == "transfer"
+        assert result == "income"
 
-    def test_zero_amount_classified_as_fee(self):
-        """Should classify zero amount as fee."""
+    def test_zero_amount_falls_through_to_default(self):
+        """Zero/no amount should pass through to DefaultClassifier."""
         classifier = AmountBasedClassifier()
         transaction = Transaction.from_dict(
             {
@@ -463,9 +660,9 @@ class TestAmountBasedClassifier:
             }
         )
 
-        result = classifier.classify(transaction, None)
+        result = classifier._do_classify(transaction, None)
 
-        assert result == "fee"
+        assert result is None
 
 
 # ---- DefaultClassifier Tests ----
@@ -474,8 +671,8 @@ class TestAmountBasedClassifier:
 class TestDefaultClassifier:
     """Test default fallback classifier."""
 
-    def test_always_returns_other(self):
-        """Should always return 'other' as default."""
+    def test_always_returns_expense(self):
+        """Should always return 'expense' as default catch-all."""
         classifier = DefaultClassifier()
         transaction = Transaction.from_dict(
             {"Date": "01/12/2023", "Details": "UNCLASSIFIABLE TRANSACTION"}
@@ -483,7 +680,7 @@ class TestDefaultClassifier:
 
         result = classifier.classify(transaction, None)
 
-        assert result == "other"
+        assert result == "expense"
 
 
 # ---- Chain Integration Tests ----
@@ -503,14 +700,61 @@ class TestClassifierChain:
             }
         )
 
-        # Template classifier should match first
         chain = create_transaction_type_classifier_chain("credit_card_statement")
         result = chain.classify(transaction, credit_card_template)
 
-        assert result == "purchase"
+        assert result == "expense"
+
+    def test_cash_classifier_intercepts_before_document_classifier(self):
+        """CashClassifier should intercept ATM withdrawal before document classifier."""
+        transaction = Transaction.from_dict(
+            {
+                "Date": "01/12/2023",
+                "Details": "ATM WITHDRAWAL O CONNELL ST",
+                "Debit_AMT": "100.00",
+                "document_type": "bank_statement",
+            }
+        )
+
+        chain = create_transaction_type_classifier_chain("bank_statement")
+        result = chain.classify(transaction, None)
+
+        assert result == "cash_withdrawal"
+
+    def test_cash_deposit_classified_correctly(self):
+        """Chain should classify lodgement as cash_deposit."""
+        transaction = Transaction.from_dict(
+            {
+                "Date": "03/12/2023",
+                "Details": "LODGEMENT BRANCH DUBLIN",
+                "Credit_AMT": "500.00",
+                "document_type": "bank_statement",
+            }
+        )
+
+        chain = create_transaction_type_classifier_chain("bank_statement")
+        result = chain.classify(transaction, None)
+
+        assert result == "cash_deposit"
+
+    def test_salary_classified_as_income(self):
+        """Chain should classify salary as income."""
+        transaction = Transaction.from_dict(
+            {
+                "Date": "28/12/2023",
+                "Details": "SALARY ACME CORP LTD",
+                "Credit_AMT": "3500.00",
+                "document_type": "bank_statement",
+            }
+        )
+
+        chain = create_transaction_type_classifier_chain("bank_statement")
+        result = chain.classify(transaction, None)
+
+        assert result == "income"
 
     def test_chain_falls_through_to_default(self):
-        """Should fall through to default classifier when nothing matches."""
+        """Should fall through to default when nothing matches."""
         transaction = Transaction.from_dict(
             {
                 "Date": "01/12/2023",
@@ -522,12 +766,10 @@ class TestClassifierChain:
         chain = create_transaction_type_classifier_chain("unknown_type")
         result = chain.classify(transaction, None)
 
-        # Amount-based classifier will classify this as 'fee' (zero amount)
-        # If we want to test true default, we need amount data
-        assert result == "fee"
+        assert result == "expense"
 
     def test_factory_creates_correct_chain_for_credit_cards(self):
-        """Should create credit card chain with appropriate classifiers."""
+        """Should classify CONTACTLESS as expense via CC chain."""
         transaction = Transaction.from_dict(
             {
                 "Date": "01/12/2023",
@@ -540,10 +782,10 @@ class TestClassifierChain:
         chain = create_transaction_type_classifier_chain("credit_card_statement")
         result = chain.classify(transaction, None)
 
-        assert result == "purchase"
+        assert result == "expense"
 
     def test_factory_creates_correct_chain_for_bank_statements(self):
-        """Should create bank statement chain with appropriate classifiers."""
+        """Should classify SEPA TRANSFER as transfer via bank statement chain."""
         transaction = Transaction.from_dict(
             {
                 "Date": "01/12/2023",
@@ -567,8 +809,7 @@ class TestClassifierChain:
         chain = create_transaction_type_classifier_chain(None)
         result = chain.classify(transaction, None)
 
-        # Should fall back to amount-based or default
-        assert result in ("payment", "purchase", "other")
+        assert result in ("expense", "income")
 
     def test_template_keywords_take_priority_over_patterns(self, bank_template):
         """Template keywords should take priority over generic patterns."""
@@ -584,5 +825,36 @@ class TestClassifierChain:
         chain = create_transaction_type_classifier_chain("bank_statement")
         result = chain.classify(transaction, bank_template)
 
-        # Template should match as 'transfer' (not pattern-based)
         assert result == "transfer"
+
+    def test_credit_card_payment_classified_as_transfer(self):
+        """Paying off CC balance should classify as transfer."""
+        transaction = Transaction.from_dict(
+            {
+                "Date": "15/12/2023",
+                "Details": "PAYMENT RECEIVED THANK YOU",
+                "Credit_AMT": "800.00",
+                "document_type": "credit_card_statement",
+            }
+        )
+
+        chain = create_transaction_type_classifier_chain("credit_card_statement")
+        result = chain.classify(transaction, None)
+
+        assert result == "transfer"
+
+    def test_unmatched_bank_credit_classified_as_income(self):
+        """Unmatched bank credit (no transfer/refund/cash pattern) should be income."""
+        transaction = Transaction.from_dict(
+            {
+                "Date": "20/12/2023",
+                "Details": "PAYMENT FROM CUSTOMER ABC",
+                "Credit_AMT": "500.00",
+                "document_type": "bank_statement",
+            }
+        )
+
+        chain = create_transaction_type_classifier_chain("bank_statement")
+        result = chain.classify(transaction, None)
+
+        assert result == "income"
