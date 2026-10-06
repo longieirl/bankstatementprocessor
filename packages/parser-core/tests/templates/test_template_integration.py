@@ -125,8 +125,8 @@ class TestTemplateIntegration:
             template = detector.detect_template(pdf_path, first_page)
 
         assert template is not None
-        # Could match default, revolut, or aib_ireland depending on file content
-        assert template.id in ["default", "revolut", "aib_ireland"]
+        # Could match default, revolut, aib_ireland, or aib_credit_card depending on file content
+        assert template.id in ["default", "revolut", "aib_ireland", "aib_credit_card"]
 
     def test_template_extraction_config_types(self):
         """Test that template extraction config has correct types."""
@@ -279,5 +279,5 @@ class TestTemplateIntegration:
 
         assert template is not None
         # Should detect based on actual PDF content
-        # Could be aib_ireland, default, or other depending on file
-        assert template.id in ["default", "aib_ireland", "revolut"]
+        # Could be aib_ireland, default, revolut, or aib_credit_card depending on file
+        assert template.id in ["default", "aib_ireland", "revolut", "aib_credit_card"]
