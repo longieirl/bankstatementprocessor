@@ -35,7 +35,7 @@ fi
 # Run Python processing pipeline
 ###############################################
 echo "🔄 Running PDF processing pipeline..."
-python -m bankstatements_free.app
+python -m bankstatements_cli.app
 
 echo "✅ Processing complete — results saved to /app/output"
 
@@ -52,7 +52,7 @@ if [ "${EXIT_AFTER_PROCESSING:-true}" = "false" ]; then
     echo ""
     echo "💡 To process PDFs:"
     echo "   1. Add PDFs to ./input/ folder on host"
-    echo "   2. Run: docker-compose exec bank-processor python -m bankstatements_free.app"
+    echo "   2. Run: docker-compose exec bank-processor python -m bankstatements_cli.app"
     echo ""
     echo "📊 Check logs:"
     echo "   docker-compose logs -f bank-processor"

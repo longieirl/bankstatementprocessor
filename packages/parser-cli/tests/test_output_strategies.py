@@ -15,13 +15,13 @@ from unittest.mock import patch
 import pandas as pd
 import pytest
 
+from bankstatements_cli.app import AppConfig, ConfigurationError
 from bankstatements_core.patterns.factories import ProcessorFactory
 from bankstatements_core.patterns.strategies import (
     CSVOutputStrategy,
     ExcelOutputStrategy,
     JSONOutputStrategy,
 )
-from bankstatements_cli.app import AppConfig, ConfigurationError
 
 # Check if openpyxl is available (PAID tier dependency)
 try:
