@@ -28,7 +28,7 @@ COPY packages/parser-cli/ ./packages/parser-cli/
 RUN pip install --no-cache-dir ./packages/parser-core
 RUN pip install --no-cache-dir ./packages/parser-cli
 # hadolint ignore=DL3013
-RUN pip install --no-cache-dir --upgrade "msgpack>=1.2.1"
+RUN pip install --no-cache-dir --upgrade "msgpack>=1.2.1" "urllib3>=2.8.0"
 
 # Expose site-packages via a stable path so the production COPY is version-agnostic
 RUN python -c "import sysconfig; print(sysconfig.get_path('purelib'))" | xargs -I{} ln -s {} /pkg
@@ -59,7 +59,7 @@ RUN --mount=type=bind,from=builder,source=/pkg,target=/mnt/pkg \
 COPY --from=builder /usr/local/bin/bankstatements /usr/local/bin/bankstatements
 
 # hadolint ignore=DL3013
-RUN pip install --no-cache-dir --upgrade "setuptools>=78.1.1" "urllib3>=2.8.0"
+RUN pip install --no-cache-dir --upgrade "setuptools>=78.1.1"
 
 COPY entrypoint.sh .
 
