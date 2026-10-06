@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **CVE-2026-97687, CVE-2026-97689** — `urllib3 2.7.0` (HTTPS proxy TLS interception + DoS via unbounded memory). Upgraded to `>=2.8.0` in the production Docker stage.
+
 ### Breaking changes
 - `BankStatementProcessor.__init__()` no longer accepts `entitlements` parameter — `TypeError` on next install for any caller passing it
 - `ServiceRegistry.from_config()` no longer accepts `entitlements` parameter

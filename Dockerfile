@@ -59,7 +59,7 @@ RUN --mount=type=bind,from=builder,source=/pkg,target=/mnt/pkg \
 COPY --from=builder /usr/local/bin/bankstatements /usr/local/bin/bankstatements
 
 # hadolint ignore=DL3013
-RUN pip install --no-cache-dir --upgrade "setuptools>=78.1.1"
+RUN pip install --no-cache-dir --upgrade "setuptools>=78.1.1" "urllib3>=2.8.0"
 
 COPY entrypoint.sh .
 
