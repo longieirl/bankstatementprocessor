@@ -1,6 +1,6 @@
 [project]
 name = "bankstatements-cli"
-version = "0.1.7"
+version = "0.1.8"
 description = "CLI for bankstatements-core PDF bank statement processor"
 readme = "README.md"
 requires-python = ">=3.11"
