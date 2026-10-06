@@ -25,10 +25,10 @@ RUN pip install --no-cache-dir --upgrade pip wheel setuptools build
 COPY packages/parser-core/ ./packages/parser-core/
 COPY packages/parser-cli/ ./packages/parser-cli/
 
+RUN pip install --no-cache-dir ./packages/parser-core
+RUN pip install --no-cache-dir ./packages/parser-cli
 # hadolint ignore=DL3013
-RUN pip install --no-cache-dir ./packages/parser-core && \
-    pip install --no-cache-dir ./packages/parser-cli && \
-    pip install --no-cache-dir --upgrade "msgpack>=1.2.1" "urllib3>=2.8.0"
+RUN pip install --no-cache-dir --upgrade "msgpack>=1.2.1"
 
 # Expose site-packages via a stable path so the production COPY is version-agnostic
 RUN python -c "import sysconfig; print(sysconfig.get_path('purelib'))" | xargs -I{} ln -s {} /pkg

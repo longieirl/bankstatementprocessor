@@ -30,6 +30,15 @@ CVE-2025-47273
 # Remove when the package that pulls msgpack updates to >=1.2.1.
 GHSA-6v7p-g79w-8964
 
-# Last review: 2026-08-31
-# Next review: 2026-09-30
+# CVE-2026-97687, CVE-2026-97689: urllib3 2.7.0 — HTTPS proxy TLS override + DoS via unbounded memory.
+# urllib3 2.7.0 is bundled in the python:3.12-slim base image layer; Trivy detects it from that layer
+# even though the builder stage upgrades to >=2.8.0. The base layer cannot be patched without a new
+# base image. The application processes PDF files locally and never initiates HTTPS proxy connections
+# or handles untrusted chunked streams, so both code paths are unreachable at runtime.
+# Re-evaluate when python:3.12-slim ships urllib3 >=2.8.0 natively.
+CVE-2026-97687
+CVE-2026-97689
+
+# Last review: 2026-10-06
+# Next review: 2026-11-06
 

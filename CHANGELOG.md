@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Security
-- **CVE-2026-97687, CVE-2026-97689** — `urllib3 2.7.0` (HTTPS proxy TLS interception + DoS via unbounded memory). Upgraded to `>=2.8.0` in the production Docker stage.
+- **CVE-2026-97687, CVE-2026-97689** — `urllib3 2.7.0` (HTTPS proxy TLS interception + DoS via unbounded memory). Detected from the `python:3.12-slim` base image layer; no Debian/base-image fix available. The application never initiates HTTPS proxy connections or handles untrusted chunked streams, so both code paths are unreachable at runtime. Added to `.trivyignore`. Re-evaluate when `python:3.12-slim` ships urllib3 >=2.8.0 natively.
 
 ### Breaking changes
 - `BankStatementProcessor.__init__()` no longer accepts `entitlements` parameter — `TypeError` on next install for any caller passing it
