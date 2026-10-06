@@ -52,9 +52,7 @@ class TestApp(unittest.TestCase):
         self.assertFalse(config.enable_dynamic_boundary)
         self.assertTrue(config.sort_by_date)
         self.assertEqual(config.totals_columns, ["debit", "credit"])
-        self.assertTrue(
-            config.generate_monthly_summary
-        )
+        self.assertTrue(config.generate_monthly_summary)
         # Verify processor.run() was called
         mock_processor.run.assert_called_once()
 

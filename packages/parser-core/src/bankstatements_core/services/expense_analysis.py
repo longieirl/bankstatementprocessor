@@ -197,7 +197,7 @@ class ExpenseAnalysisService:
             )
             return self._empty_insights(error=str(e))
 
-    def _detect_recurring_charges(  # noqa: C901, PLR0912, PLR0915
+    def _detect_recurring_charges(
         self, tx_objects: list[Transaction]
     ) -> list[dict[str, Any]]:
         """
@@ -222,122 +222,156 @@ class ExpenseAnalysisService:
 
         recurring = []
         for description, txs in groups.items():
-            if len(txs) < 2:
-                continue  # Need at least 2 occurrences
-
-            # Sort by date for interval calculation
-            try:
-                txs_sorted = sorted(
-                    txs,
-                    key=lambda t: _date_parser_service.parse_transaction_date(t.date),
-                )
-            except (ValueError, TypeError) as e:
-                logger.warning("Failed to sort transactions for %s: %s", description, e)
-                continue
-
-            # Extract amounts (handle both debit and credit)
-            amounts = []
-            for tx in txs_sorted:
-                amount = self._get_transaction_amount(tx)
-                if amount is not None and amount > 0:
-                    amounts.append(amount)
-
-            if len(amounts) < 2:
-                continue  # Need at least 2 valid amounts
-
-            # Check amount similarity (±5% tolerance)
-            avg_amount = sum(amounts) / len(amounts)
-            if not all(
-                abs(float(a) - float(avg_amount)) <= float(avg_amount) * 0.05
-                for a in amounts
-            ):
-                continue  # Amounts too variable
-
-            # Calculate date intervals
-            intervals = []
-            for i in range(1, len(txs_sorted)):
-                try:
-                    date1 = _date_parser_service.parse_transaction_date(
-                        txs_sorted[i - 1].date
-                    )
-                    date2 = _date_parser_service.parse_transaction_date(
-                        txs_sorted[i].date
-                    )
-                    delta = (date2 - date1).days
-                    if delta > 0:  # Only positive intervals
-                        intervals.append(delta)
-                except (ValueError, TypeError, AttributeError) as e:
-                    logger.warning("Failed to calculate interval: %s", e)
-                    continue
-
-            if not intervals:
-                continue
-
-            avg_interval = sum(intervals) / len(intervals)
-            frequency = _classify_frequency(avg_interval)
-            if frequency is None:
-                continue
-
-            tx_list = [
-                {
-                    "date": tx.date,
-                    "amount": round(float(self._get_transaction_amount(tx) or 0), 2),
-                }
-                for tx in txs_sorted
-            ]
-
-            if not self.recurring_intelligence:
-                # Legacy mode: monthly-only, basic fields
-                if frequency != "monthly":
-                    continue
-                recurring.append(
-                    {
-                        "description": description,
-                        "average_amount": round(float(avg_amount), 2),
-                        "frequency": "monthly",
-                        "occurrences": len(txs_sorted),
-                        "transactions": tx_list,
-                        "average_interval_days": round(avg_interval, 1),
-                    }
-                )
-                continue
-
-            amount_floats = [float(a) for a in amounts]
-            amount_variation = (
-                round(statistics.stdev(amount_floats), 2)
-                if len(amount_floats) > 1
-                else 0.0
-            )
-            annualised_cost = round(float(avg_amount) * _periods_per_year(frequency), 2)
-            confidence = _compute_confidence(
-                intervals, amount_floats, avg_interval, float(avg_amount)
-            )
-
-            last_date = _date_parser_service.parse_transaction_date(txs_sorted[-1].date)
-            next_expected = (last_date + timedelta(days=round(avg_interval))).strftime(
-                "%d %b %Y"
-            )
-
-            recurring.append(
-                {
-                    "description": description,
-                    "frequency": frequency,
-                    "average_amount": round(float(avg_amount), 2),
-                    "amount_variation": amount_variation,
-                    "first_occurrence": txs_sorted[0].date,
-                    "last_occurrence": txs_sorted[-1].date,
-                    "annualised_cost": annualised_cost,
-                    "next_expected": next_expected,
-                    "is_subscription": _is_subscription(description, frequency),
-                    "confidence": confidence,
-                    "occurrences": len(txs_sorted),
-                    "transactions": tx_list,
-                    "average_interval_days": round(avg_interval, 1),
-                }
-            )
+            entry = self._build_recurring_entry(description, txs)
+            if entry is not None:
+                recurring.append(entry)
 
         logger.info("Detected %s recurring charges", len(recurring))
         return recurring
+
+    def _build_recurring_entry(
+        self, description: str, txs: list[Transaction]
+    ) -> dict[str, Any] | None:
+        """Build a single recurring charge entry, or return None if not recurring."""
+        if len(txs) < 2:
+            return None
+        validated = self._validate_recurring_group(description, txs)
+        if validated is None:
+            return None
+        txs_sorted, amounts, intervals, avg_amount, avg_interval, frequency = validated
+
+        tx_list = [
+            {
+                "date": tx.date,
+                "amount": round(float(self._get_transaction_amount(tx) or 0), 2),
+            }
+            for tx in txs_sorted
+        ]
+
+        if not self.recurring_intelligence:
+            if frequency != "monthly":
+                return None
+            return {
+                "description": description,
+                "average_amount": round(float(avg_amount), 2),
+                "frequency": "monthly",
+                "occurrences": len(txs_sorted),
+                "transactions": tx_list,
+                "average_interval_days": round(avg_interval, 1),
+            }
+
+        return self._build_enriched_entry(
+            description,
+            txs_sorted,
+            amounts,
+            intervals,
+            avg_amount,
+            avg_interval,
+            frequency,
+            tx_list,
+        )
+
+    def _validate_recurring_group(
+        self, description: str, txs: list[Transaction]
+    ) -> tuple[list[Transaction], list[Any], list[int], Any, float, str] | None:
+        """Validate and extract components needed to build a recurring entry.
+
+        Returns (txs_sorted, amounts, intervals, avg_amount, avg_interval, frequency)
+        or None if the group does not qualify as recurring.
+
+        Precondition: len(txs) >= 2.
+        """
+        try:
+            txs_sorted = sorted(
+                txs,
+                key=lambda t: _date_parser_service.parse_transaction_date(t.date),
+            )
+        except (ValueError, TypeError) as e:
+            logger.warning("Failed to sort transactions for %s: %s", description, e)
+            return None
+
+        amounts = [
+            a
+            for tx in txs_sorted
+            for a in [self._get_transaction_amount(tx)]
+            if a is not None and a > 0
+        ]
+        if len(amounts) < 2:
+            return None
+
+        avg_amount = sum(amounts) / len(amounts)
+        if not all(
+            abs(float(a) - float(avg_amount)) <= float(avg_amount) * 0.05
+            for a in amounts
+        ):
+            return None
+
+        intervals = self._calculate_intervals(txs_sorted)
+        if not intervals:
+            return None
+
+        avg_interval = sum(intervals) / len(intervals)
+        frequency = _classify_frequency(avg_interval)
+        if frequency is None:
+            return None
+
+        return txs_sorted, amounts, intervals, avg_amount, avg_interval, frequency
+
+    def _calculate_intervals(self, txs_sorted: list[Transaction]) -> list[int]:
+        """Return positive day-gaps between consecutive sorted transactions."""
+        intervals = []
+        for i in range(1, len(txs_sorted)):
+            try:
+                date1 = _date_parser_service.parse_transaction_date(
+                    txs_sorted[i - 1].date
+                )
+                date2 = _date_parser_service.parse_transaction_date(txs_sorted[i].date)
+                delta = (date2 - date1).days
+                if delta > 0:
+                    intervals.append(delta)
+            except (ValueError, TypeError, AttributeError) as e:
+                logger.warning("Failed to calculate interval: %s", e)
+        return intervals
+
+    def _build_enriched_entry(  # noqa: PLR0913
+        self,
+        description: str,
+        txs_sorted: list[Transaction],
+        amounts: list[Any],
+        intervals: list[int],
+        avg_amount: Any,
+        avg_interval: float,
+        frequency: str,
+        tx_list: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Build the intelligence-enriched recurring charge dict."""
+        amount_floats = [float(a) for a in amounts]
+        amount_variation = (
+            round(statistics.stdev(amount_floats), 2) if len(amount_floats) > 1 else 0.0
+        )
+        annualised_cost = round(float(avg_amount) * _periods_per_year(frequency), 2)
+        confidence = _compute_confidence(
+            intervals, amount_floats, avg_interval, float(avg_amount)
+        )
+        last_date = _date_parser_service.parse_transaction_date(txs_sorted[-1].date)
+        next_expected = (last_date + timedelta(days=round(avg_interval))).strftime(
+            "%d %b %Y"
+        )
+        return {
+            "description": description,
+            "frequency": frequency,
+            "average_amount": round(float(avg_amount), 2),
+            "amount_variation": amount_variation,
+            "first_occurrence": txs_sorted[0].date,
+            "last_occurrence": txs_sorted[-1].date,
+            "annualised_cost": annualised_cost,
+            "next_expected": next_expected,
+            "is_subscription": _is_subscription(description, frequency),
+            "confidence": confidence,
+            "occurrences": len(txs_sorted),
+            "transactions": tx_list,
+            "average_interval_days": round(avg_interval, 1),
+        }
 
     def _detect_high_value_transactions(
         self, tx_objects: list[Transaction], statistics_data: dict[str, Any]

@@ -1100,9 +1100,24 @@ class TestRecurringIntelligenceToggle:
         svc = ExpenseAnalysisService(recurring_intelligence=False)
         result = svc.analyze(self._monthly_txns())
         rec = result["insights"]["recurring_charges"][0]
-        for key in ("description", "average_amount", "frequency", "occurrences", "transactions", "average_interval_days"):
+        for key in (
+            "description",
+            "average_amount",
+            "frequency",
+            "occurrences",
+            "transactions",
+            "average_interval_days",
+        ):
             assert key in rec
-        for enriched_key in ("amount_variation", "first_occurrence", "last_occurrence", "annualised_cost", "next_expected", "is_subscription", "confidence"):
+        for enriched_key in (
+            "amount_variation",
+            "first_occurrence",
+            "last_occurrence",
+            "annualised_cost",
+            "next_expected",
+            "is_subscription",
+            "confidence",
+        ):
             assert enriched_key not in rec
 
     def test_legacy_mode_weekly_not_detected(self):
