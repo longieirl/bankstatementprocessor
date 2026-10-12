@@ -38,8 +38,15 @@ RUN python -c "import sysconfig; print(sysconfig.get_path('purelib'))" | xargs -
 # ============================================================================
 FROM base AS production
 
+# Re-declare so BUILD_DATE is in scope here; referencing it in the apt layer
+# busts the build cache per build so apt-get upgrade always re-pulls the latest
+# Debian security patches (e.g. perl-base CVE-2026-13221 / CVE-2026-8376) instead
+# of reusing a stale cached layer.
+ARG BUILD_DATE
+
 # hadolint ignore=DL3008
-RUN apt-get update && apt-get upgrade -y --no-install-recommends && apt-get install -y --no-install-recommends \
+RUN echo "OS patch layer build: ${BUILD_DATE}" \
+    && apt-get update && apt-get upgrade -y --no-install-recommends && apt-get install -y --no-install-recommends \
     poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 # poppler-utils is runtime-critical; pinning not practical. Mitigated by Trivy CI gate.
