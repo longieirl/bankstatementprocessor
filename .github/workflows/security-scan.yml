@@ -133,6 +133,9 @@ jobs:
         image-ref: 'ghcr.io/longieirl/bankstatements:latest'
         format: 'json'
         output: 'trivy-detailed-report.json'
+        severity: 'CRITICAL,HIGH,MEDIUM'
+        ignore-unfixed: true
+        trivyignores: '.trivyignore'
 
     - name: Upload detailed report as artifact
       uses: actions/upload-artifact@v7
@@ -145,23 +148,19 @@ jobs:
     - name: Check for critical vulnerabilities
       id: check-critical
       run: |
-        CRITICAL_COUNT=$(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-          aquasec/trivy:latest image --quiet \
-          --severity CRITICAL \
-          --format json \
-          ghcr.io/longieirl/bankstatements:latest | \
-          jq '[.Results[]?.Vulnerabilities // [] | .[] | select(.Severity == "CRITICAL")] | length')
-
+        # Count from the post-ignore report so suppressed (.trivyignore) and
+        # unfixed CVEs are not counted. This is the number that drives the alert.
+        CRITICAL_COUNT=$(jq '[.Results[]?.Vulnerabilities // [] | .[] | select(.Severity == "CRITICAL")] | length' trivy-detailed-report.json)
         echo "critical_count=${CRITICAL_COUNT}" >> "$GITHUB_OUTPUT"
-        echo "Found ${CRITICAL_COUNT} critical vulnerabilities"
+        echo "Found ${CRITICAL_COUNT} actionable critical vulnerabilities (post-ignore)"
 
-    - name: Create issue for critical vulnerabilities
-      if: steps.check-critical.outputs.critical_count > 0
+    - name: Create or close issue for critical vulnerabilities
+      if: always()
       uses: actions/github-script@v9.0.0
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
-          const criticalCount = ${{ steps.check-critical.outputs.critical_count }};
+          const criticalCount = Number(`${{ steps.check-critical.outputs.critical_count }}` || '0');
           const issueTitle = `🚨 Security Alert: ${criticalCount} Critical Vulnerabilities Found`;
           const issueBody = `
           ## Security Vulnerability Alert
@@ -204,34 +203,48 @@ jobs:
           This issue was automatically created by the security scanning workflow.
           `;
 
-          // Check if there's already an open issue
+          // Find any existing open security issue created by this workflow
           const issues = await github.rest.issues.listForRepo({
             owner: context.repo.owner,
             repo: context.repo.repo,
             state: 'open',
             labels: 'security,vulnerability'
           });
-
           const existingIssue = issues.data.find(issue =>
             issue.title.includes('Critical Vulnerabilities Found')
           );
 
-          if (existingIssue) {
-            // Update existing issue
+          if (criticalCount > 0) {
+            if (existingIssue) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssue.number,
+                body: `**Update**: Still ${criticalCount} critical vulnerabilities found in latest scan.\n\nScan run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: issueTitle,
+                body: issueBody,
+                labels: ['security', 'vulnerability', 'critical']
+              });
+            }
+          } else if (existingIssue) {
+            // No actionable critical vulnerabilities remain — resolve and close.
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: existingIssue.number,
-              body: `**Update**: Still ${criticalCount} critical vulnerabilities found in latest scan.\n\nScan run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}`
+              body: `✅ **Resolved**: 0 actionable critical vulnerabilities in the latest scan (suppressed/unfixed excluded via \`.trivyignore\`). Closing automatically.\n\nScan run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}`
             });
-          } else {
-            // Create new issue
-            await github.rest.issues.create({
+            await github.rest.issues.update({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: issueTitle,
-              body: issueBody,
-              labels: ['security', 'vulnerability', 'critical']
+              issue_number: existingIssue.number,
+              state: 'closed',
+              state_reason: 'completed'
             });
           }
 
