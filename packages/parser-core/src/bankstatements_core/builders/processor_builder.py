@@ -48,6 +48,7 @@ class BankStatementProcessorBuilder:
         self._generate_monthly_summary: bool = True
         self._generate_expense_analysis: bool = True
         self._recurring_intelligence: bool = True
+        self._filter_year_range: tuple[int, int] | None = None
         self._output_strategies: dict[str, Any] | None = None
         self._duplicate_strategy: Any | None = None
         self._repository: Any | None = None
@@ -293,6 +294,7 @@ class BankStatementProcessorBuilder:
         self._generate_monthly_summary = config.processing.generate_monthly_summary
         self._generate_expense_analysis = config.processing.generate_expense_analysis
         self._recurring_intelligence = config.processing.recurring_intelligence
+        self._filter_year_range = config.processing.filter_year_range
         return self
 
     def _get_output_formats(self) -> list[str]:
@@ -339,6 +341,7 @@ class BankStatementProcessorBuilder:
                 generate_monthly_summary=self._generate_monthly_summary,
                 generate_expense_analysis=self._generate_expense_analysis,
                 recurring_intelligence=self._recurring_intelligence,
+                filter_year_range=self._filter_year_range,
             ),
             output=OutputConfig(
                 output_formats=self._get_output_formats(),

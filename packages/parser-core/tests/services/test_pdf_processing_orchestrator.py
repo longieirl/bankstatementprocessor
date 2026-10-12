@@ -14,7 +14,7 @@ from bankstatements_core.services.pdf_processing_orchestrator import (
 )
 
 
-def _make_orchestrator(extraction_orchestrator=None):
+def _make_orchestrator(extraction_orchestrator=None, year_filter_service=None):
     """Build a PDFProcessingOrchestrator with minimal required args."""
     return PDFProcessingOrchestrator(
         extraction_config=ExtractionConfig(table_top_y=100, table_bottom_y=700),
@@ -22,6 +22,7 @@ def _make_orchestrator(extraction_orchestrator=None):
         output_dir=Path(tempfile.mkdtemp()),
         repository=MagicMock(),
         extraction_orchestrator=extraction_orchestrator,
+        year_filter_service=year_filter_service,
     )
 
 
@@ -141,3 +142,90 @@ class TestSaveCardNumbers(unittest.TestCase):
         # "440260****9459" has no spaces → stripped is 14 chars → 6 middle stars
         self.assertEqual(entry["card_masked"], "4402******9459")
         self.assertNotIn(" ", entry["card_masked"])
+
+
+class TestYearFilterInOrchestrator(unittest.TestCase):
+    """Year filter applied per-PDF during extraction."""
+
+    @staticmethod
+    def _tx(date):
+        from bankstatements_core.domain.models.transaction import Transaction
+
+        return Transaction(
+            date=date,
+            details="x",
+            debit="1.00",
+            credit=None,
+            balance="1.00",
+            filename="s.pdf",
+        )
+
+    def _orch_with_result(self, transactions, iban=None, year_range=None):
+        from bankstatements_core.services.transaction_year_filter import (
+            TransactionYearFilterService,
+        )
+
+        svc = TransactionYearFilterService.from_range(year_range)
+        orch = _make_orchestrator(year_filter_service=svc)
+        orch.pdf_discovery.discover_pdfs = MagicMock(return_value=[Path("/tmp/s.pdf")])
+        orch.extraction_orchestrator.extract_from_pdf = MagicMock(
+            return_value=ExtractionResult(
+                transactions=list(transactions),
+                page_count=1,
+                iban=iban,
+                source_file=Path("/tmp/s.pdf"),
+            )
+        )
+        return orch
+
+    def _written(self, orch, name):
+        return [
+            c
+            for c in orch.repository.save_json_file.call_args_list
+            if name in str(c[0][0])
+        ]
+
+    def test_in_year_transactions_kept(self):
+        orch = self._orch_with_result(
+            [self._tx("01/06/2024"), self._tx("01/06/2025")],
+            iban="IE00AIBK00000000003010",
+            year_range=(2025, 2025),
+        )
+        results, _, _ = orch.process_all_pdfs(Path("/tmp"))
+        self.assertEqual(len(results), 1)
+        self.assertEqual([t.date for t in results[0].transactions], ["01/06/2025"])
+
+    def test_pdf_with_no_in_year_txns_excluded_and_iban_omitted(self):
+        orch = self._orch_with_result(
+            [self._tx("01/06/2024")],
+            iban="IE00AIBK00000000003010",
+            year_range=(2025, 2025),
+        )
+        results, _, _ = orch.process_all_pdfs(Path("/tmp"))
+        self.assertEqual(results, [])
+        # ibans.json must NOT be written — no PDF contributed in-year data
+        self.assertEqual(self._written(orch, "ibans.json"), [])
+        # excluded_files.json records the PDF
+        excluded = self._written(orch, "excluded_files.json")
+        self.assertEqual(len(excluded), 1)
+        reason = excluded[0][0][1]["excluded_files"][0]["reason"]
+        self.assertIn("year", reason.lower())
+
+    def test_unparseable_date_aborts_run(self):
+        from bankstatements_core.exceptions import YearFilterError
+
+        orch = self._orch_with_result(
+            [self._tx("not-a-date")], iban=None, year_range=(2025, 2025)
+        )
+        with self.assertRaises(YearFilterError):
+            orch.process_all_pdfs(Path("/tmp"))
+
+    def test_no_filter_keeps_all_years(self):
+        orch = self._orch_with_result(
+            [self._tx("01/06/2024"), self._tx("01/06/2026")],
+            iban="IE00AIBK00000000003010",
+            year_range=None,
+        )
+        results, _, _ = orch.process_all_pdfs(Path("/tmp"))
+        self.assertEqual(len(results), 1)
+        self.assertEqual(len(results[0].transactions), 2)

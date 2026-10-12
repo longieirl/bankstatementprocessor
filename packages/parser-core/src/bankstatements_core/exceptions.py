@@ -322,6 +322,19 @@ class TransactionProcessingError(ProcessingError):
     pass
 
 
+class YearFilterError(ProcessingError):
+    """
+    Raised when a transaction's year cannot be determined while a year filter
+    (FILTER_YEAR) is active.
+
+    The year filter must never guess a year. When a transaction date has no
+    explicit year and none can be inferred, processing aborts so the output
+    cannot silently include or drop the wrong year.
+    """
+
+    pass
+
+
 # ==============================================================================
 # Exception Registry
 # ==============================================================================
@@ -348,4 +361,6 @@ __all__ = [
     "TransactionProcessingError",
     # Validation
     "ValidationError",
+    # Year filter
+    "YearFilterError",
 ]

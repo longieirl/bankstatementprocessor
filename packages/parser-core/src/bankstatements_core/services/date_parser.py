@@ -124,6 +124,44 @@ class DateParserService:
         )
         return self.EPOCH_DATE
 
+    def try_resolve_year(
+        self, date_str: str, hint_year: int | None = None
+    ) -> int | None:
+        """Resolve the year of a date string strictly, without guessing.
+
+        Unlike parse_transaction_date, this never falls back to DEFAULT_YEAR or
+        epoch. A year is returned only when it is explicit in the date string
+        (e.g. "01/12/2025", "25 Apr 2024") or supplied via hint_year for a
+        yearless date (e.g. "3 Feb" from a CC statement). Returns None when the
+        year cannot be determined, so callers that must not guess (such as the
+        year filter) can treat it as a hard failure.
+
+        Args:
+            date_str: Date string from bank statement
+            hint_year: Year inferred from a document-level field, used only to
+                resolve yearless dates like "3 Feb"
+
+        Returns:
+            Four-digit year as int, or None if indeterminable
+        """
+        if not date_str or not date_str.strip():
+            return None
+
+        normalized = date_str.strip().replace("Sept", "Sep")
+
+        # Explicit-year formats (DD/MM/YY, DD/MM/YYYY, "25 Apr 2025", ...)
+        parsed = self._parse_common_date_formats(normalized)
+        if parsed is not None:
+            return parsed.year
+
+        # Yearless formats resolved only via hint_year
+        parsed = self._parse_yearless_date(normalized, hint_year)
+        if parsed is not None:
+            return parsed.year
+
+        # Deliberately NOT trying _parse_partial_date — it assumes DEFAULT_YEAR
+        return None
+
     def _normalize_two_digit_year(
         self, parsed_date: datetime, format_string: str
     ) -> datetime:

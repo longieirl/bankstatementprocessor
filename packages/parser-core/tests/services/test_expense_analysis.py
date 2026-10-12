@@ -598,14 +598,15 @@ class TestExpenseAnalysisService:
         assert len(repeated) == 1
         assert repeated[0]["description"] == "VDP-TRIA ENERGY LT"
         assert repeated[0]["transaction_count"] == 2
-        assert repeated[0]["total_spent"] == 1315.00
+        assert repeated[0]["total_debit"] == 1315.00
+        assert repeated[0]["total_credit"] == 0.0
         assert repeated[0]["average_amount"] == 657.50
         assert repeated[0]["min_amount"] == 515.00
         assert repeated[0]["max_amount"] == 800.00
         assert len(repeated[0]["transactions"]) == 2
 
-    def test_repeated_vendors_sorted_by_total_spent(self):
-        """Test that repeated vendors are sorted by total spent descending."""
+    def test_repeated_vendors_sorted_by_total_activity(self):
+        """Test that repeated vendors are sorted by total activity descending."""
         service = ExpenseAnalysisService()
         transactions = [
             # Vendor A: 2 transactions, total 100
@@ -648,11 +649,11 @@ class TestExpenseAnalysisService:
 
         repeated = result["insights"]["repeated_vendors"]
         assert len(repeated) == 2
-        # Should be sorted by total_spent descending
+        # Should be sorted by total activity (debit + credit) descending
         assert repeated[0]["description"] == "Vendor B"
-        assert repeated[0]["total_spent"] == 500.00
+        assert repeated[0]["total_debit"] == 500.00
         assert repeated[1]["description"] == "Vendor A"
-        assert repeated[1]["total_spent"] == 100.00
+        assert repeated[1]["total_debit"] == 100.00
 
     def test_repeated_vendors_excludes_single_transactions(self):
         """Test that vendors with only 1 transaction are excluded."""
@@ -718,8 +719,43 @@ class TestExpenseAnalysisService:
         repeated = result["insights"]["repeated_vendors"]
         assert len(repeated) == 1
         assert repeated[0]["description"] == "Refund Company"
-        assert repeated[0]["total_spent"] == 300.00
+        # Credits must be counted as credit, never as spending
+        assert repeated[0]["total_credit"] == 300.00
+        assert repeated[0]["total_debit"] == 0.0
         assert repeated[0]["transaction_count"] == 2
+        assert all(t["direction"] == "credit" for t in repeated[0]["transactions"])
+
+    def test_repeated_vendors_debit_and_credit_not_netted(self):
+        """A vendor with both debits and credits reports each direction separately."""
+        service = ExpenseAnalysisService()
+        transactions = [
+            {
+                "Date": "1 Jan 2025",
+                "Details": "Mixed Vendor",
+                "Debit €": "300",
+                "Credit €": "",
+                "Balance €": "700",
+                "Filename": "test.pdf",
+            },
+            {
+                "Date": "2 Jan 2025",
+                "Details": "Mixed Vendor",
+                "Debit €": "",
+                "Credit €": "50",
+                "Balance €": "750",
+                "Filename": "test.pdf",
+            },
+        ]
+
+        result = service.analyze(transactions)
+
+        repeated = result["insights"]["repeated_vendors"]
+        assert len(repeated) == 1
+        entry = repeated[0]
+        assert entry["total_debit"] == 300.00
+        assert entry["total_credit"] == 50.00
+        directions = {t["amount"]: t["direction"] for t in entry["transactions"]}
+        assert directions == {300.0: "debit", 50.0: "credit"}
 
     def test_repeated_vendors_with_empty_descriptions(self):
         """Test that transactions with empty descriptions are excluded."""
@@ -839,7 +875,7 @@ class TestExpenseAnalysisService:
         # Should still detect the vendor even with bad dates (uses unsorted fallback)
         assert len(repeated) == 1
         assert repeated[0]["description"] == "Test Vendor"
-        assert repeated[0]["total_spent"] == 300.00
+        assert repeated[0]["total_debit"] == 300.00
 
     def test_repeated_vendors_empty_list_when_no_repeats(self):
         """Test that empty list is returned when no vendors have multiple transactions."""

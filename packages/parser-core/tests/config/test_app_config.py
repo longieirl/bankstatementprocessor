@@ -129,6 +129,59 @@ class TestAppConfigFromEnv:
         assert "json" in cfg.output_formats
 
 
+class TestAppConfigFilterYear:
+    """Tests for FILTER_YEAR parsing into filter_year_range."""
+
+    def _cfg(self, monkeypatch, tmp_path, value):
+        monkeypatch.setenv("INPUT_DIR", str(tmp_path))
+        monkeypatch.setenv("OUTPUT_DIR", str(tmp_path))
+        if value is None:
+            monkeypatch.delenv("FILTER_YEAR", raising=False)
+        else:
+            monkeypatch.setenv("FILTER_YEAR", value)
+        return AppConfig.from_env()
+
+    def test_unset_is_none(self, monkeypatch, tmp_path):
+        assert self._cfg(monkeypatch, tmp_path, None).filter_year_range is None
+
+    def test_empty_is_none(self, monkeypatch, tmp_path):
+        assert self._cfg(monkeypatch, tmp_path, "   ").filter_year_range is None
+
+    def test_single_year(self, monkeypatch, tmp_path):
+        assert self._cfg(monkeypatch, tmp_path, "2025").filter_year_range == (
+            2025,
+            2025,
+        )
+
+    def test_range(self, monkeypatch, tmp_path):
+        assert self._cfg(monkeypatch, tmp_path, "2024-2026").filter_year_range == (
+            2024,
+            2026,
+        )
+
+    def test_range_with_spaces(self, monkeypatch, tmp_path):
+        assert self._cfg(monkeypatch, tmp_path, " 2024 - 2026 ").filter_year_range == (
+            2024,
+            2026,
+        )
+
+    def test_non_numeric_raises(self, monkeypatch, tmp_path):
+        with pytest.raises(ConfigurationError, match="FILTER_YEAR"):
+            self._cfg(monkeypatch, tmp_path, "abc")
+
+    def test_inverted_range_raises(self, monkeypatch, tmp_path):
+        with pytest.raises(ConfigurationError, match="FILTER_YEAR"):
+            self._cfg(monkeypatch, tmp_path, "2026-2024")
+
+    def test_non_four_digit_raises(self, monkeypatch, tmp_path):
+        with pytest.raises(ConfigurationError, match="FILTER_YEAR"):
+            self._cfg(monkeypatch, tmp_path, "25")
+
+    def test_too_many_parts_raises(self, monkeypatch, tmp_path):
+        with pytest.raises(ConfigurationError, match="FILTER_YEAR"):
+            self._cfg(monkeypatch, tmp_path, "2024-2025-2026")
+
+
 class TestAppConfigLogConfiguration:
     """Tests for AppConfig.log_configuration()."""
 

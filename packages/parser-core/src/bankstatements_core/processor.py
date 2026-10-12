@@ -243,11 +243,18 @@ class BankStatementProcessor:
         self._template_registry = template_registry
 
         # Orchestrators: High-level coordinators for major workflows
+        from bankstatements_core.services.transaction_year_filter import (  # noqa: PLC0415
+            TransactionYearFilterService,
+        )
+
         self._pdf_orchestrator = PDFProcessingOrchestrator(
             extraction_config=config.extraction,
             column_names=self.column_names,
             output_dir=self.output_dir,
             repository=self.repository,
+            year_filter_service=TransactionYearFilterService.from_range(
+                config.processing.filter_year_range
+            ),
         )
 
         # ServiceRegistry: single wiring point for transaction processing

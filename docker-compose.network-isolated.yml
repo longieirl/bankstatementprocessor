@@ -80,6 +80,8 @@ services:
       - ENABLE_DYNAMIC_BOUNDARY=${ENABLE_DYNAMIC_BOUNDARY:-false}
       - SORT_BY_DATE=${SORT_BY_DATE:-true}
       - RECURSIVE_SCAN=${RECURSIVE_SCAN:-true}
+      # Optional year filter: single year "2025" or range "2024-2026"; empty = all years
+      - FILTER_YEAR=${FILTER_YEAR:-}
       # Minimal output format for GDPR-compliant environments (override to add json/excel)
       - OUTPUT_FORMATS=${OUTPUT_FORMATS:-csv}
       # Disabled by default in isolated mode; enable explicitly if required
