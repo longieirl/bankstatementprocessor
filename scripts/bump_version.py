@@ -126,8 +126,12 @@ def create_git_commit_and_tag(version: str, dry_run: bool = False) -> None:
         return
 
     # Stage changes
-    subprocess.run(["git", "add", "src/__version__.py"], check=True)
-    subprocess.run(["git", "add", "pyproject.toml"], check=True)
+    subprocess.run(
+        ["git", "add", "packages/parser-core/src/bankstatements_core/__version__.py"],
+        check=True,
+    )
+    subprocess.run(["git", "add", "packages/parser-core/pyproject.toml"], check=True)
+    subprocess.run(["git", "add", "packages/parser-cli/pyproject.toml"], check=True)
     subprocess.run(["git", "add", "CHANGELOG.md"], check=False)  # May not exist
 
     # Create commit
@@ -161,13 +165,23 @@ def main() -> int:
         # Find project root
         project_root = Path(__file__).parent.parent
 
-        # Read current version
-        version_file = project_root / "src" / "__version__.py"
-        if not version_file.exists():
-            print(f"❌ Version file not found: {version_file}")
+        # Monorepo version files — all three must stay in sync (CI enforces this).
+        core_version_file = (
+            project_root
+            / "packages"
+            / "parser-core"
+            / "src"
+            / "bankstatements_core"
+            / "__version__.py"
+        )
+        core_pyproject = project_root / "packages" / "parser-core" / "pyproject.toml"
+        cli_pyproject = project_root / "packages" / "parser-cli" / "pyproject.toml"
+
+        if not core_version_file.exists():
+            print(f"❌ Version file not found: {core_version_file}")
             return 1
 
-        content = version_file.read_text()
+        content = core_version_file.read_text()
         match = re.search(r'__version__ = "([^"]*)"', content)
         if not match:
             print("❌ Could not parse current version")
@@ -180,15 +194,17 @@ def main() -> int:
 
         if args.dry_run:
             print("\n🔍 Dry run - no changes made")
-            print(f"   Would update: src/__version__.py")
-            print(f"   Would update: pyproject.toml")
+            print(f"   Would update: {core_version_file}")
+            print(f"   Would update: {core_pyproject}")
+            print(f"   Would update: {cli_pyproject}")
             print(f"   Would update: CHANGELOG.md")
             create_git_commit_and_tag(new_version, dry_run=True)
             return 0
 
         # Update files
-        update_version_file(version_file, new_version)
-        update_pyproject_toml(project_root / "pyproject.toml", new_version)
+        update_version_file(core_version_file, new_version)
+        update_pyproject_toml(core_pyproject, new_version)
+        update_pyproject_toml(cli_pyproject, new_version)
         update_changelog(project_root / "CHANGELOG.md", new_version)
 
         # Create git commit and tag
