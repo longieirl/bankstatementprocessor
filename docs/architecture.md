@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes the structure of the `bankstatementprocessor` monorepo and how the premium distribution relates to the open-source packages.
+This document describes the structure of the `bankstatementprocessor` monorepo and how the open-source packages fit together.
 
 ---
 
@@ -122,17 +122,11 @@ registry = ServiceRegistry.from_config(
 
 ---
 
-## Premium Distribution
-
-A separate private distribution (`bankstatements-premium`) extends the open-source packages with additional bank templates and support for processing statements without IBAN patterns. It is not part of this repository.
-
----
-
 ## Boundary Enforcement
 
 CI enforces that `parser-cli` never imports code from outside `bankstatements-core`. A dedicated `boundary-check.yml` workflow scans `packages/parser-cli/src/` on every PR and fails if any prohibited imports are found.
 
-This ensures the structural boundary between the open-source and premium distributions is maintained automatically on every PR.
+This keeps `parser-cli` a thin wrapper that depends only on the public `bankstatements-core` package.
 
 ---
 
@@ -144,5 +138,3 @@ This ensures the structural boundary between the open-source and premium distrib
 | `bankstatements-cli` | `packages/parser-cli/pyproject.toml` | `cli-v0.1.0` |
 
 Core and CLI versions are independent. A core release does not require a CLI release and vice versa.
-
-`bankstatements-premium` follows a separate versioning scheme (`v1.x.x`) and is not published to PyPI.

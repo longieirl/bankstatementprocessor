@@ -78,7 +78,7 @@ bankstatementprocessor/
 ├── docs/                     documentation
 └── .github/workflows/
     ├── ci.yml                lint + test both packages
-    ├── boundary-check.yml    enforce parser-cli cannot import premium code
+    ├── boundary-check.yml    enforce parser-cli only imports bankstatements-core
     └── release-core.yml      publish bankstatements-core to PyPI on core-v* tags
 ```
 
@@ -86,7 +86,9 @@ bankstatementprocessor/
 
 ## Docker
 
-**Open source (this repo):** a `Dockerfile` and `docker-compose.yml` are provided for local development. They build both `bankstatements-core` and `bankstatements-cli` from source — no remote image is pulled.
+### Build from source (development)
+
+A `Dockerfile` and `docker-compose.yml` build both `bankstatements-core` and `bankstatements-cli` from source.
 
 ```bash
 git clone https://github.com/longieirl/bankstatementprocessor.git
@@ -97,29 +99,27 @@ docker-compose up --build
 
 Place PDFs in `./input/` before running. Results are written to `./output/`.
 
-**Production image:** published to the GitHub Container Registry.
+### Run via Docker (no clone)
+
+The image is published to the GitHub Container Registry — pull and run it directly, no clone required. Both bank statements and credit-card statements are processed; no license is needed.
 
 ```bash
-docker pull ghcr.io/longieirl/bankstatements-premium:latest
+docker pull ghcr.io/longieirl/bankstatements:latest
 ```
-
-To run:
 
 ```bash
 docker run --rm \
   --network none \
-  -v ./input:/app/input \
-  -v ./output:/app/output \
-  -v ./logs:/app/logs \
-  -v ./license.json:/app/license.json:ro \
-  -e LICENSE_PATH=/app/license.json \
-  -e OUTPUT_FORMATS=csv,json \
-  ghcr.io/longieirl/bankstatements-premium:latest
+  -v "/path/to/your/pdfs:/app/input:ro" \
+  -v "/path/to/your/output:/app/output" \
+  -e EXIT_AFTER_PROCESSING=true \
+  -e OUTPUT_FORMATS=csv,json,excel \
+  ghcr.io/longieirl/bankstatements:latest
 ```
 
-Place PDFs in `./input/`; results are written to `./output/`.
+Mount your PDF folder at `/app/input` (read-only) and an output folder at `/app/output`. `--network none` runs fully offline (drop it if you don't need isolation).
 
-> **License:** A `license.json` is only required for credit card statements. Without one, the processor will handle any statements containing an IBAN — credit card PDFs will be skipped.
+Optional: set `-e FILTER_YEAR=2025` (or a range like `2024-2026`) to restrict output to specific years; omit it to include all years. See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for all options.
 
 ---
 
