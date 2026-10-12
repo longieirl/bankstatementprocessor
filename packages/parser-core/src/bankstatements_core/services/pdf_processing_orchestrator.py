@@ -29,6 +29,9 @@ if TYPE_CHECKING:
     from bankstatements_core.services.extraction_orchestrator import (
         ExtractionOrchestrator,
     )
+    from bankstatements_core.services.transaction_year_filter import (
+        TransactionYearFilterService,
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +56,7 @@ class PDFProcessingOrchestrator:
         pdf_discovery: IPDFDiscovery | None = None,
         extraction_orchestrator: ExtractionOrchestrator | None = None,
         filter_service: ITransactionFilter | None = None,
+        year_filter_service: TransactionYearFilterService | None = None,
     ):
         """Initialize PDF processing orchestrator.
 
@@ -64,6 +68,8 @@ class PDFProcessingOrchestrator:
             pdf_discovery: Service for discovering PDF files (optional, creates default if None)
             extraction_orchestrator: Service for extracting data from PDFs (optional, creates default if None)
             filter_service: Service for filtering transactions (optional, creates default if None)
+            year_filter_service: Service for restricting transactions by year
+                (optional; defaults to an include-all no-op filter)
         """
         from bankstatements_core.services.extraction_orchestrator import (  # noqa: PLC0415
             ExtractionOrchestrator,
@@ -73,6 +79,9 @@ class PDFProcessingOrchestrator:
         )
         from bankstatements_core.services.transaction_filter import (  # noqa: PLC0415
             TransactionFilterService,
+        )
+        from bankstatements_core.services.transaction_year_filter import (  # noqa: PLC0415
+            TransactionYearFilterService,
         )
 
         self.extraction_config = extraction_config
@@ -88,6 +97,9 @@ class PDFProcessingOrchestrator:
             )
         )
         self.filter_service = filter_service or TransactionFilterService(column_names)
+        self.year_filter_service = (
+            year_filter_service or TransactionYearFilterService.from_range(None)
+        )
 
     def process_all_pdfs(
         self, input_dir: Path, recursive: bool = False
@@ -158,7 +170,34 @@ class PDFProcessingOrchestrator:
                 filtered_rows = self.filter_service.apply_all_filters(
                     result.transactions
                 )
+
+                # Apply the optional year filter. When no year is configured this
+                # is a no-op. When active, it may raise YearFilterError on an
+                # undeterminable date, which bubbles up to abort the run.
+                filtered_rows = self.year_filter_service.filter(filtered_rows, pdf.name)
                 result.transactions = filtered_rows
+
+                # When a year filter is active and removes every transaction, the
+                # PDF did not contribute to the selected year(s). Exclude it so
+                # ibans.json / cc.json reflect only PDFs with in-year data.
+                if self.year_filter_service.is_active and not filtered_rows:
+                    pdf_ibans.pop(pdf.name, None)
+                    pdf_card_numbers.pop(pdf.name, None)
+                    excluded_files.append(
+                        {
+                            "filename": pdf.name,
+                            "path": str(pdf),
+                            "reason": "No transactions in the configured filter year(s)",
+                            "timestamp": datetime.now().isoformat(),
+                            "pages": result.page_count,
+                        }
+                    )
+                    logger.warning(
+                        "PDF %d (%s) excluded: no transactions in the configured filter year(s)",
+                        idx,
+                        pdf.name,
+                    )
+                    continue
 
                 logger.info(
                     "Successfully processed PDF %d: %d transactions extracted",

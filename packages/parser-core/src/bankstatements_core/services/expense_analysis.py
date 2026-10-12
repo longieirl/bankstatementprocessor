@@ -460,40 +460,48 @@ class ExpenseAnalysisService:
                 logger.warning("Failed to sort transactions for %s: %s", description, e)
                 txs_sorted = txs  # Use unsorted if date parsing fails
 
-            # Extract all amounts
+            # Extract amounts, split by direction (debit = money out, credit = in)
             amounts = []
+            total_debit = 0.0
+            total_credit = 0.0
+            tx_entries = []
             for tx in txs_sorted:
                 amount = self._get_transaction_amount(tx)
-                if amount is not None and amount > 0:
-                    amounts.append(float(amount))
+                if amount is None or amount <= 0:
+                    continue
+                amt = float(amount)
+                amounts.append(amt)
+                direction = "credit" if tx.is_credit() else "debit"
+                if direction == "credit":
+                    total_credit += amt
+                else:
+                    total_debit += amt
+                tx_entries.append(
+                    {"date": tx.date, "amount": round(amt, 2), "direction": direction}
+                )
 
             if not amounts:
                 continue  # Skip if no valid amounts
-
-            total_spent = sum(amounts)
 
             repeated.append(
                 {
                     "description": description,
                     "transaction_count": len(txs_sorted),
-                    "total_spent": round(total_spent, 2),
-                    "average_amount": round(total_spent / len(amounts), 2),
+                    "total_debit": round(total_debit, 2),
+                    "total_credit": round(total_credit, 2),
+                    "average_amount": round(sum(amounts) / len(amounts), 2),
                     "min_amount": round(min(amounts), 2),
                     "max_amount": round(max(amounts), 2),
-                    "transactions": [
-                        {
-                            "date": tx.date,
-                            "amount": round(
-                                float(self._get_transaction_amount(tx) or 0), 2
-                            ),
-                        }
-                        for tx in txs_sorted
-                    ],
+                    "transactions": tx_entries,
                 }
             )
 
-        # Sort by total spent descending (most expensive vendors first)
-        repeated.sort(key=lambda x: cast(float, x["total_spent"]), reverse=True)
+        # Sort by total activity (debit + credit) descending
+        repeated.sort(
+            key=lambda x: cast(float, x["total_debit"])
+            + cast(float, x["total_credit"]),
+            reverse=True,
+        )
 
         logger.info("Detected %s repeated vendors", len(repeated))
         return repeated

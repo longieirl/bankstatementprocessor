@@ -47,6 +47,8 @@ class ProcessingConfig:
             classification, next-expected date, annualised cost, subscription
             detection, and confidence scoring (default: True)
         recursive_scan: Whether to scan subdirectories recursively for PDF files
+        filter_year_range: Optional inclusive (min_year, max_year) to restrict
+            output to transactions in those years; None means include all years
     """
 
     sort_by_date: bool = True
@@ -55,6 +57,7 @@ class ProcessingConfig:
     generate_expense_analysis: bool = True
     recurring_intelligence: bool = True
     recursive_scan: bool = True
+    filter_year_range: tuple[int, int] | None = None
 
 
 @dataclass

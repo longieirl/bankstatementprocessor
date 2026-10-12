@@ -102,6 +102,7 @@ class ProcessorFactory:
                 totals_columns=config.totals_columns,
                 generate_monthly_summary=config.generate_monthly_summary,
                 generate_expense_analysis=config.generate_expense_analysis,
+                filter_year_range=config.filter_year_range,
             ),
             output=OutputConfig(
                 output_formats=config.output_formats,

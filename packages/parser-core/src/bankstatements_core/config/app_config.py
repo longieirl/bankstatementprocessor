@@ -49,6 +49,7 @@ class AppConfig:
     data_retention_days: int = 0  # 0 = no limit
     auto_cleanup_on_exit: bool = False
     logs_dir: Path = field(default_factory=lambda: Path("logs"))
+    filter_year_range: tuple[int, int] | None = None
 
     def __post_init__(self) -> None:
         """Validate configuration after initialization."""
@@ -217,6 +218,9 @@ class AppConfig:
                 "AUTO_CLEANUP_ON_EXIT", False
             )
 
+            # Parse optional year filter (FILTER_YEAR): "2025" or "2024-2026"
+            filter_year_range = cls._parse_filter_year(os.getenv("FILTER_YEAR"))
+
             return cls(
                 input_dir=input_dir,
                 output_dir=output_dir,
@@ -233,6 +237,7 @@ class AppConfig:
                 data_retention_days=data_retention_days,
                 auto_cleanup_on_exit=auto_cleanup_on_exit,
                 logs_dir=logs_dir,
+                filter_year_range=filter_year_range,
             )
 
         except ConfigurationError:
@@ -241,6 +246,40 @@ class AppConfig:
             # Expected errors: validation failures, type errors, attribute errors, file system errors, runtime errors
             raise ConfigurationError(f"Failed to load configuration: {e}") from e
         # Let truly unexpected errors (like MemoryError, SystemError) bubble up
+
+    @staticmethod
+    def _parse_filter_year(raw: str | None) -> tuple[int, int] | None:
+        """Parse the FILTER_YEAR env value into an inclusive (min, max) range.
+
+        Accepts a single year ("2025") or a hyphenated range ("2024-2026").
+        An unset or blank value means "all years" (None). Invalid values raise
+        ConfigurationError so misconfiguration fails fast at startup.
+        """
+        if raw is None or not raw.strip():
+            return None
+
+        parts = [p.strip() for p in raw.strip().split("-")]
+        if len(parts) not in (1, 2):
+            raise ConfigurationError(
+                f"FILTER_YEAR must be a year or year range (e.g. 2025 or 2024-2026), got '{raw}'"
+            )
+
+        years: list[int] = []
+        for part in parts:
+            if len(part) != 4 or not part.isdigit():
+                raise ConfigurationError(
+                    f"FILTER_YEAR years must be four digits, got '{raw}'"
+                )
+            years.append(int(part))
+
+        min_year, max_year = (
+            (years[0], years[0]) if len(years) == 1 else (years[0], years[1])
+        )
+        if min_year > max_year:
+            raise ConfigurationError(
+                f"FILTER_YEAR range start must not exceed end, got '{raw}'"
+            )
+        return (min_year, max_year)
 
     def log_configuration(self) -> None:
         """Log current configuration in a structured way."""
@@ -273,6 +312,11 @@ class AppConfig:
             "ENABLED" if self.recurring_intelligence else "DISABLED",
         )
         logger.info("Output formats: %s", ", ".join(self.output_formats))
+        if self.filter_year_range is not None:
+            lo, hi = self.filter_year_range
+            logger.info("Year filter: %s", str(lo) if lo == hi else f"{lo}-{hi}")
+        else:
+            logger.info("Year filter: ALL YEARS")
         logger.info(
             "Data retention: %s",
             (

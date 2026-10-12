@@ -124,3 +124,39 @@ class TestYearlessDateFormats:
         # Yearless formats must NOT appear in DATE_FORMATS to avoid ambiguity
         assert "%d %b" not in service.DATE_FORMATS
         assert "%d %B" not in service.DATE_FORMATS
+
+
+class TestTryResolveYear:
+    """Tests for try_resolve_year — strict year resolution with no guessing.
+
+    Returns an int only when the year is explicit in the date string or
+    supplied via hint_year. Returns None otherwise (no DEFAULT_YEAR fallback).
+    """
+
+    def test_explicit_four_digit_year(self, service):
+        assert service.try_resolve_year("01/12/2025") == 2025
+
+    def test_explicit_two_digit_year(self, service):
+        assert service.try_resolve_year("01/12/25") == 2025
+
+    def test_dd_mmm_yyyy(self, service):
+        assert service.try_resolve_year("25 Apr 2024") == 2024
+
+    def test_yearless_with_hint(self, service):
+        assert service.try_resolve_year("3 Feb", hint_year=2026) == 2026
+
+    def test_yearless_without_hint_returns_none(self, service):
+        assert service.try_resolve_year("3 Feb") is None
+
+    def test_partial_date_no_year_returns_none(self, service):
+        # "01/12" must NOT be guessed as DEFAULT_YEAR — year is indeterminable
+        assert service.try_resolve_year("01/12") is None
+
+    def test_empty_string_returns_none(self, service):
+        assert service.try_resolve_year("") is None
+
+    def test_unparseable_returns_none(self, service):
+        assert service.try_resolve_year("not-a-date") is None
+
+    def test_dated_format_ignores_hint(self, service):
+        assert service.try_resolve_year("01/12/2025", hint_year=1999) == 2025
