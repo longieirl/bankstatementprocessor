@@ -35,7 +35,7 @@ The local repository copy is authoritative for this project.
 
 ## Repo Overview
 
-This is the open-source repo. Credit-card and bank-statement processing both run with no license (tier gating was removed in PR #260).
+This is the open-source repo. Credit-card and bank-statement processing both run with no license.
 
 - **Local Docker image name:** `bankstatementsprocessor` (built from `Dockerfile`)
 - **Published image:** `ghcr.io/longieirl/bankstatements:latest` — built and pushed to GHCR by `release.yml` on `v*.*.*` tags.
