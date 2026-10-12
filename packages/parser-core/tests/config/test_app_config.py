@@ -100,6 +100,26 @@ class TestAppConfigFromEnv:
             ):
                 AppConfig.from_env()
 
+    def test_from_env_output_defaults_to_input_folder(self, monkeypatch, tmp_path):
+        """OUTPUT_DIR unset + INPUT_DIR set → output under input folder."""
+        input_dir = tmp_path / "pdfs"
+        monkeypatch.setenv("INPUT_DIR", str(input_dir))
+        monkeypatch.delenv("OUTPUT_DIR", raising=False)
+        cfg = AppConfig.from_env()
+        assert cfg.input_dir == input_dir
+        assert cfg.output_dir == input_dir / "output"
+
+    def test_from_env_output_defaults_to_project_root_when_no_input(
+        self, monkeypatch, tmp_path
+    ):
+        """OUTPUT_DIR and INPUT_DIR both unset → output under PROJECT_ROOT/cwd."""
+        monkeypatch.setenv("PROJECT_ROOT", str(tmp_path))
+        monkeypatch.delenv("INPUT_DIR", raising=False)
+        monkeypatch.delenv("OUTPUT_DIR", raising=False)
+        cfg = AppConfig.from_env()
+        assert cfg.input_dir == tmp_path / "input"
+        assert cfg.output_dir == tmp_path / "output"
+
     def test_from_env_with_explicit_output_formats(self, monkeypatch, tmp_path):
         monkeypatch.setenv("INPUT_DIR", str(tmp_path))
         monkeypatch.setenv("OUTPUT_DIR", str(tmp_path))
