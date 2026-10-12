@@ -196,7 +196,19 @@ class AppConfig:
                 return project_root / path
 
             input_dir = resolve_dir("INPUT_DIR", "input")
-            output_dir = resolve_dir("OUTPUT_DIR", "output")
+
+            # Output directory resolution:
+            # - OUTPUT_DIR set: resolve normally (absolute, or relative to root)
+            # - OUTPUT_DIR unset + INPUT_DIR set: default under the input folder
+            # - OUTPUT_DIR unset + INPUT_DIR unset: default under PROJECT_ROOT/cwd
+            if os.getenv("OUTPUT_DIR") is not None:
+                output_dir = resolve_dir("OUTPUT_DIR", "output")
+            else:
+                output_base = (
+                    input_dir if os.getenv("INPUT_DIR") is not None else project_root
+                )
+                output_dir = output_base / "output"
+
             logs_dir = resolve_dir("LOGS_DIR", "logs")
 
             # Parse data retention configuration
