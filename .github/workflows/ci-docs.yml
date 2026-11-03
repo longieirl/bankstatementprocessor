@@ -21,5 +21,6 @@ jobs:
   ci-pass:
     name: CI Pass
     runs-on: ubuntu-latest
+    permissions: {}
     steps:
       - run: echo "Docs-only change — skipping code checks."
