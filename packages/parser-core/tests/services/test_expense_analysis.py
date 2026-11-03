@@ -632,8 +632,7 @@ class TestExpenseAnalysisService:
         repeated = result["insights"]["repeated_vendors"]
         assert len(repeated) == 1
         assert repeated[0]["transaction_count"] == 2
-        # Display description is a real raw line, not the normalised key
-        assert repeated[0]["description"].startswith("NETFLIX.COM")
+        assert repeated[0]["description"] == "NETFLIX.COM 866-579-7172 US"
 
     def test_recurring_charge_groups_across_cc_ref_suffixes(self):
         """CC recurring charge detected despite per-row 'Ref:' suffixes."""
@@ -661,7 +660,7 @@ class TestExpenseAnalysisService:
 
         recurring = result["insights"]["recurring_charges"]
         assert len(recurring) == 1
-        assert recurring[0]["description"].startswith("APPLE.COM/BILL")
+        assert recurring[0]["description"] == "APPLE.COM/BILL ITUNES.COM IE"
 
     def test_repeated_vendors_sorted_by_total_activity(self):
         """Test that repeated vendors are sorted by total activity descending."""
