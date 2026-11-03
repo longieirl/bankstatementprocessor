@@ -15,30 +15,16 @@ CVE-2026-33845
 # Re-evaluate when a Debian patch is released.
 CVE-2026-42496
 
-# CVE-2025-47273: setuptools — path traversal in PackageIndex.
-# setuptools 70.3.0 is in the python:3.12-slim base image layer; Trivy detects it
-# from that layer even though the production stage upgrades to >=78.1.1 at runtime.
-# PackageIndex is not used by this application — no package installation at runtime.
-# Re-evaluate if a newer python:3.12-slim base image ships >=78.1.1 natively.
-CVE-2025-47273
-
 # GHSA-6v7p-g79w-8964: msgpack — out-of-bounds read on Unpacker reuse after memoryview.
 # msgpack is an indirect transitive dependency; this application never directly imports
 # or calls msgpack's Unpacker class, so the vulnerable code path is unreachable.
-# Trivy detects 1.1.2 from a Docker build layer that persists despite runtime upgrades
+# Trivy detects it from a Docker build layer that persists despite runtime upgrades
 # due to BuildKit layer caching behaviour with cross-stage mounts.
 # Remove when the package that pulls msgpack updates to >=1.2.1.
 GHSA-6v7p-g79w-8964
 
-# CVE-2026-97687, CVE-2026-97689: urllib3 2.7.0 — HTTPS proxy TLS override + DoS via unbounded memory.
-# urllib3 2.7.0 is bundled in the python:3.12-slim base image layer; Trivy detects it from that layer
-# even though the builder stage upgrades to >=2.8.0. The base layer cannot be patched without a new
-# base image. The application processes PDF files locally and never initiates HTTPS proxy connections
-# or handles untrusted chunked streams, so both code paths are unreachable at runtime.
-# Re-evaluate when python:3.12-slim ships urllib3 >=2.8.0 natively.
-CVE-2026-97687
-CVE-2026-97689
-
-# Last review: 2026-10-06
-# Next review: 2026-11-06
-
+# Last review: 2026-11-03
+# Next review: 2026-12-03
+# Note: CVE-2025-47273 (setuptools) and CVE-2026-97687/CVE-2026-97689 (urllib3) were
+# removed — they were artifacts of the python:3.12-slim base layer. Base image moved
+# to python:3.13-slim in PR #282; rescan after next release to confirm they are gone.
