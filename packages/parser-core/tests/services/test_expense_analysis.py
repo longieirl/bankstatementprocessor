@@ -605,6 +605,63 @@ class TestExpenseAnalysisService:
         assert repeated[0]["max_amount"] == 800.00
         assert len(repeated[0]["transactions"]) == 2
 
+    def test_repeated_vendors_groups_across_cc_ref_suffixes(self):
+        """CC lines with unique 'Ref:' suffixes group as one vendor."""
+        service = ExpenseAnalysisService()
+        transactions = [
+            {
+                "Date": "10 Jan 2023",
+                "Details": "NETFLIX.COM 866-579-7172 US Ref: 24692162029100476079799",
+                "Debit €": "8.28",
+                "Credit €": "",
+                "Balance €": "",
+                "Filename": "cc.pdf",
+            },
+            {
+                "Date": "10 Feb 2023",
+                "Details": "NETFLIX.COM 866-579-7172 US Ref: 24692162060100512345678",
+                "Debit €": "8.28",
+                "Credit €": "",
+                "Balance €": "",
+                "Filename": "cc.pdf",
+            },
+        ]
+
+        result = service.analyze(transactions)
+
+        repeated = result["insights"]["repeated_vendors"]
+        assert len(repeated) == 1
+        assert repeated[0]["transaction_count"] == 2
+        assert repeated[0]["description"] == "NETFLIX.COM 866-579-7172 US"
+
+    def test_recurring_charge_groups_across_cc_ref_suffixes(self):
+        """CC recurring charge detected despite per-row 'Ref:' suffixes."""
+        service = ExpenseAnalysisService()
+        transactions = [
+            {
+                "Date": "07 Jan 2023",
+                "Details": "APPLE.COM/BILL ITUNES.COM IE Ref: 74313302023100122538711",
+                "Debit €": "0.99",
+                "Credit €": "",
+                "Balance €": "",
+                "Filename": "cc.pdf",
+            },
+            {
+                "Date": "07 Feb 2023",  # ~31 days = monthly band
+                "Details": "APPLE.COM/BILL ITUNES.COM IE Ref: 74313302054100199887766",
+                "Debit €": "0.99",
+                "Credit €": "",
+                "Balance €": "",
+                "Filename": "cc.pdf",
+            },
+        ]
+
+        result = service.analyze(transactions)
+
+        recurring = result["insights"]["recurring_charges"]
+        assert len(recurring) == 1
+        assert recurring[0]["description"] == "APPLE.COM/BILL ITUNES.COM IE"
+
     def test_repeated_vendors_sorted_by_total_activity(self):
         """Test that repeated vendors are sorted by total activity descending."""
         service = ExpenseAnalysisService()
