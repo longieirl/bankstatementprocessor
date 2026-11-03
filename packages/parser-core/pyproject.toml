@@ -1,6 +1,6 @@
 [project]
 name = "bankstatements-core"
-version = "0.1.9"
+version = "0.1.10"
 description = "Core PDF bank statement parsing library"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -73,7 +73,7 @@ where = ["src"]
 bankstatements_core = ["templates/*.json", "py.typed"]
 
 [tool.pytest.ini_options]
-minversion = "7.0"
+minversion = "0.1.10"
 addopts = [
     "-ra",
     "--strict-markers",
@@ -123,7 +123,7 @@ exclude_lines = [
 ]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "0.1.10"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -151,7 +151,7 @@ known_first_party = ["bankstatements_core"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py311"
+target-version = "0.1.10"
 
 [tool.ruff.lint]
 select = [

@@ -1,6 +1,6 @@
 [project]
 name = "bankstatements-cli"
-version = "0.1.9"
+version = "0.1.10"
 description = "CLI for bankstatements-core PDF bank statement processor"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -41,7 +41,7 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.pytest.ini_options]
-minversion = "7.0"
+minversion = "0.1.10"
 addopts = [
     "-ra",
     "--strict-markers",
@@ -71,7 +71,7 @@ known_first_party = ["bankstatements_cli", "bankstatements_core"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py311"
+target-version = "0.1.10"
 
 [tool.ruff.lint]
 select = [
