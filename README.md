@@ -3,6 +3,7 @@
 [![CI](https://github.com/longieirl/bankstatementprocessor/actions/workflows/ci.yml/badge.svg)](https://github.com/longieirl/bankstatementprocessor/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)
+[![Docker](https://img.shields.io/badge/ghcr.io-bankstatements-blue?logo=docker)](https://github.com/longieirl/bankstatementprocessor/pkgs/container/bankstatements)
 
 > Parse PDF bank statements into structured CSV, JSON, and Excel — locally, with no cloud services.
 
@@ -102,6 +103,15 @@ Place PDFs in `./input/` before running. Results are written to `./output/`.
 ### Run via Docker (no clone)
 
 The image is published to the GitHub Container Registry — pull and run it directly, no clone required. Both bank statements and credit-card statements are processed; no license is needed.
+
+**Registry:** [`ghcr.io/longieirl/bankstatements`](https://github.com/longieirl/bankstatementprocessor/pkgs/container/bankstatements)
+
+| Tag | Description |
+|---|---|
+| `latest` | Most recent release |
+| `0.1.10` | Exact version |
+| `0.1` | Latest patch of minor |
+| `0` | Latest minor of major |
 
 ```bash
 docker pull ghcr.io/longieirl/bankstatements:latest
