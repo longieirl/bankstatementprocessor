@@ -68,9 +68,10 @@ def update_pyproject_toml(file_path: Path, new_version: str) -> None:
     """Update version in pyproject.toml."""
     content = file_path.read_text()
     content = re.sub(
-        r'version = "[^"]*"',
+        r'^version = "[^"]*"',
         f'version = "{new_version}"',
         content,
+        flags=re.MULTILINE,
     )
     file_path.write_text(content)
     print(f"✅ Updated {file_path}")
