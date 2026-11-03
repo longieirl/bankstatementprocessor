@@ -7,8 +7,9 @@ detection and high-value transaction anomaly detection.
 from __future__ import annotations
 
 import logging
+import re
 import statistics
-from collections import defaultdict
+from collections import Counter, defaultdict
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any, cast
@@ -20,6 +21,11 @@ from bankstatements_core.services.date_parser import DateParserService
 logger = logging.getLogger(__name__)
 
 _date_parser_service = DateParserService()
+
+# Credit-card descriptions carry a unique per-transaction authorisation
+# reference ("... Ref: 7427988..."). Everything from "Ref:" onward is volatile
+# and must be removed before grouping, or the same vendor never groups.
+_REF_SUFFIX_RE = re.compile(r"\s+Ref:.*$", re.IGNORECASE)
 
 # (lower_days, upper_days, label, periods_per_year)
 _FREQUENCY_BANDS: list[tuple[int, int, str, float]] = [
@@ -204,8 +210,8 @@ class ExpenseAnalysisService:
         Detect recurring charges using exact description matching.
 
         A recurring charge is identified when:
-        - Exact same description appears 2+ times
-        - No normalization - exact string match required
+        - Same vendor (normalised description) appears 2+ times
+        - Volatile credit-card "Ref:" suffixes are stripped before matching
         - Intervals fall within a recognised frequency band
 
         Args:
@@ -214,14 +220,13 @@ class ExpenseAnalysisService:
         Returns:
             List of recurring charge dicts with metadata
         """
-        # Group transactions by EXACT description (no normalization)
-        groups: dict[str, list[Transaction]] = defaultdict(list)
-        for tx in tx_objects:
-            if tx.details:  # Only group non-empty descriptions
-                groups[tx.details].append(tx)
+        # Group transactions by normalised vendor key (strips volatile "Ref:"
+        # suffix so the same vendor groups across credit-card transactions).
+        groups = self._group_by_vendor_key(tx_objects)
 
         recurring = []
-        for description, txs in groups.items():
+        for txs in groups.values():
+            description = self._representative_description(txs)
             entry = self._build_recurring_entry(description, txs)
             if entry is not None:
                 recurring.append(entry)
@@ -429,9 +434,10 @@ class ExpenseAnalysisService:
         """
         Detect vendors/companies with multiple transactions (2+).
 
-        Groups all transactions by exact description, regardless of amount
-        variance or date intervals. Useful for identifying all companies
-        you've transacted with more than once.
+        Groups transactions by normalised vendor key (volatile credit-card
+        "Ref:" suffixes stripped), regardless of amount variance or date
+        intervals. Useful for identifying all companies you've transacted with
+        more than once.
 
         Args:
             tx_objects: List of Transaction domain objects
@@ -439,16 +445,16 @@ class ExpenseAnalysisService:
         Returns:
             List of vendor dicts with transaction details, sorted by total spent
         """
-        # Group transactions by EXACT description
-        groups: dict[str, list[Transaction]] = defaultdict(list)
-        for tx in tx_objects:
-            if tx.details:  # Only group non-empty descriptions
-                groups[tx.details].append(tx)
+        # Group transactions by normalised vendor key (strips volatile "Ref:"
+        # suffix so the same vendor groups across credit-card transactions).
+        groups = self._group_by_vendor_key(tx_objects)
 
         repeated = []
-        for description, txs in groups.items():
+        for txs in groups.values():
             if len(txs) < 2:
                 continue  # Need at least 2 transactions
+
+            description = self._representative_description(txs)
 
             # Sort by date for chronological ordering
             try:
@@ -584,6 +590,50 @@ class ExpenseAnalysisService:
         if not description:
             return ""
         return description.lower().strip()
+
+    def _vendor_key(self, description: str) -> str:
+        """Return a stable grouping key for a vendor description.
+
+        Strips the volatile credit-card "Ref:" suffix, collapses internal
+        whitespace, and lowercases so the same vendor groups across
+        transactions. Bank descriptions (no "Ref:") are only whitespace-
+        normalised and lowercased.
+
+        Args:
+            description: Raw transaction description
+
+        Returns:
+            Normalised vendor key, or "" when the description is empty
+        """
+        if not description:
+            return ""
+        stripped = _REF_SUFFIX_RE.sub("", description)
+        return re.sub(r"\s+", " ", stripped).strip().lower()
+
+    @staticmethod
+    def _representative_description(txs: list[Transaction]) -> str:
+        """Pick a clean, human-readable description for a group.
+
+        Strips the volatile "Ref:" suffix from each raw description (preserving
+        original case) then returns the most common result, so display text is
+        readable and free of per-transaction reference noise. Ties resolve to
+        the first-seen value.
+        """
+        counts = Counter(
+            _REF_SUFFIX_RE.sub("", tx.details).strip() for tx in txs if tx.details
+        )
+        return counts.most_common(1)[0][0] if counts else ""
+
+    def _group_by_vendor_key(
+        self, tx_objects: list[Transaction]
+    ) -> dict[str, list[Transaction]]:
+        """Group transactions by normalised vendor key (skips empty keys)."""
+        groups: dict[str, list[Transaction]] = defaultdict(list)
+        for tx in tx_objects:
+            key = self._vendor_key(tx.details)
+            if key:
+                groups[key].append(tx)
+        return groups
 
     def _get_transaction_amount(self, tx: Transaction) -> Decimal | None:
         """

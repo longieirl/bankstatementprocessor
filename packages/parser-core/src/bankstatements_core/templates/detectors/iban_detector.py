@@ -99,9 +99,14 @@ class IBANDetector(BaseDetector):
                 if len(matched_pattern) > 10:
                     confidence = 1.0
 
+                masked = (
+                    matched_iban
+                    if len(matched_iban) <= 8
+                    else f"{matched_iban[:4]}{'*' * (len(matched_iban) - 8)}{matched_iban[-4:]}"
+                )
                 logger.info(
                     "IBAN '%s' matched template '%s' (pattern: %s, confidence: %s)",
-                    matched_iban,
+                    masked,
                     template.name,
                     matched_pattern,
                     confidence,
