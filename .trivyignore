@@ -1,6 +1,15 @@
 # Trivy vulnerability ignore list
 # Format: CVE-YYYY-NNNNN [reason]
 
+# CVE-2025-47273: setuptools — path traversal in PackageIndex.
+# python:3.13-slim ships setuptools 70.3.0; the fix is 78.1.1. The production
+# stage runs `pip install --upgrade "setuptools>=78.1.1"` but Trivy detects the
+# version registered in the base image's pip metadata layer rather than the
+# upgraded one. This application never invokes setuptools' PackageIndex at
+# runtime — it processes PDF files only — so the path-traversal attack vector is
+# unreachable. Re-evaluate when python:3.13-slim ships setuptools >= 78.1.1.
+CVE-2025-47273
+
 # CVE-2026-33845: libgnutls30t64 — GnuTLS DoS via DTLS zero-length fragment.
 # No fixed version available in Debian 13 as of 2026-05-08; apt-get upgrade cannot
 # resolve this. The application processes PDF files locally and never initiates or
@@ -25,6 +34,6 @@ GHSA-6v7p-g79w-8964
 
 # Last review: 2026-11-03
 # Next review: 2026-12-03
-# Note: CVE-2025-47273 (setuptools) and CVE-2026-97687/CVE-2026-97689 (urllib3) were
-# removed — they were artifacts of the python:3.12-slim base layer. Base image moved
-# to python:3.13-slim in PR #282; rescan after next release to confirm they are gone.
+# Note: CVE-2025-47273 (setuptools) was originally removed thinking 3.13-slim would
+# fix it, but python:3.13-slim still ships setuptools 70.3.0. Re-added with explanation.
+# CVE-2026-97687/CVE-2026-97689 (urllib3) resolved by 3.13-slim migration (PR #282).
