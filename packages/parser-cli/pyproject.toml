@@ -41,7 +41,7 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.pytest.ini_options]
-minversion = "0.1.10"
+minversion = "7.0"
 addopts = [
     "-ra",
     "--strict-markers",
@@ -71,7 +71,7 @@ known_first_party = ["bankstatements_cli", "bankstatements_core"]
 
 [tool.ruff]
 line-length = 88
-target-version = "0.1.10"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = [
